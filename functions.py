@@ -18,7 +18,7 @@ def find_pulses(left_channel):
     pulses = []
     for i in range(len(left_channel) - 51):
         samples = left_channel[i:i+51]  # Get the first 51 samples
-        if samples[25] >= max(samples) and (max(samples)-min(samples)) > 1000 and samples[25] < 32000:
+        if samples[25] >= max(samples) and (max(samples)-min(samples)) > 100 and samples[25] < 32768:
             pulses.append(samples)
     if len(pulses) != 0:  # If the list is empty
         #print(".",pulses) # For debugging

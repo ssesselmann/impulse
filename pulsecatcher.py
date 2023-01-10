@@ -6,7 +6,7 @@ import time
 
 start = time.perf_counter()
 
-def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index, chunk, shape):
+def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index, chunk, shape, threshold, tolerance):
 
 	samples =[]
 	pulses = []
@@ -34,7 +34,7 @@ def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index
 	    for i in range(len(left_channel) - 51):
 	        samples = left_channel[i:i+51]  # Get the first 51 samples
 
-	        if samples[25] >= max(samples) and (max(samples)-min(samples)) > 100 and samples[25] < 32000:
+	        if samples[25] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[25] < 32768:
 	        	# Time capture
 	        	end = time.perf_counter()
 	        	elapsed = int((end - start) * 1000000)
@@ -44,8 +44,9 @@ def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index
 	        	distortion = mps.distortion(normalised, shape)
 	        	# Function calculates pulse height
 	        	height = mps.pulse_height(normalised)
-	        	# prints data to console
-	        	print(elapsed,",",height,",",distortion)
-	        	
+	        	if distortion < tolerance:
+		        	# prints data to console
+		        	#print(elapsed,",",height,",",distortion)
+	        		print(height)
         		
 	    

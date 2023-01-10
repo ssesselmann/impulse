@@ -7,8 +7,10 @@ import pulsecatcher as pc
 # Set up the audio stream
 p          = pyaudio.PyAudio()
 audio_format = pyaudio.paInt16
-rate       = 48000
-chunk      = 1024
+rate       = 192000
+chunk      = 2048
+threshold  = 100
+tolerance  = 8000
 
 sum_pulses = []
 pulses = []
@@ -54,8 +56,7 @@ print('Input device format is', device_format)
 
 # print a blank line of space
 print(' ')
-
-
+print("Calculating mean pulse shape......", "\n")
 # Open the selected audio input device
 stream = p.open(
     format=audio_format,
@@ -69,7 +70,7 @@ stream = p.open(
 
 
 # Read and process the audio data 100 times
-for i in range(100):
+for i in range(200):
     # Read the audio data from the stream
     data = stream.read(chunk, exception_on_overflow=True)
     values = list(wave.struct.unpack("%dh" % (chunk * device_channels), data))
@@ -79,7 +80,7 @@ for i in range(100):
    # print("From find_pulses", pulses)
 
 # ----------- pulse shape startup routine ------------------------
-print("Calculating mean pulse shape......", "\n")
+
 # Get list length
 count = len(pulses)
 # Sum lists of pulses
@@ -96,7 +97,15 @@ shape = mps.normalise_pulse(average)
 
 
    
-pc.pulsecatcher(left_channel, audio_format, device_channels, rate, device_index, chunk, shape)
+pc.pulsecatcher(
+        left_channel, 
+        audio_format, 
+        device_channels, 
+        rate, device_index, 
+        chunk, 
+        shape,
+        threshold,
+        tolerance)
 
 
 
