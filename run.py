@@ -1,13 +1,14 @@
 import pyaudio
 import wave
 import math
-import mps as mps
+import functions as mps
+import pulsecatcher as pc
 
 # Set up the audio stream
 p          = pyaudio.PyAudio()
 audio_format = pyaudio.paInt16
 rate       = 48000
-chunk      = 2048
+chunk      = 1024
 
 sum_pulses = []
 pulses = []
@@ -68,17 +69,17 @@ stream = p.open(
 
 
 # Read and process the audio data 100 times
-for i in range(1000):
+for i in range(100):
     # Read the audio data from the stream
     data = stream.read(chunk, exception_on_overflow=True)
     values = list(wave.struct.unpack("%dh" % (chunk * device_channels), data))
     # Extract every other element (left channel)
     left_channel = values[::2]  
     pulses = pulses+mps.find_pulses(left_channel)
-
+   # print("From find_pulses", pulses)
 
 # ----------- pulse shape startup routine ------------------------
-
+print("Calculating mean pulse shape......", "\n")
 # Get list length
 count = len(pulses)
 # Sum lists of pulses
@@ -86,22 +87,16 @@ sum_pulses = mps.sum_pulses(pulses).tolist()
 # Average sum pulses
 average = mps.average_pulse(sum_pulses, count) 
 # normalise sum pulses
-normalised = mps.normalise_pulse(average)
+shape = mps.normalise_pulse(average)
 
-print("Normalised pulse")
-print(normalised, "\n")
+
+#print(shape, "\n")
 
 #----- Begin data collection --------------------------
 
 
-#while True:    
-#    pulses = mps.running_pulses(left_channel, audio_format, device_channels, rate, device_index, chunk)
-#    print(pulses)
-#passed = mps.shape_filter(pulses)
-
-#height = mps.pulse_height(passed)
-
-
+   
+pc.pulsecatcher(left_channel, audio_format, device_channels, rate, device_index, chunk, shape)
 
 
 
