@@ -9,6 +9,7 @@ p          = pyaudio.PyAudio()
 audio_format = pyaudio.paInt16
 rate       = 192000
 chunk      = 2048
+# Set filter parameter
 threshold  = 100
 tolerance  = 8000
 
@@ -33,14 +34,12 @@ for i, device in enumerate(input_devices):
         else:
                 print(f"{i}: {device['name']}")
 
-print(' ')        
+print(' ')  # Line of space
 
 # Prompt the user to select an input device
 device_index = int(input("Enter the number of the audio input device to use: "))
 
-# print a blank line of space
-print(' ')
-
+print(' ') # Line of space
 print('Input device Index is ', device_index)
 
 # Get the number of channels that the selected device supports
@@ -55,7 +54,7 @@ device_format = p.get_device_info_by_host_api_device_index(0, device_index).get(
 print('Input device format is', device_format)
 
 # print a blank line of space
-print(' ')
+print(' ') # Line of space
 print("Calculating mean pulse shape......", "\n")
 # Open the selected audio input device
 stream = p.open(
@@ -67,9 +66,7 @@ stream = p.open(
     input_device_index=device_index,
     frames_per_buffer=chunk)
 
-
-
-# Read and process the audio data 100 times
+# Read and process the audio data 200 times
 for i in range(200):
     # Read the audio data from the stream
     data = stream.read(chunk, exception_on_overflow=True)
@@ -77,7 +74,6 @@ for i in range(200):
     # Extract every other element (left channel)
     left_channel = values[::2]  
     pulses = pulses+mps.find_pulses(left_channel)
-   # print("From find_pulses", pulses)
 
 # ----------- pulse shape startup routine ------------------------
 
@@ -90,13 +86,8 @@ average = mps.average_pulse(sum_pulses, count)
 # normalise sum pulses
 shape = mps.normalise_pulse(average)
 
-
-#print(shape, "\n")
-
 #----- Begin data collection --------------------------
 
-
-   
 pc.pulsecatcher(
         left_channel, 
         audio_format, 
@@ -106,9 +97,6 @@ pc.pulsecatcher(
         shape,
         threshold,
         tolerance)
-
-
-
 
 # ---------- Clean up the audio stream
 stream.stop_stream()

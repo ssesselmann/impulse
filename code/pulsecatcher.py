@@ -4,13 +4,15 @@ import math
 import functions as mps
 import time
 
+# Start timer
 start = time.perf_counter()
 
+# Function to catch pulses and output time, pulkse height and distortion
 def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index, chunk, shape, threshold, tolerance):
 
 	samples =[]
 	pulses = []
-	p      = pyaudio.PyAudio()
+	p = pyaudio.PyAudio()
 	left_data = []
 
 	# Open the selected audio input device
@@ -30,7 +32,6 @@ def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index
 	    # Extract every other element (left channel)
 	    left_channel = values[::2]
 
-	    
 	    for i in range(len(left_channel) - 51):
 	        samples = left_channel[i:i+51]  # Get the first 51 samples
 
@@ -46,6 +47,7 @@ def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index
 	        	height = mps.pulse_height(normalised)
 	        	if distortion < tolerance:
 		        	# prints data to console
+		        	
 		        	#print(elapsed,",",height,",",distortion)
 	        		print(height)
         		
