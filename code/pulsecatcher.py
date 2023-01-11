@@ -3,13 +3,30 @@ import wave
 import math
 import functions as mps
 import time
+from collections import defaultdict
+import csv
 
 # Start timer
 start = time.perf_counter()
 
+
+
+#function creates bins
+start = 0
+stop = 33000
+bin_size = 20
+bins = mps.create_bins(start, stop, bin_size)
+
+bin_counts = defaultdict(int)
+
+data = None
+left_channel = None
+ 
+plot = {}
+
 # Function to catch pulses and output time, pulkse height and distortion
 def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index, chunk, shape, threshold, tolerance):
-
+	
 	samples =[]
 	pulses = []
 	p = pyaudio.PyAudio()
@@ -31,10 +48,11 @@ def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index
 	    values = list(wave.struct.unpack("%dh" % (chunk * device_channels), data))
 	    # Extract every other element (left channel)
 	    left_channel = values[::2]
+	    global plot_data
 
 	    for i in range(len(left_channel) - 51):
 	        samples = left_channel[i:i+51]  # Get the first 51 samples
-
+	      
 	        if samples[25] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[25] < 32768:
 	        	# Time capture
 	        	end = time.perf_counter()
@@ -47,8 +65,19 @@ def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index
 	        	height = mps.pulse_height(normalised)
 	        	if distortion < tolerance:
 		        	# prints data to console
-		        	
 		        	#print(elapsed,",",height,",",distortion)
-	        		print(height)
-        		
-	    
+	        		#print(height,"\n")
+	        		
+
+	        		# Drop pulse height into bins
+	        		plot_data = mps.update_bin(height, bins, bin_counts)
+	        		plot = dict(plot_data)
+        			#print(plot,"\n")
+        			mps.export_to_csv(plot)
+        			#time.sleep(100)
+        				
+
+        			
+
+
+    

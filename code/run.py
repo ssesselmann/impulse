@@ -4,10 +4,11 @@ import math
 import functions as mps
 import pulsecatcher as pc
 
+
 # Set up the audio stream
 p          = pyaudio.PyAudio()
 audio_format = pyaudio.paInt16
-rate       = 192000
+rate       = 96000
 chunk      = 2048
 # Set filter parameter
 threshold  = 100
@@ -88,15 +89,13 @@ shape = mps.normalise_pulse(average)
 
 #----- Begin data collection --------------------------
 
-pc.pulsecatcher(
-        left_channel, 
-        audio_format, 
-        device_channels, 
-        rate, device_index, 
-        chunk, 
-        shape,
-        threshold,
-        tolerance)
+#thread = threading.Thread(target=pc.pulsecatcher, args=(left_channel, audio_format, device_channels, rate, device_index, chunk, shape, threshold, tolerance))
+
+pc.pulsecatcher(left_channel, audio_format, device_channels, rate, device_index, chunk, shape, threshold, tolerance)
+
+
+
+
 
 # ---------- Clean up the audio stream
 stream.stop_stream()

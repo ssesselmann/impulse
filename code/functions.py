@@ -5,6 +5,9 @@ import pyaudio
 import wave
 import numpy as np
 import math
+import csv
+from collections import defaultdict
+import pandas as pd
 
 peak = 0.0
 trough = 0.0
@@ -59,3 +62,35 @@ def pulse_height(passed):
     trough = passed[passed.index(min(passed))]
     height = int(peak-trough)
     return height
+
+    # Function to create bins
+def create_bins(start, stop, bin_size):
+    return np.arange(start, stop, bin_size)
+
+def histogram_count(n, bins):
+    # find the bin for the input number
+    for i in range(len(bins)):
+        if n < bins[i]:
+            bin_num = i
+            break
+    else:
+        bin_num = len(bins)
+    return bin_num
+
+    #Function to bin pulse height
+def update_bin(n, bins, bin_counts):
+    bin_num = histogram_count(n, bins)
+    bin_counts[bin_num] += 1
+    return bin_counts
+
+
+def export_to_csv(data):
+    with open("Sites/github/gs_plot/data/plot.csv", "w+") as f:
+        writer = csv.writer(f)
+        writer.writerow(["X-Values", "Y-Values"])
+        for x, y in data.items():
+            writer.writerow([x, y])
+           
+
+
+
