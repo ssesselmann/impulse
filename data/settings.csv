@@ -1,0 +1,7 @@
+Setting,Value
+device index,1
+sample rate,192000
+chunk size,2048
+LLD,10000
+Shape tolerance,15000
+File path,Sites/github/gs_plot/data/

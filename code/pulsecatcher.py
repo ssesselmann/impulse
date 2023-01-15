@@ -31,6 +31,7 @@ def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index
 	pulses = []
 	p = pyaudio.PyAudio()
 	left_data = []
+	path = "/Sites/github/gs-plot/data/plot.csv"
 
 	# Open the selected audio input device
 	stream = p.open(
@@ -67,13 +68,12 @@ def pulsecatcher(left_channel, audio_format, device_channels, rate, device_index
 		        	# prints data to console
 		        	#print(elapsed,",",height,",",distortion)
 	        		#print(height,"\n")
-	        		
 
 	        		# Drop pulse height into bins
 	        		plot_data = mps.update_bin(height, bins, bin_counts)
 	        		plot = dict(plot_data)
         			#print(plot,"\n")
-        			mps.export_to_csv(plot)
+        			fn.write_to_csv('Sites/github/gs_plot/data/shape.csv', plot)
         			#time.sleep(100)
         				
 

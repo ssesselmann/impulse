@@ -2,6 +2,7 @@
 # Repeats x times
 # Calculates zip average
 import pyaudio
+import webbrowser
 import wave
 import numpy as np
 import math
@@ -84,13 +85,48 @@ def update_bin(n, bins, bin_counts):
     return bin_counts
 
 
-def export_to_csv(data):
-    with open("Sites/github/gs_plot/data/plot.csv", "w+") as f:
+def write_to_csv(path, data):
+    with open(path, "w+") as f:
         writer = csv.writer(f)
-        writer.writerow(["X-Values", "Y-Values"])
+        writer.writerow(["bin", "counts"])
         for x, y in data.items():
             writer.writerow([x, y])
-           
 
+def write_settings_csv(path, data):
+    with open(path, "w+") as f:
+        writer = csv.writer(f)
+        writer.writerow(['Setting','Value'])
+        for key, value in data.items():
+            writer.writerow([key, value])           
+
+def load_settings():
+    data = []
+    with open('Sites/github/gs_plot/data/settings.csv', "r") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            data.append((row[0], row[1]))
+    return data
+
+           
+def get_device_list():
+    input_devices = []
+    # Get a list of available audio input devices
+    device_info = p.get_host_api_info_by_index(0).get('deviceCount')
+    for i in range(device_info):
+        input_devices.append(p.get_device_info_by_host_api_device_index(0, i).copy())
+    return input_devices
+
+def refresh_audio_devices():
+    global p
+    p.terminate()
+    p = pyaudio.PyAudio()
+    return
+
+# Function to open browser
+def open_browser(port):
+    webbrowser.open_new("http://localhost:{}".format(port))    
+    return
+
+    
 
 

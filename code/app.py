@@ -1,44 +1,58 @@
 import dash
+import functions as fn
 from dash import dcc
 from dash import html
-from dash.dependencies import Input, Output
-import plotly.graph_objs as go
-import pulsecatcher as pc
-import csv
+from server import app
+from dash.dependencies import Input, Output, State
+from tab1 import show_tab1
+from tab2 import show_tab2
+from tab3 import show_tab3
 
-path = "Sites/github/gs_plot/data/plot.csv"
-app = dash.Dash()
-plot_data = {}
+devices = fn.get_device_list()
+
+
+#---Defines the tab buttons------------------------------------------------------------
 
 app.layout = html.Div([
-    dcc.Graph(id='bar-chart'),
-    dcc.Interval(
-        id='interval-component',
-        interval=1*1000, # in milliseconds
-        n_intervals=0
-    )
-])
+    dcc.Tabs(
+        id="tabs", 
+        value='tab1', 
+        style={'fontWeight': 'bold'}, 
+        children=[
+            dcc.Tab(
+                label= 'Controls', 
+                value= 'tab1'),
+            dcc.Tab(
+                label='Histogram Chart', 
+                value='tab2'),   
+            dcc.Tab(
+                label='Spare', 
+                value='tab3'),
 
+        ]),
+    html.Div(id = 'tabs-content'),# Empty Div, where the out of render_tabs is sent to. (The page content)
+    ],style={ 'background-color':'lightgray', 'margin:':'50px'})
 
+#---Tab values call function and provide page contents
 
-@app.callback(Output('bar-chart', 'figure'),
-              [Input('interval-component', 'n_intervals')])
+@app.callback(
+    Output('tabs-content','children'),
+    Input('tabs','value'))
 
-def update_graph(n):
+def render_content(tab):
+    if tab == 'tab1':
+        html_tab1 = show_tab1()
+        return html_tab1  
+        
+    elif tab == 'tab2':
+        html_tab2 = show_tab2()
+        return html_tab2
+
+    elif tab == 'tab3':
+        html_tab3 = show_tab3()
+        return html_tab3    
+        
+
    
-    plot_data = {}
-    with open(path, "r") as f:
-        reader = csv.reader(f)
-        next(reader)  # Skip the header row
-        for x, y in reader:
-            plot_data[int(x)] = int(y)
 
-    x = list(plot_data.keys())
-    y = list(plot_data.values())
-    trace = go.Bar(x=x, y=y, width=1, marker={'color': 'black'})
-    layout = go.Layout(title='Histogram', height=800, width=1200)
-    return go.Figure(data=[trace], layout=layout)
-
-
-if __name__ == '__main__':
-    app.run_server(debug=False)
+    
