@@ -1,7 +1,7 @@
 import functions as fn
 import webbrowser
 from threading import Timer
-from App import app
+from launcher import app
 
 # The following three lines limit output to errors
 import logging

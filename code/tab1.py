@@ -206,13 +206,11 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
     [Input('get_shape', 'n_clicks')])
 
 def plot_callback(n_clicks):
-    # if n_clicks is None:
-        #prevent click on page load
-        # raise PreventUpdate
-    #if n_clicks > 0:
 
+    #prevent click on page load
     if n_clicks is None:
-
+        raise PreventUpdate
+    if n_clicks > 0:
         fig = {'data': [], 'layout': {}}
     else:    
 
