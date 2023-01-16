@@ -20,10 +20,10 @@ app.layout = html.Div([
         style={'fontWeight': 'bold'}, 
         children=[
             dcc.Tab(
-                label= 'Controls', 
+                label= 'Settings & Control', 
                 value= 'tab1'),
             dcc.Tab(
-                label='Histogram Chart', 
+                label='Pulse Height Histogram', 
                 value='tab2'),   
             dcc.Tab(
                 label='Spare', 
@@ -31,7 +31,7 @@ app.layout = html.Div([
 
         ]),
     html.Div(id = 'tabs-content'),# Empty Div, where the out of render_tabs is sent to. (The page content)
-    ],style={ 'background-color':'lightgray', 'margin:':'50px'})
+    ],style={ 'background-color':'white', 'margin:':'50px'})
 
 #---Tab values call function and provide page contents
 

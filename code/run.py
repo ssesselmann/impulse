@@ -17,7 +17,7 @@ fn.open_browser(port)
 
 if __name__ == '__main__':
     Timer(1, fn.open_browser(port)).start();
-    app.run_server(debug=True, port=port)
+    app.run_server(debug=False, port=port)
 
 
 

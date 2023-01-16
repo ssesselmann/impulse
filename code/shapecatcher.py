@@ -15,19 +15,17 @@ start = 0
 stop = 33000
 bin_size = 20
 bins = fn.create_bins(start, stop, bin_size)
-bin_counts = defaultdict(int)
 data = None
 left_channel = None
- 
-plot = {}
-pulses = {}
 sample_list = []
 
 # Function to catch pulses and output time, pulkse height and distortion
 def shapecatcher():
 	count = 0
+	shape = None
+	samples_sum = None
 	samples 	= []
-	pulses 		= []
+	#pulses 		= []
 	left_channel= []
 	summed = []
 	p = pyaudio.PyAudio()
@@ -35,9 +33,7 @@ def shapecatcher():
 	audio_format = pyaudio.paInt16
 
 	settings = fn.load_settings()
-
 	values = [row[1] for row in settings[1:]]
-
 	input_index     = int(values[0])
 	input_rate      = int(values[1])
 	input_chunk     = int(values[2])
@@ -86,12 +82,16 @@ def shapecatcher():
 				if count > 100:
 					# Zip sum all lists
 					samples_sum = [sum(x)/100 for x in zip(*sample_list)]
+
 					# Normalise summed list
 					shape = fn.normalise_pulse(samples_sum)
+
+					shape_int = [int(round(x)) for x in shape]
+
 					# Format and save to csv file
-					df = pd.DataFrame(shape)
-					df.to_csv("Sites/github/gs_plot/data/shape.csv", index='Shape', header=1)
-					return shape  	
+					df = pd.DataFrame(shape_int)
+					df.to_csv("Sites/github/gs_plot/data/shape.csv", index='Shape', header=0)
+					return shape_int  	
 
 
 

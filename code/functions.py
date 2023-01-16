@@ -47,12 +47,11 @@ def normalise_pulse(average):
     normalised = []
     mean = sum(average) / len(average)   
     normalised = [n - mean for n in average]  
-    #print(normalised)
+    # print(normalised)
     return normalised
 
-def distortion(pulse, shape):
-    
-    product = [(x - y)**2 for x, y in zip(shape, pulse)]
+def distortion(normalised, shape):
+    product = [(x - y)**2 for x, y in zip(shape, normalised)]
     distortion = int(math.sqrt(sum(product)))
 
     return distortion
@@ -101,12 +100,20 @@ def write_settings_csv(path, data):
 
 def load_settings():
     data = []
-    with open('Sites/github/gs_plot/data/settings.csv', "r") as f:
+    with open('Sites/github/gs_plot/data/settings.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             data.append((row[0], row[1]))
     return data
 
+
+def load_shape(path):
+    data = []
+    with open(f'{path}shape.csv', 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            data.append(row[1])
+    return data  
            
 def get_device_list():
     input_devices = []
