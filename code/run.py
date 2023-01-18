@@ -1,10 +1,10 @@
 import functions as fn
 import webbrowser
+import logging
 from threading import Timer
 from launcher import app
 
 # The following three lines limit output to errors
-import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 

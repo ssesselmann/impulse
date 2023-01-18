@@ -7,8 +7,9 @@ import wave
 import numpy as np
 import math
 import csv
-from collections import defaultdict
 import pandas as pd
+from collections import defaultdict
+
 
 peak = 0.0
 trough = 0.0
@@ -47,8 +48,10 @@ def normalise_pulse(average):
     normalised = []
     mean = sum(average) / len(average)   
     normalised = [n - mean for n in average]  
+    # Converts normalised to integers
+    normalised_int = [int(x) for x in normalised]
     # print(normalised)
-    return normalised
+    return normalised_int
 
 def distortion(normalised, shape):
     product = [(x - y)**2 for x, y in zip(shape, normalised)]
@@ -98,9 +101,9 @@ def write_settings_csv(path, data):
         for key, value in data.items():
             writer.writerow([key, value])           
 
-def load_settings():
+def load_settings(path):
     data = []
-    with open('Sites/github/gs_plot/data/settings.csv', 'r') as f:
+    with open(f'{path}settings.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             data.append((row[0], row[1]))
@@ -113,7 +116,8 @@ def load_shape(path):
         reader = csv.reader(f)
         for row in reader:
             data.append(row[1])
-    return data  
+            shape = [int(x) for x in data] #converts 'string' to integers in data
+    return shape  
            
 def get_device_list():
     input_devices = []

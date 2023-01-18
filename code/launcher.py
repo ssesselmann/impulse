@@ -3,13 +3,16 @@ import functions as fn
 from dash import dcc
 from dash import html
 from server import app
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 from tab1 import show_tab1
 from tab2 import show_tab2
 from tab3 import show_tab3
 
 devices = fn.get_device_list()
 
+#### SET UP PATH TO THE DATA FILE !!
+path = 'Sites/github/gs_plot/data/'
+####################################
 
 #---Defines the tab buttons------------------------------------------------------------
 
@@ -41,15 +44,15 @@ app.layout = html.Div([
 
 def render_content(tab):
     if tab == 'tab1':
-        html_tab1 = show_tab1()
+        html_tab1 = show_tab1(path)
         return html_tab1  
         
     elif tab == 'tab2':
-        html_tab2 = show_tab2()
+        html_tab2 = show_tab2(path)
         return html_tab2
 
     elif tab == 'tab3':
-        html_tab3 = show_tab3()
+        html_tab3 = show_tab3(path)
         return html_tab3    
         
 

@@ -1,54 +1,53 @@
 import pyaudio
 import wave
 import math
+import csv
+import time
 import functions as fn
 import pandas as pd
-import time
 from collections import defaultdict
-import csv
 
-# Start timer
-t0 = time.perf_counter()
 
-#function creates bins
-start = 0
-stop = 33000
-bin_size = 20
-bins = fn.create_bins(start, stop, bin_size)
+t0 = time.perf_counter() # Starts timer
+
+
+start = 0 
+stop = 33000 # to become variable in settings
+bin_size = 32 # to become variable in settings
+
+bins = fn.create_bins(start, stop, bin_size) #function creates empty bins
 data = None
-left_channel = None
+
+left_channel = []
 sample_list = []
 
 # Function to catch pulses and output time, pulkse height and distortion
-def shapecatcher():
-	count = 0
-	shape = None
+def shapecatcher(path):
+
+	
+	count 		= 0
+	shape 		= None
 	samples_sum = None
 	samples 	= []
-	#pulses 		= []
+	#pulses 	= []
 	left_channel= []
-	summed = []
+	summed 		= []
+	sample_size = 10 # add to settings
 	p = pyaudio.PyAudio()
 
 	audio_format = pyaudio.paInt16
 
-	settings = fn.load_settings()
-	values = [row[1] for row in settings[1:]]
+	settings 		= fn.load_settings(path)
+	values 			= [row[1] for row in settings[1:]]
 	input_index     = int(values[0])
 	input_rate      = int(values[1])
 	input_chunk     = int(values[2])
 	input_lld       = int(values[3])
 	input_tolerance = int(values[4])
-	input_path      = values[5]
 
 	devices = fn.get_device_list()
-
-	#print(devices[input_index])
-
 	device_channels = devices[input_index]['maxInputChannels']
 	
-	#print(input_index, input_rate, input_chunk, input_lld, input_tolerance, input_path, device_channels)
-
 	# Open the selected audio input device
 	stream = p.open(
 		format=audio_format,
@@ -79,18 +78,19 @@ def shapecatcher():
 				# Counter
 				count += 1
 				# Stop[ afer n samples]
-				if count > 100:
+				if count > sample_size:
 					# Zip sum all lists
-					samples_sum = [sum(x)/100 for x in zip(*sample_list)]
+					samples_sum = [sum(x)/sample_size for x in zip(*sample_list)]
 
 					# Normalise summed list
 					shape = fn.normalise_pulse(samples_sum)
 
-					shape_int = [int(round(x)) for x in shape]
+					shape_int = [int(x) for x in shape]
 
 					# Format and save to csv file
 					df = pd.DataFrame(shape_int)
-					df.to_csv("Sites/github/gs_plot/data/shape.csv", index='Shape', header=0)
+					df.to_csv(f'{path}shape.csv', index='Shape', header=0)
+
 					return shape_int  	
 
 
