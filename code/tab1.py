@@ -2,9 +2,11 @@ import dash
 import plotly.graph_objects as go
 import pyaudio
 import functions as fn
+import sqlite3 as sql
 import shapecatcher as sc
 import csv
-
+import pandas as pd
+import os
 from dash import dash_table
 from dash import dcc
 from dash import html
@@ -12,31 +14,39 @@ from dash.dependencies import Input, Output
 from server import app
 
 n_clicks = None
-path = ''
 
 # ----------- Audio input selection ---------------------------------
 
-def show_tab1(path):
+def show_tab1():
+
+    conn = sql.connect("data.db")
+    c = conn.cursor()
+    query = "SELECT * FROM settings "
+    c.execute(query) 
+    settings = c.fetchall()[0]
+
+    name            = settings[1]
+    device          = settings[2]             
+    sample_rate     = settings[3]
+    chunk_size      = settings[4]                        
+    threshold       = settings[5]
+    tolerance       = settings[6]
+    bins            = settings[7]
+    bin_size        = settings[8]
+    max_counts      = settings[9]
 
     n_clicks = None
 
-    audio_format = pyaudio.paInt16
-    p = pyaudio.PyAudio()
+    # audio_format = pyaudio.paInt16
+    # p = pyaudio.PyAudio()
 
-    data = fn.load_settings(path)
-    values = [row[1] for row in data[1:]]
-    input_index     = int(values[0])
-    input_rate      = int(values[1])
-    input_chunk     = int(values[2])
-    input_lld       = int(values[3])
-    input_tolerance = int(values[4])
-
+    filepath = os.path.dirname(__file__)
 
     devices = fn.get_device_list()
 
-    device_channels = devices[int(values[0])]['maxInputChannels']
+    # device_channels = devices[device]['maxInputChannels']
 
-    shape = fn.load_shape(path)
+    shape = fn.load_shape()
 
     tab1 = html.Div([ 
 
@@ -54,21 +64,21 @@ def show_tab1(path):
         
         html.Div( children=[ 
             html.Div(id='input_text', children='Enter Device index'),
-            html.Div(dcc.Input(id='input_index', type='number', value = input_index, style={'fontSize':18, 'width':'100px'})),
+            html.Div(dcc.Input(id='device', type='number', value = device, style={'fontSize':18, 'width':'100px'})),
             html.Div(id='selected_device_text', children='', style={'color': 'red'}),
             ], style={'width':'16%','height':'80px','float': 'left','background-color':'lightgray', 'align':'center'}
             ),
 
-        html.Div(id='input_rate_div', children=[
+        html.Div(id='sample_rate_div', children=[
             dcc.Dropdown(
-            id="input_rate",
+            id="sample_rate",
             options=[
                 {"label": "48 kHz", "value": "48000"},
                 {"label": "96 kHz", "value": "96000"},
                 {"label": "192 kHz", "value": "192000"},
                 {"label": "384 kHz", "value": "384000"}
             ], 
-            value=input_rate,  # pre-selected option
+            value=sample_rate,  # pre-selected option
             clearable=False,
             style={'width':'150px'} # style for dropdown
             ),
@@ -79,28 +89,28 @@ def show_tab1(path):
 
         html.Div( children=[ 
             html.Div( children='Chunk Size'),
-            html.Div(dcc.Input(id='input_chunk', type='number', value= input_chunk, style={'fontSize':18, 'width':'100px', 'align':'middle'})),
+            html.Div(dcc.Input(id='chunk_size', type='number', value= chunk_size, style={'fontSize':18, 'width':'100px', 'align':'middle'})),
             html.Div(id='output_chunk_text', children='', style={'color': 'red'}),
             ], style={'width':'16%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
             ),
 
         html.Div( children=[ 
             html.Div( children='LLD Threshold (30-100)'),
-            html.Div(dcc.Input(id='input_lld', type='number', value = input_lld, style={'fontSize':18, 'width':'100px'})),
+            html.Div(dcc.Input(id='threshold', type='number', value = threshold, style={'fontSize':18, 'width':'100px'})),
             html.Div(id='output_lld_text', children='', style={'color': 'red'}),
             ], style={'width':'16%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
             ),
 
         html.Div( children=[ 
             html.Div( children='Shape Tolerance'),
-            html.Div(dcc.Input(id='input_tolerance', type='number', value = input_tolerance, style={'fontSize':18, 'width':'100px'})),
+            html.Div(dcc.Input(id= 'tolerance', type='number', value = tolerance, style={'fontSize':18, 'width':'100px'})),
             html.Div( children='', style={'color': 'red'}),
             ], style={'width':'10%' , 'height':'80px','float': 'left',  'background-color':'lightgray', 'align':'center'}
             ),
 
         html.Div( children=[ 
-            html.Div( children='Spare Field'),
-            html.Div(dcc.Input(id='path', type='text', value = path, style={'fontSize':16, 'width':'250px'})),
+            html.Div( children='Name Field'),
+            html.Div(dcc.Input(id='name', type='text', value =name , style={'fontSize':16, 'width':'250px'})),
             html.Div( children='', style={'color': 'red'}),
             ], style={'width':'16%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
             ),
@@ -143,7 +153,7 @@ def show_tab1(path):
 
                 ]),
 
-        html.Div('Note: Path to ..../data/ needs to be edited up in launcher.py .', style={'color':'red', 'float':'left'}),   
+        html.Div(f'Note: Path to (../data/) are relative to {filepath}', style={'color':'red', 'float':'left'}),   
                 
     ]) # tab1 ends here
 
@@ -162,46 +172,43 @@ def update_n_clicks(n_clicks):
               [Input('n_clicks_storage',        'children')])
 
 def on_button_click(n_clicks):
+    
     if n_clicks is not None:
-        initialise = fn.refresh_audio_devices()
+        fn.refresh_audio_devices()
+        print('refresh')
         dl = fn.get_device_list()
         return dl
 
 # Callback to save settings ---------------------------
 
 @app.callback(
-    Output('selected_device_text', 'children'),
-    [Input('submit',            'n_clicks')],
-    [Input('input_index',       'value'),
-    Input('input_rate',         'value'),
-    Input('input_chunk',        'value'),
-    Input('input_lld',          'value'),
-    Input('input_tolerance',    'value'),
-    Input('path',               'value'),])
+    Output('selected_device_text'   ,'children'),
+    [Input('submit'                 ,'n_clicks')],
+    [Input('device'                 ,'value'),
+    Input('sample_rate'             ,'value'),
+    Input('chunk_size'              ,'value'),
+    Input('threshold'               ,'value'),
+    Input( 'tolerance'              ,'value'),
+    Input('name'                   ,'value'),])
 
 def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
 
     if n_clicks == 0:
-        input_index     = value1
-        input_rate      = value2
-        input_chunk     = value3
-        input_lld       = value4
-        input_tolerance = value5
+        device      = value1
+        sample_rate = value2
+        chunk_size  = value3
+        threshold   = value4
+        tolerance   = value5
+        name        = str(value6)
+
+        conn = sql.connect("data.db")
+        c = conn.cursor()
+        query = f"UPDATE settings SET device={device}, sample_rate={sample_rate}, chunk_size={chunk_size}, threshold={threshold}, tolerance={tolerance}, name='{name}' WHERE id=0;"
+        c.execute(query)
+        conn.commit()
 
 
-
-        #path = "../data/settings.csv"
-        data = {'device index':value1, 
-                'sample rate':value2, 
-                'chunk size':value3, 
-                'LLD':value4, 
-                'Shape tolerance':value5, 
-                'File path':value6
-                }
-
-        fn.write_settings_csv(f'{path}settings.csv',data)
-
-        return f'Device ({input_index}) selected'
+        return f'Device ({device}) selected'
 
 #-------- Callback to capture and save mean pulse shape ----------
 
@@ -218,11 +225,11 @@ def capture_pulse_shape(n_clicks):
 
         fig = {'data': [{}], 'layout': {}}
         #raise PreventUpdate
-    #if n_clicks == 0:
+        #if n_clicks == 0:
         
     else:    
 
-        shape = sc.shapecatcher(path)
+        shape = sc.shapecatcher()
         dots = list(range(len(shape)))
         
         marker  = dict(size = 7, color = 'purple')

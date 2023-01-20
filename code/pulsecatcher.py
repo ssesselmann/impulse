@@ -2,69 +2,68 @@ import pyaudio
 import wave
 import math
 import functions as fn
+import sqlite3 as sql
 import time
 from collections import defaultdict
 import csv
 
 # Start timer
-start = time.perf_counter()
+start 			= time.perf_counter()
+data 			= None
+left_channel 	= None
+devices 		= fn.get_device_list()
+path 			= None
+plot 			= {}
 
-#function creates bins
-start = 0
-stop = 33000
-bin_size = 50
-bins = fn.create_bins(start, stop, bin_size)
-bin_counts = defaultdict(int)
-data = None
-left_channel = None
-devices = fn.get_device_list()
-path = None
-plot = {}
 
 # Function to catch pulses and output time, pulkse height and distortion
-def pulsecatcher(mode, path):
+def pulsecatcher(mode):
 
+	settings 		= fn.load_settings()
 
+	name            = settings[1]
+	device          = settings[2]             
+	sample_rate     = settings[3]
+	chunk_size      = settings[4]                        
+	threshold       = settings[5]
+	tolerance       = settings[6]
+	bins            = settings[7]
+	bin_size        = settings[8]
+	max_counts      = settings[9]
 
-
-	settings = fn.load_settings(path)
-	values = [row[1] for row in settings[1:]]
-	input_index	 = int(values[0])
-	input_rate	  = int(values[1])
-	input_chunk	 = int(values[2])
-	input_lld	   = int(values[3])
-	input_tolerance = int(values[4])
-
+	# Create an array of ewmpty bins
+	start = 0
+	stop = bins * bin_size
+	bin_array = fn.create_bin_array(start, stop, bin_size)
+	bin_counts = defaultdict(int)
 
 	audio_format = pyaudio.paInt16
-	device_channels = devices[input_index]['maxInputChannels']
+	device_channels = devices[device]['maxInputChannels']
 
-	shapestring = fn.load_shape(path)
+	shapestring = fn.load_shape()
 	# Convert string to float
-	shape = [float(x) for x in shapestring]
+	shape = [int(x) for x in shapestring]
 
-
-	samples 	=[]
+	samples 	= []
 	pulses 		= []
 	left_data 	= []
 	p = pyaudio.PyAudio()
-
+	n =0
 
 	# Open the selected audio input device
 	stream = p.open(
 		format=audio_format,
 		channels=device_channels,
-		rate=input_rate,
+		rate=sample_rate,
 		input=True,
 		output=False,
-		input_device_index=input_index,
-		frames_per_buffer=input_chunk)
+		input_device_index=device,
+		frames_per_buffer=chunk_size)
 
-	while True:
-		if mode == 0: break
+	while n <= max_counts:
 		# Read the audio data from the stream
-		data = stream.read(input_chunk, exception_on_overflow=False)
-		values = list(wave.struct.unpack("%dh" % (input_chunk * device_channels), data))
+		data = stream.read(chunk_size, exception_on_overflow=False)
+		values = list(wave.struct.unpack("%dh" % (chunk_size * device_channels), data))
 		# Extract every other element (left channel)
 		left_channel = values[::2]
 
@@ -72,7 +71,8 @@ def pulsecatcher(mode, path):
 		for i in range(len(left_channel) - 51):
 			samples = left_channel[i:i+51]  # Get the first 51 samples
 		  
-			if samples[25] >= max(samples) and (max(samples)-min(samples)) > input_lld and samples[25] < 32768:
+			if samples[25] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[25] < 32768:
+
 				# Time capture
 				end = time.perf_counter()
 				elapsed = int((end - start) * 1000000)
@@ -88,14 +88,18 @@ def pulsecatcher(mode, path):
 
 				# Function calculates pulse height
 				height = fn.pulse_height(normalised_int)
-				if distortion < input_tolerance:
+				if distortion < tolerance:
+					n += 1
+					#print(n, '\n')
 					# prints data to console
 					#print(elapsed,",",height,",",distortion)
 					#print(height,"\n")
-
-					# Drop pulse height into bins
-					plot_data = fn.update_bin(height, bins, bin_counts)
+					# Drop pulse height into bin_array
+					plot_data = fn.update_bin(height, bin_array, bin_counts)
 					plot = dict(plot_data)
 					#print(plot,"\n")
-					fn.write_to_csv(f'{path}plot.csv', plot)
+					fn.write_histogram_to_csv(plot)
+					
+
+
 					

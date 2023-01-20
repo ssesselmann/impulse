@@ -7,6 +7,8 @@ import wave
 import numpy as np
 import math
 import csv
+import os
+import sqlite3 as sql
 import pandas as pd
 from collections import defaultdict
 
@@ -66,8 +68,8 @@ def pulse_height(passed):
     height = int(peak-trough)
     return height
 
-    # Function to create bins
-def create_bins(start, stop, bin_size):
+    # Function to create bin_array
+def create_bin_array(start, stop, bin_size):
     return np.arange(start, stop, bin_size)
 
 def histogram_count(n, bins):
@@ -87,37 +89,60 @@ def update_bin(n, bins, bin_counts):
     return bin_counts
 
 
-def write_to_csv(path, data):
-    with open(path, "w+") as f:
+def write_histogram_to_csv(data):
+    with open('../data/plot.csv', "w+") as f:
         writer = csv.writer(f)
         writer.writerow(["bin", "counts"])
         for x, y in data.items():
             writer.writerow([x, y])
 
-def write_settings_csv(path, data):
-    with open(path, "w+") as f:
+# Function not used
+# def write_histogram_to_db(data: dict):
+#     keys = ", ".join([str(k) for k in data.keys()])
+#     placeholders = ", ".join(["?" for _ in data.keys()])
+#     values = tuple(data.values())
+#     query = "INSERT INTO histogram ({}) VALUES ({});".format(keys, placeholders)
+#     print(data, '\n')
+#     print(query,'\n')
+#     conn = sql.connect("data.db")
+#     c = conn.cursor()
+#     c.execute(query, values) 
+#     conn.commit()
+#     conn.close()
+
+def write_settings_csv(data):
+    with open('../data/settings.csv', "w+") as f:
         writer = csv.writer(f)
         writer.writerow(['Setting','Value'])
         for key, value in data.items():
             writer.writerow([key, value])           
 
-def load_settings(path):
-    data = []
-    with open(f'{path}settings.csv', 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            data.append((row[0], row[1]))
-    return data
+def load_settings():
+    
+    settings        = []
+    conn            = sql.connect("data.db")
+    c               = conn.cursor()
+    query           = "SELECT * FROM settings "
+    c.execute(query) 
+    settings        = c.fetchall()[0]
+
+    return settings
+ 
 
 
-def load_shape(path):
+def load_shape():
     data = []
-    with open(f'{path}shape.csv', 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            data.append(row[1])
-            shape = [int(x) for x in data] #converts 'string' to integers in data
-    return shape  
+
+    if os.path.exists('../data/shape.csv'):
+        with open('../data/shape.csv', 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                data.append(row[1])
+                shape = [int(x) for x in data] #converts 'string' to integers in data
+        return shape  
+    else:
+        shape = pd.DataFrame(data = {'Shape': [0]*51})   
+        return shape 
            
 def get_device_list():
     input_devices = []
@@ -137,7 +162,3 @@ def refresh_audio_devices():
 def open_browser(port):
     webbrowser.open_new("http://localhost:{}".format(port))    
     return
-
-    
-
-

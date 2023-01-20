@@ -3,29 +3,22 @@ import wave
 import math
 import csv
 import time
+import sqlite3 as sql
 import functions as fn
 import pandas as pd
 from collections import defaultdict
 
 
-t0 = time.perf_counter() # Starts timer
-
-
-start = 0 
-stop = 33000 # to become variable in settings
-bin_size = 32 # to become variable in settings
-
-bins = fn.create_bins(start, stop, bin_size) #function creates empty bins
-data = None
-
-left_channel = []
-sample_list = []
+t0 				= time.perf_counter() # Starts timer
+data 			= None
+left_channel 	= []
+sample_list 	= []
 
 # Function to catch pulses and output time, pulkse height and distortion
-def shapecatcher(path):
+def shapecatcher():
 
 	
-	count 		= 0
+	n = 0
 	shape 		= None
 	samples_sum = None
 	samples 	= []
@@ -33,63 +26,75 @@ def shapecatcher(path):
 	left_channel= []
 	summed 		= []
 	sample_size = 10 # add to settings
+	
 	p = pyaudio.PyAudio()
-
 	audio_format = pyaudio.paInt16
 
-	settings 		= fn.load_settings(path)
-	values 			= [row[1] for row in settings[1:]]
-	input_index     = int(values[0])
-	input_rate      = int(values[1])
-	input_chunk     = int(values[2])
-	input_lld       = int(values[3])
-	input_tolerance = int(values[4])
+	conn = sql.connect("data.db")
+	c = conn.cursor()
+	query = "SELECT * FROM settings "
+	c.execute(query) 
+	settings = c.fetchall()[0]
+
+	name            = settings[1]
+	device          = settings[2]             
+	sample_rate     = settings[3]
+	chunk_size      = settings[4]                        
+	threshold       = settings[5]
+	tolerance       = settings[6]
+	bins            = settings[7]
+	bin_size        = settings[8]
+	max_counts      = settings[9]
+
+	# Create an array of ewmpty bins
+	start = 0
+	stop = bins * bin_size
+	bin_array = fn.create_bin_array(start, stop, bin_size)
+	bin_counts = defaultdict(int)
 
 	devices = fn.get_device_list()
-	device_channels = devices[input_index]['maxInputChannels']
+	device_channels = devices[device]['maxInputChannels']
 	
 	# Open the selected audio input device
 	stream = p.open(
 		format=audio_format,
 		channels=device_channels,
-		rate=input_rate,
+		rate=sample_rate,
 		input=True,
 		output=False,
-		input_device_index=input_index,
-		frames_per_buffer=input_chunk)
+		input_device_index=device,
+		frames_per_buffer=chunk_size)
 
 
 	while True:
-		
-		# Read the audio data from the stream
-		data = stream.read(input_chunk, exception_on_overflow=False)
-		values = list(wave.struct.unpack("%dh" % (input_chunk * device_channels), data))
-
+		# Read the audio data stream
+		data = stream.read(chunk_size, exception_on_overflow=False)
+		# Convert hex to numbers
+		values = list(wave.struct.unpack("%dh" % (chunk_size * device_channels), data))
 	    # Extract every other element (left channel)
 		left_channel = values[::2]
-		
-		#print(left_channel)
+		# Cycle through list of sample strings
 		for i in range(len(left_channel) - 51):
-			samples = left_channel[i:i+51]  # Get the first 51 samples
-			# Discriminate samples LLD and ULD
+			# Get the first 51 samples
+			samples = left_channel[i:i+51]  
+			# Discriminate samples based only on LLD and ULD
 			if samples[25] >= max(samples) and (max(samples)-min(samples)) > 50 and samples[25] < 30000:
-				# Gather a list of samples 
+				# gather a list of samples 
 				sample_list.append(samples)
 				# Counter
-				count += 1
+				n += 1
 				# Stop[ afer n samples]
-				if count > sample_size:
+				if n >= sample_size: # number of pulses to average
 					# Zip sum all lists
-					samples_sum = [sum(x)/sample_size for x in zip(*sample_list)]
-
+					samples_sum = [sum(x)/len(sample_list) for x in zip(*sample_list)] 
 					# Normalise summed list
 					shape = fn.normalise_pulse(samples_sum)
-
+					# convert floats to ints
 					shape_int = [int(x) for x in shape]
-
 					# Format and save to csv file
 					df = pd.DataFrame(shape_int)
-					df.to_csv(f'{path}shape.csv', index='Shape', header=0)
+					# Write to csv
+					df.to_csv('../data/shape.csv', index='Shape', header=0)
 
 					return shape_int  	
 
