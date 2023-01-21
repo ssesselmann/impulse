@@ -4,8 +4,6 @@ import pyaudio
 import functions as fn
 import sqlite3 as sql
 import shapecatcher as sc
-import csv
-import pandas as pd
 import os
 from dash import dash_table
 from dash import dcc
@@ -35,10 +33,6 @@ def show_tab1():
     bin_size        = settings[8]
     max_counts      = settings[9]
 
-    n_clicks = None
-
-    # audio_format = pyaudio.paInt16
-    # p = pyaudio.PyAudio()
 
     filepath = os.path.dirname(__file__)
 
@@ -149,8 +143,6 @@ def show_tab1():
                             html.H3('www.gammaspectacular.com'),
                             ], style={ 'width':'40%', 'height':'380px','background-color':'white', 'float':'left', 'text-align':'center', 'border': '2px solid black', 'padding':'35px'}
                             ),
-
-
                 ]),
 
         html.Div(f'Note: Path to (../data/) are relative to {filepath}', style={'color':'red', 'float':'left'}),   
@@ -207,7 +199,6 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
         c.execute(query)
         conn.commit()
 
-
         return f'Device ({device}) selected'
 
 #-------- Callback to capture and save mean pulse shape ----------
@@ -224,8 +215,6 @@ def capture_pulse_shape(n_clicks):
     if n_clicks is None:
 
         fig = {'data': [{}], 'layout': {}}
-        #raise PreventUpdate
-        #if n_clicks == 0:
         
     else:    
 
@@ -241,8 +230,4 @@ def capture_pulse_shape(n_clicks):
 
         return fig, fig
         
-
-
-
-
 

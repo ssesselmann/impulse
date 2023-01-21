@@ -2,8 +2,8 @@ import dash
 import plotly.graph_objs as go
 import pulsecatcher as pc
 import functions as fn
-import csv
 import os
+import json
 import sqlite3 as sql
 from dash import dcc
 from dash import html
@@ -23,7 +23,7 @@ def show_tab2():
     name            = settings[1]
     device          = settings[2]             
     sample_rate     = settings[3]
-    chunk_size      = settings[4]                        
+    chunk_size      = settings[4]
     threshold       = settings[5]
     tolerance       = settings[6]
     bins            = settings[7]
@@ -41,27 +41,36 @@ def show_tab2():
         #Start button
         html.Div( children=[
             html.Button( 'START' , id='start', style={'background-color':'lightgreen','border-radius':'9px', 'height':'30px', 'width':'150px'}),
-            ],style={'width':'10%', 'margin':'20px', 'background-color':'white', 'text-align':'center', 'color':'green', 'float':'left'}
+            html.Div(id='counts', children= '' , style={'fontSize':'50px','color':'blue', 'text-align':'center', 'fontFamily':'Arial', 'fontWeight' : 'bold'}),
+
+            ],style={'width':'10%', 'height':'150px', 'padding':'20px', 'background-color':'orange', 'text-align':'center', 'color':'green', 'float':'left'}
         ),
 
         #Stop button
         html.Div( children=[
             html.Button( 'CLEAR FILE' , id='stop', style={'background-color':'red','border-radius':'9px', 'height':'30px', 'width':'150px'}),
-            ],style={'width':'10%', 'margin':'20px', 'background-color':'white', 'text-align':'center', 'color':'green', 'float':'left'}
+            html.Div(id='stop_text', children= '' , style={'fontSize':'10px','color':'blue', 'text-align':'center', 'fontFamily':'Arial', 'fontWeight' : 'bold'}),
+            ],style={'width':'10%', 'height':'150px','padding':'20px', 'background-color':'orange', 'text-align':'center', 'color':'green', 'float':'left'}
         ),
 
-        html.Div(['Bin qty: ',   dcc.Input(id='bin_qty', type='number', value=bins)]),
-        html.Div(['Bin size: ',  dcc.Input(id='bin_size', type='number', value=bin_size)]),
-        html.Div(['Max counts:', dcc.Input(id='max_counts', type='number', value=max_counts)]),
-        html.Div(['File name:', dcc.Input(id='name', type='text', value=name)]),
+        html.Div(children=[
+            html.Div(['File name     :', dcc.Input(id='filename', type='text', value=name)]),
+            html.Div(['Number of bins:', dcc.Input(id='bin_qty', type='number', value=bins)]),
+            html.Div(['Bin Size      :', dcc.Input(id='bin_size', type='number', value=bin_size)]),
+            html.Div(['Max counts    :', dcc.Input(id='max_counts', type='number', value=max_counts)]),
+        ],style={'width':'74%', 'height':'150px','padding':'20px', 'background-color':'orange', 'text-align':'left', 'color':'blue', 'float':'left', 'fontFamily':'Arial'}
+        ),
 
+        html.Div(
+            
+            ),
 
-        html.Div(id='start_text', children =''),
-        html.Div(id='stop_text' , children =''),
+        
+        html.Div(id='start_text' , children =''),
         html.Div(id='settings'  , children =''),
-        html.Div(id='counts'   , children ='' ),
+        
 
-    ]) # End of tab 2 render
+    ],style={'width':'100%' , 'height':'100%','background-color':'lightgray', 'float': 'left', 'padding':'30px'}) # End of tab 2 render
 
     return html_tab2
 
@@ -87,49 +96,48 @@ def update_output(n_clicks):
                 [Input('stop'      ,'n_clicks')])
 
 def update_output(n_clicks):
-    
-    with open("../data/plot.csv", "w") as f:
-        f.truncate()
-        print('truncated')
 
+    if n_clicks % 2 == 0:
 
-    return 
+        return "not working"
 
 #----------------------------------------------------------------
 
-@app.callback(Output('bar-chart'            ,'figure'),
-              [Input('interval-component'   ,'n_intervals')])
+@app.callback([Output('bar-chart'            ,'figure'),(Output('counts', 'children'))],
+              [Input('interval-component'   ,'n_intervals'), Input('filename', 'value')])
 
-def update_graph(n):
+def update_graph(n, filename):
 
-    plot_data = {}
-    if os.path.exists('../data/plot.csv'):
-        with open('../data/plot.csv', "r") as f:
+    if os.path.exists(f'../data/{filename}.json'):
+        with open(f"../data/{filename}.json", "r") as f:
+            data = json.load(f)
+            schemaVersion       = data["schemaVersion"]
+            startTime           = data["startTime"]
+            endTime             = data["endTime"]
+            numberOfChannels    = data["resultData"]["energySpectrum"]["numberOfChannels"]
+            validPulseCount     = data["resultData"]["energySpectrum"]["validPulseCount"]
+            measurementTime     = data["resultData"]["energySpectrum"]["measurementTime"]
+            polynomialOrder     = data["resultData"]["energySpectrum"]["energyCalibration"]["polynomialOrder"]
+            coefficients        = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+            spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
 
-            reader = csv.reader(f)
-            next(reader)  # Skip the header row
-            for x, y in reader:
-                plot_data[int(x)] = int(y)
+            x = list(range(numberOfChannels))
+            y = spectrum
 
-        x = list(plot_data.keys())
-        y = list(plot_data.values())
-
-        #print(y)
-
-        trace = go.Bar(x=x, y=y, width=1, marker={'color': 'darkblue'})
-        layout = go.Layout(title={
-            'text': 'Pulse Height Histogram',
-            'x': 0.5,
-            'y': 0.9,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
-        },
-            #title='GS Pulse Height Histogram', 
-            height  =700, 
-            autosize=True
-            )
-        return go.Figure(data=[trace], layout=layout)
+            trace = go.Bar(x=x, y=y, width=1, marker={'color': 'darkblue'})
+            layout = go.Layout(title={
+                'text': 'Pulse Height Histogram',
+                'x': 0.5,
+                'y': 0.9,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+            },
+                #title='GS Pulse Height Histogram', 
+                height  =700, 
+                autosize=True
+                )
+            return go.Figure(data=[trace], layout=layout), validPulseCount
 
     else:
         layout = go.Layout(title={
@@ -144,25 +152,24 @@ def update_graph(n):
             height=700, 
             autosize=True
             )
-        return go.Figure(data=[], layout=layout)
+        return go.Figure(data=[], layout=layout), 0
 
 #--------UPDATE SETTINGS-------------------
 @app.callback( Output('settings'        ,'children'),
                 [Input('bin_qty'        ,'value'),
                 Input('bin_size'        ,'value'),
                 Input('max_counts'      ,'value'),
-                Input('name'            ,'value')])
+                Input('filename'        ,'value'),])
 
 
-def save_settings(bin_qty, bin_size, max_counts):
+def save_settings(bin_qty, bin_size, max_counts, filename):
 
     conn = sql.connect("data.db")
     c = conn.cursor()
 
-    query = f'UPDATE settings SET bins={bin_qty}, bin_size={bin_size}, max_counts={max_counts} WHERE id=0;'
-
+    query = f"UPDATE settings SET bins={bin_qty}, bin_size={bin_size}, max_counts={max_counts}, name='{filename}' WHERE id=0;"
     c.execute(query)
     conn.commit()
 
 
-    return 'settings updated'
+    return 

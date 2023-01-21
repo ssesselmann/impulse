@@ -4,9 +4,11 @@
 import pyaudio
 import webbrowser
 import wave
+import datetime
 import numpy as np
 import math
 import csv
+import json
 import os
 import sqlite3 as sql
 import pandas as pd
@@ -68,7 +70,7 @@ def pulse_height(passed):
     height = int(peak-trough)
     return height
 
-    # Function to create bin_array
+    # Function to create bin_array 
 def create_bin_array(start, stop, bin_size):
     return np.arange(start, stop, bin_size)
 
@@ -96,19 +98,30 @@ def write_histogram_to_csv(data):
         for x, y in data.items():
             writer.writerow([x, y])
 
-# Function not used
-# def write_histogram_to_db(data: dict):
-#     keys = ", ".join([str(k) for k in data.keys()])
-#     placeholders = ", ".join(["?" for _ in data.keys()])
-#     values = tuple(data.values())
-#     query = "INSERT INTO histogram ({}) VALUES ({});".format(keys, placeholders)
-#     print(data, '\n')
-#     print(query,'\n')
-#     conn = sql.connect("data.db")
-#     c = conn.cursor()
-#     c.execute(query, values) 
-#     conn.commit()
-#     conn.close()
+
+def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram):
+
+
+    data =  {
+        "schemaVersion":"NPESv1",
+        "startTime":t0,
+        "endTime": t1,
+        "resultData":{
+            "energySpectrum":{
+                "numberOfChannels":bins,
+                "validPulseCount":n,
+                "measurementTime":elapsed,
+                "energyCalibration":{
+                    "polynomialOrder":2,
+                    "coefficients":[1,1,0]
+                    },"spectrum": histogram
+                }
+            }
+        }
+
+    with open(f"../data/{name}.json", "w+") as f:
+        json.dump(data, f)
+
 
 def write_settings_csv(data):
     with open('../data/settings.csv', "w+") as f:

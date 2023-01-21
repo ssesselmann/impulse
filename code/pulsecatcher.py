@@ -8,7 +8,7 @@ from collections import defaultdict
 import csv
 
 # Start timer
-start 			= time.perf_counter()
+t0				= time.perf_counter()
 data 			= None
 left_channel 	= None
 devices 		= fn.get_device_list()
@@ -34,9 +34,14 @@ def pulsecatcher(mode):
 	# Create an array of ewmpty bins
 	start = 0
 	stop = bins * bin_size
-	bin_array = fn.create_bin_array(start, stop, bin_size)
-	bin_counts = defaultdict(int)
 
+	histogram = [0] * bins
+
+
+	# bin_array = fn.create_bin_array(start, stop, bin_size)
+	# print('bin_array',bin_array)
+	# bin_counts = defaultdict(int)
+	# print('bin_counts', bin_counts)
 	audio_format = pyaudio.paInt16
 	device_channels = devices[device]['maxInputChannels']
 
@@ -74,8 +79,8 @@ def pulsecatcher(mode):
 			if samples[25] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[25] < 32768:
 
 				# Time capture
-				end = time.perf_counter()
-				elapsed = int((end - start) * 1000000)
+				t1 = time.perf_counter()
+				elapsed = int((t1 - t0) * 1000000)
 				# Function normalises sample to zero
 				normalised = fn.normalise_pulse(samples)
 				# Function calculates pulse distortion
@@ -89,16 +94,19 @@ def pulsecatcher(mode):
 				# Function calculates pulse height
 				height = fn.pulse_height(normalised_int)
 				if distortion < tolerance:
-					n += 1
-					#print(n, '\n')
-					# prints data to console
-					#print(elapsed,",",height,",",distortion)
-					#print(height,"\n")
-					# Drop pulse height into bin_array
-					plot_data = fn.update_bin(height, bin_array, bin_counts)
-					plot = dict(plot_data)
-					#print(plot,"\n")
-					fn.write_histogram_to_csv(plot)
+					
+					bin_index = int(height/bin_size)
+
+					if bin_index < bins:
+
+						histogram[bin_index] += 1
+
+						n += 1
+
+						if n % 10 == 0:
+
+							fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram)
+
 					
 
 

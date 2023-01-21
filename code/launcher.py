@@ -16,7 +16,7 @@ conn    = sql.connect("data.db")
 c       = conn.cursor()
 query   = """CREATE TABLE IF NOT EXISTS settings (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        name            TEXT    DEFAULT 'My settings',
+        name            TEXT    DEFAULT '',
         device          INTEGER DEFAULT 1,              
         sample_rate     INTEGER DEFAULT 48000,
         chunk_size      INTEGER DEFAULT 1025,                        
