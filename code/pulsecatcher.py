@@ -84,7 +84,7 @@ def pulsecatcher(mode):
 				# Time capture
 				t1 = datetime.datetime.now()
 				te = time.time()
-				elapsed = te - tb
+				elapsed = int(te - tb)
 
 				# Function normalises sample to zero
 				normalised = fn.normalise_pulse(samples)

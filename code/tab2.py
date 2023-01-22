@@ -199,7 +199,7 @@ def save_settings(bin_qty, bin_size, max_counts, filename, threshold, tolerance)
     
     query = f"UPDATE settings SET bins={bin_qty}, bin_size={bin_size}, max_counts={max_counts}, name='{filename}', threshold={threshold}, tolerance={tolerance} WHERE id=0;"
     
-    print(f'query: {query}', '\n')
+    #print(f'query: {query}', '\n')
     c.execute(query)
     conn.commit()
 
