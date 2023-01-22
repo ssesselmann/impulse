@@ -4,7 +4,6 @@
 import pyaudio
 import webbrowser
 import wave
-import datetime
 import numpy as np
 import math
 import csv
@@ -13,7 +12,7 @@ import os
 import sqlite3 as sql
 import pandas as pd
 from collections import defaultdict
-
+from datetime import datetime
 
 peak = 0.0
 trough = 0.0
@@ -102,22 +101,22 @@ def write_histogram_to_csv(data):
 def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram):
 
 
-    data =  {
-        "schemaVersion":"NPESv1",
-        "startTime":t0,
-        "endTime": t1,
-        "resultData":{
-            "energySpectrum":{
-                "numberOfChannels":bins,
-                "validPulseCount":n,
-                "measurementTime":elapsed,
-                "energyCalibration":{
-                    "polynomialOrder":2,
-                    "coefficients":[1,1,0]
-                    },"spectrum": histogram
+    data =  {"schemaVersion":"NPESv1",
+                "resultData":{
+                    "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                    "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                    "energySpectrum":{
+                        "numberOfChannels":bins,
+                        "energyCalibration":{
+                            "polynomialOrder":2,
+                            "coefficients":[1,1,0]
+                            },
+                        "validPulseCount":n,
+                        "measurementTime":str(elapsed),
+                        "spectrum": histogram
+                        }
+                    }
                 }
-            }
-        }
 
     with open(f"../data/{name}.json", "w+") as f:
         json.dump(data, f)

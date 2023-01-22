@@ -14,6 +14,7 @@ from tab3 import show_tab3
 
 conn    = sql.connect("data.db")
 c       = conn.cursor()
+
 query   = """CREATE TABLE IF NOT EXISTS settings (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
         name            TEXT    DEFAULT '',
@@ -24,31 +25,16 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         tolerance       INTEGER DEFAULT 10000,
         bins            INTEGER DEFAULT 1000,
         bin_size        INTEGER DEFAULT 30,
-        max_counts      INTEGER DEFAULT 1000);"""
+        max_counts      INTEGER DEFAULT 1000,
+        shapecatches    INTEGER DEFAULT 100 );"""
 
-query2  = f'''CREATE TABLE IF NOT EXISTS histogram (id INTEGER PRIMARY KEY, '0' INTEGER,
-            '1' INTEGER, '2' INTEGER, '3' INTEGER, '4' INTEGER, '5' INTEGER,
-            '6' INTEGER, '7' INTEGER, '8' INTEGER, '9' INTEGER, '10' INTEGER,
-            '11' INTEGER, '12' INTEGER, '13' INTEGER, '14' INTEGER, '15' INTEGER,
-            '16' INTEGER, '17' INTEGER, '18' INTEGER, '19' INTEGER, '20' INTEGER,
-            '21' INTEGER, '22' INTEGER, '23' INTEGER, '24' INTEGER, '25' INTEGER,
-            '26' INTEGER, '27' INTEGER, '28' INTEGER, '29' INTEGER, '30' INTEGER,
-            '31' INTEGER, '32' INTEGER, '33' INTEGER, '34' INTEGER, '35' INTEGER,
-            '36' INTEGER, '37' INTEGER, '38' INTEGER, '39' INTEGER, '40' INTEGER,
-            '41' INTEGER, '42' INTEGER, '43' INTEGER, '44' INTEGER, '45' INTEGER,
-            '46' INTEGER, '47' INTEGER, '48' INTEGER, '49' INTEGER, '50' INTEGER,
-            '99' INTEGER);'''
+query2  =  f'INSERT INTO settings (id, name) SELECT 0, 0 WHERE NOT EXISTS (SELECT 1 FROM settings WHERE id = 0);'
+
 
 with conn:
     c.execute(query).execute(query2)
     conn.commit()
 
-
-
-
-
-   # c.execute("INSERT OR IGNORE INTO settings VALUES (0, 'My Settings', 1, 48000, 1025, 100, 10000, 1000, 30, 1000);") 
-   # conn.commit()
 
 #---Defines the tab buttons------------------------------------------------------------
 

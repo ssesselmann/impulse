@@ -25,7 +25,7 @@ def shapecatcher():
 	#pulses 	= []
 	left_channel= []
 	summed 		= []
-	sample_size = 10 # add to settings
+	sample_size = 100 # add to settings
 	
 	p = pyaudio.PyAudio()
 	audio_format = pyaudio.paInt16

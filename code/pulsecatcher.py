@@ -3,12 +3,12 @@ import wave
 import math
 import functions as fn
 import sqlite3 as sql
-import time
+import datetime
 from collections import defaultdict
 import csv
 
 # Start timer
-t0				= time.perf_counter()
+t0				= datetime.datetime.now()
 data 			= None
 left_channel 	= None
 devices 		= fn.get_device_list()
@@ -79,8 +79,9 @@ def pulsecatcher(mode):
 			if samples[25] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[25] < 32768:
 
 				# Time capture
-				t1 = time.perf_counter()
-				elapsed = int((t1 - t0) * 1000000)
+				t1 = datetime.datetime.now()
+				elapsed = t1 - t0
+
 				# Function normalises sample to zero
 				normalised = fn.normalise_pulse(samples)
 				# Function calculates pulse distortion
