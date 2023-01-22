@@ -5,6 +5,7 @@ import functions as fn
 import os
 import json
 import sqlite3 as sql
+import dash_daq as daq
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
@@ -12,7 +13,7 @@ from server import app
 from datetime import datetime
 
 path = None
-n_intervals = 0
+n_clicks = 0
 
 def show_tab2():
 
@@ -22,7 +23,7 @@ def show_tab2():
     c.execute(query) 
     settings        = c.fetchall()[0]
 
-    name            = settings[1]
+    filename        = settings[1]
     device          = settings[2]             
     sample_rate     = settings[3]
     chunk_size      = settings[4]
@@ -31,6 +32,7 @@ def show_tab2():
     bins            = settings[7]
     bin_size        = settings[8]
     max_counts      = settings[9]
+    energy_per_bin  = settings[10]
 
 
     html_tab2 = html.Div([
@@ -57,7 +59,7 @@ def show_tab2():
         ),
 
         html.Div(children=[
-            html.Div(['File name     :', dcc.Input(id='filename', type='text', value=name, style={'text-align':'right'})]),
+            html.Div(['File name     :', dcc.Input(id='filename', type='text', value=filename, style={'text-align':'right'})]),
             html.Div(['Number of bins:', dcc.Input(id='bin_qty', type='number', value=bins, style={'text-align':'right'})]),
             html.Div(['Bin Size      :', dcc.Input(id='bin_size', type='number', value=bin_size, style={'text-align':'right'})]),
             html.Div(['Max counts    :', dcc.Input(id='max_counts', type='number', value=max_counts, style={'text-align':'right'})]),
@@ -68,11 +70,18 @@ def show_tab2():
         html.Div(children=[
             html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold, style={'text-align':'right'})]),
             html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance, style={'text-align':'right'})]),
+            html.Div(['Enable Energy per bin', daq.BooleanSwitch(id='energy_per_bin',on=False, color='purple',)]),
+
         ],style={'width':'10%', 'height':'150px','padding':'20px', 'background-color':'orange', 'text-align':'right', 'color':'blue', 'float':'left', 'fontFamily':'Arial'}
         ),
 
-        html.Div(
+        html.Div(style={'width':'100%', 'height':'150px'}),
+
+        html.Div(children=[
+            html.H1('i m p u l s e', style={'font-family':'arial','font-size':'90px', 'text-align':'center', 'color':'blue'}),
             
+            html.P('by GammaSpectacular', style={'font-family':'arial','font-size':'18px', 'text-align':'center', 'color':'blue'}),
+            ], style={'width':'100%', 'height':'100px'}
             ),
 
         
@@ -106,19 +115,20 @@ def update_output(n_clicks):
 
 def update_output(n_clicks):
 
-    if n_clicks % 2 == 0:
+    if n_clicks != 0:
 
         return "not working"
 
 #----------------------------------------------------------------
 
 @app.callback([ Output('bar-chart'  ,'figure'), Output('counts'     ,'children'),Output('elapsed'    ,'children')],
-              [ Input('interval-component'   ,'n_intervals'), Input('filename'    ,'value')])
+              [ Input('interval-component'   ,'n_intervals'), Input('filename'    ,'value'), Input('energy_per_bin', 'on')])
 
-def update_graph(n, filename):
+def update_graph(n, filename, energy_per_bin):
 
     if os.path.exists(f'../data/{filename}.json'):
         with open(f"../data/{filename}.json", "r") as f:
+
             data = json.load(f)
             numberOfChannels    = data["resultData"]["energySpectrum"]["numberOfChannels"]
             validPulseCount     = data["resultData"]["energySpectrum"]["validPulseCount"]
@@ -128,7 +138,13 @@ def update_graph(n, filename):
             spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
 
             x = list(range(numberOfChannels))
-            y = spectrum
+            
+
+
+            if energy_per_bin == True:
+                y = [i * count for i, count in enumerate(spectrum)]
+            else:    
+                y = spectrum
 
             trace = go.Bar(x=x, y=y, width=1, marker={'color': 'darkblue'})
             layout = go.Layout(
@@ -147,7 +163,7 @@ def update_graph(n, filename):
                 autosize=True,
 
                 )
-            return go.Figure(data=[trace], layout=layout), validPulseCount, elapsed[:-7]
+            return go.Figure(data=[trace], layout=layout), validPulseCount, elapsed
 
     else:
         layout = go.Layout(title={
@@ -162,7 +178,7 @@ def update_graph(n, filename):
             height=700, 
             autosize=True
             )
-        return go.Figure(data=[], layout=layout), 0
+        return go.Figure(data=[], layout=layout), 0, 0
 
 #--------UPDATE SETTINGS-------------------
 @app.callback( Output('settings'        ,'children'),
@@ -171,7 +187,7 @@ def update_graph(n, filename):
                 Input('max_counts'      ,'value'),
                 Input('filename'        ,'value'),
                 Input('threshold'       ,'value'),
-                Input('tolerance'       ,'value'),
+                Input('tolerance'       ,'value')
                 ])
 
 
@@ -180,7 +196,10 @@ def save_settings(bin_qty, bin_size, max_counts, filename, threshold, tolerance)
     conn = sql.connect("data.db")
     c = conn.cursor()
 
+    
     query = f"UPDATE settings SET bins={bin_qty}, bin_size={bin_size}, max_counts={max_counts}, name='{filename}', threshold={threshold}, tolerance={tolerance} WHERE id=0;"
+    
+    print(f'query: {query}', '\n')
     c.execute(query)
     conn.commit()
 

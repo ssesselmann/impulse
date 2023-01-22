@@ -109,6 +109,7 @@ def show_tab1():
             ], style={'width':'10%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
             ),
 
+
         html.Div( children=[ 
             html.Button('Save Settings', 
                 id='submit', 
@@ -146,8 +147,17 @@ def show_tab1():
                 ]),
 
         html.Div(f'Note: Path to (../data/) are relative to {filepath}', style={'color':'red', 'float':'left'}),   
-                
+       
+        html.Div(children=[
+            html.H1('i m p u l s e', style={'font-family':'arial','font-size':'90px', 'text-align':'center', 'color':'blue'}),
+            
+            html.P('by GammaSpectacular (V0.5)', style={'font-family':'arial','font-size':'18px', 'text-align':'center', 'verticalAlign':'top','color':'blue'}),
+            ], style={'width':'100%', 'height':'160px', 'background-color':'orange', 'float':'left'}
+            ),
+
     ]) # tab1 ends here
+
+
 
     ], style={'width':'100%' , 'height':'100%','background-color':'lightgray', 'float': 'left', 'padding':'30px'}),
 
@@ -164,7 +174,7 @@ def update_n_clicks(n_clicks):
               [Input('n_clicks_storage',        'children')])
 
 def on_button_click(n_clicks):
-    
+    print(n_clicks)
     if n_clicks is not None:
         fn.refresh_audio_devices()
         dl = fn.get_device_list()

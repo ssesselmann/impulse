@@ -112,7 +112,7 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram):
                             "coefficients":[1,1,0]
                             },
                         "validPulseCount":n,
-                        "measurementTime":str(elapsed),
+                        "measurementTime": elapsed,
                         "spectrum": histogram
                         }
                     }

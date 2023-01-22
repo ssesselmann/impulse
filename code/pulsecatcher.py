@@ -1,6 +1,7 @@
 import pyaudio
 import wave
 import math
+import time
 import functions as fn
 import sqlite3 as sql
 import datetime
@@ -9,6 +10,7 @@ import csv
 
 # Start timer
 t0				= datetime.datetime.now()
+tb				= time.time()
 data 			= None
 left_channel 	= None
 devices 		= fn.get_device_list()
@@ -30,6 +32,7 @@ def pulsecatcher(mode):
 	bins            = settings[7]
 	bin_size        = settings[8]
 	max_counts      = settings[9]
+	energy_per_bin 	= settings[10]
 
 	# Create an array of ewmpty bins
 	start = 0
@@ -80,7 +83,8 @@ def pulsecatcher(mode):
 
 				# Time capture
 				t1 = datetime.datetime.now()
-				elapsed = t1 - t0
+				te = time.time()
+				elapsed = te - tb
 
 				# Function normalises sample to zero
 				normalised = fn.normalise_pulse(samples)
@@ -94,6 +98,7 @@ def pulsecatcher(mode):
 
 				# Function calculates pulse height
 				height = fn.pulse_height(normalised_int)
+				
 				if distortion < tolerance:
 					
 					bin_index = int(height/bin_size)
