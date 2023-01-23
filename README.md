@@ -1,4 +1,4 @@
-GS-PLOT V(0.1) 2023/01/21
+GS-PLOT V(0.6) 2023/01/24
 --------------
 Python based MCA for gamma spectrometry.
 ----------------------------------------
