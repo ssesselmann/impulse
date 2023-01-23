@@ -1,4 +1,4 @@
-IMPULSE V(0.6) 2023/01/24
+IMPULSE V(0.7) 2023/01/24
 --------------
 Python Scripted MCA for gamma spectrometry.
 ----------------------------------------
