@@ -1,6 +1,6 @@
-GS-PLOT V(0.6) 2023/01/24
+IMPULSE V(0.6) 2023/01/24
 --------------
-Python based MCA for gamma spectrometry.
+Python Scripted MCA for gamma spectrometry.
 ----------------------------------------
  This program reads a stream of data from the PC sound card and picks out pulses, the pulses are subsequently filtered and written to a JSON file. A live histogram can be viewed in the browser. 
  
