@@ -33,6 +33,7 @@ def show_tab1():
     bin_size        = settings[8]
     max_counts      = settings[9]
     shapes          = settings[10]
+    sample_length   = settings[11]
 
 
     filepath = os.path.dirname(__file__)
@@ -64,50 +65,75 @@ def show_tab1():
             ], style={'width':'10%','height':'80px','float': 'left','background-color':'lightgray', 'align':'center'}
             ),
 
-        html.Div(id='sample_rate_div', children=[
+        html.Div(children=[
+            html.Div( children='Sample rate'),
             dcc.Dropdown(id="sample_rate",
-            options=[
-                {"label": "48 kHz", "value": "48000"},
-                {"label": "96 kHz", "value": "96000"},
-                {"label": "192 kHz", "value": "192000"},
-                {"label": "384 kHz", "value": "384000"}
-            ], 
-            value=sample_rate,  # pre-selected option
-            clearable=False,
-            style={'width':'150px'} # style for dropdown
-            ),
+                options=[
+                    {"label": "48 kHz", "value": "48000"},
+                    {"label": "96 kHz", "value": "96000"},
+                    {"label": "192 kHz", "value": "192000"},
+                    {"label": "384 kHz", "value": "384000"}
+                ], 
+                value=sample_rate,  # pre-selected option
+                clearable=False,
+                style={'width':'130px'} # style for dropdown
+                ),
         html.Div(id="rate_output"),
-            ],style={'width':'10%' , 'height':'60px','float': 'left', 'background-color':'lightgray', 'padding':'10px'}
+            ],style={'width':'10%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
             ),
 
 
         html.Div( children=[ 
             html.Div( children='Chunk Size'),
-            html.Div(dcc.Input(id='chunk_size', type='number', value= chunk_size, style={'fontSize':16, 'width':'100px', 'align':'middle'})),
+            html.Div(dcc.Dropdown(id='chunk_size', 
+                options=[
+                    {'label': '516', 'value':  '516'},
+                    {'label':'1024', 'value': '1024'},
+                    {'label':'2048', 'value': '2048'},
+                    {'label':'4096', 'value': '4096'}
+                    ],
+                value= chunk_size, 
+                clearable=False,
+                style={'fontSize':16, 'width':'130px', 'align':'middle'})),
             html.Div(id='output_chunk_text', children='', style={'color': 'red'}),
             ], style={'width':'10%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
             ),
 
-        # html.Div( children=[ 
-        #     html.Div( children='LLD Threshold (30-100)'),
-        #     html.Div(dcc.Input(id='threshold', type='number', value = threshold, style={'fontSize':16, 'width':'100px'})),
-        #     html.Div(id='output_lld_text', children='', style={'color': 'red'}),
-        #     ], style={'width':'10%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
-        #     ),
-
-        # html.Div( children=[ 
-        #     html.Div( children='Shape Tolerance'),
-        #     html.Div(dcc.Input(id= 'tolerance', type='number', value = tolerance, style={'fontSize':16, 'width':'100px'})),
-        #     html.Div( children='', style={'color': 'red'}),
-        #     ], style={'width':'10%' , 'height':'80px','float': 'left',  'background-color':'lightgray', 'align':'center'}
-        #     ),
 
         html.Div( children=[ 
-            html.Div( children='Number of pulses to sample'),
-            html.Div(dcc.Input(id='catch', type='number', value =shapes , style={'fontSize':16, 'width':'100px'})),
+            html.Div( children='Pulses to sample'),
+            html.Div(dcc.Dropdown(id='catch', 
+                options=[
+                    {'label': '10', 'value':  '10'},
+                    {'label': '50', 'value':  '50'},
+                    {'label':'100', 'value': '100'},
+                    {'label':'500', 'value': '500'},
+                    {'label':'1000', 'value': '1000'}
+                    ],
+                value =shapes ,
+                clearable=False, 
+                style={'fontSize':16, 'width':'130px'})),
             html.Div( children='', style={'color': 'red'}),
             ], style={'width':'10%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
             ),
+
+                    html.Div( children=[ 
+            html.Div( children='Sample length'),
+            html.Div(dcc.Dropdown(id='sample_length', 
+                options=[
+                    {'label':'21 dots', 'value': '21'},
+                    {'label':'31 dots', 'value': '31'},
+                    {'label':'41 dots', 'value': '41'},
+                    {'label':'51 dots', 'value': '51'},
+                    {'label':'61 dots', 'value': '61'}
+                    ],
+                value =sample_length ,
+                clearable=False, 
+                style={'fontSize':16, 'width':'130px'})),
+            html.Div( children='', style={'color': 'red'}),
+            ], style={'width':'10%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
+            ),
+
 
 
         html.Div( children=[ 
@@ -132,27 +158,34 @@ def show_tab1():
 #-----------------------------------------------------------------------------------------------------------
                         
                             html.Div(id='showplot',style={'width':'48%', 'float':'left'}), 
-                            dcc.Graph(id='plot', figure={}, style={'width':'48%', 'float':'left', 'border': '2px solid black'} ),
-                            html.Div( children=[
-                            html.H1('Operating Instructions'),
-                            html.P('1) Click the green button to get a list of audio devices connected to your computer', style={'text-align':'left'}),
-                            html.P('2) Look up the index number of the input device you want to use', style={'text-align':'left'}),
-                            html.P('3) Enter your preferred audio settings, your choice is automatically saved in settings.csv', style={'text-align':'left'}),
-                            html.P('4) Click the black pulse capture button to start pulse shape training', style={'text-align':'left'}),
-                            html.P('This function records the sum avarage pulse shape from 100 pulses and saves it as shape.csv',style={'text-align':'left'}),
-                            html.P('This open source software is being developed by Bee Research Pty for use with sound card gamma spectrometers.', style={'text-align':'left'}),
-                            html.H3('www.gammaspectacular.com'),
-                            ], style={ 'width':'40%', 'height':'380px','background-color':'white', 'float':'left', 'text-align':'center', 'border': '2px solid black', 'padding':'35px'}
-                            ),
+                            
+                            html.Div(dcc.Graph(id='plot', figure={'data': [{}], 'layout': {}}), style={'width':'45%', 'float':'left', 'padding':'10px'} ),
+                            
+                            # html.Div(style={'height':'380px', 'widh':'20px', 'background-color':'lightgray', 'float':'left'}),
+
+                            html.Div(children=[ 
+                                html.Div(children=[
+                                    html.H1('Operating Instructions'),
+                                    html.P('1) Click the green button to get a list of audio devices connected to your computer', style={'text-align':'left'}),
+                                    html.P('2) Look up the index number of the input device you want to use', style={'text-align':'left'}),
+                                    html.P('3) Enter your preferred audio settings, your choice is automatically saved in settings.db', style={'text-align':'left'}),
+                                    html.P('4) Click the black pulse capture button to start pulse shape training', style={'text-align':'left'}),
+                                    html.P('This function records the sum avarage pulse shape from 100 pulses and saves it as shape.csv',style={'text-align':'left'}),
+                                    html.P('This open source software is being developed by Bee Research Pty for use with sound card gamma spectrometers.', style={'text-align':'left'}),
+                                    html.H3('www.gammaspectacular.com'),
+                                    html.Div(f'Note: Path to (../data/) are relative to {filepath}', style={'color':'red', 'float':'left'}),   
+
+                                    ],style={'background-color':'white', 'padding': '35px', 'height':'380px'}
+                                ), 
+                                ],style={ 'width':'40%', 'height':'400px','background-color':'lightgray', 'float':'left', 'text-align':'center', 'padding':'10px'}
+                                ),
                 ]),
 
-        html.Div(f'Note: Path to (../data/) are relative to {filepath}', style={'color':'red', 'float':'left'}),   
        
         html.Div(children=[
-            html.H1('i m p u l s e', style={'font-family':'arial','font-size':'90px', 'text-align':'center', 'color':'blue'}),
-            
-            html.P('by GammaSpectacular (V0.5)', style={'font-family':'arial','font-size':'18px', 'text-align':'center', 'verticalAlign':'top','color':'blue'}),
-            ], style={'width':'100%', 'height':'160px', 'background-color':'orange', 'float':'left'}
+            html.P('i m p u l s e', style={'font-family':'arial','font-size':'120px', 'font-weight':'bold', 'color':'blue'}),
+            html.P('by GammaSpectacular (V0.5)', style={'font-family':'arial','font-size':'18px', 'text-align':'center','color':'blue'}),
+            ], style={'width':'100%', 'height':'160px', 'background-color':'orange', 'float':'left', 'text-align':'center', 'margin-top':'10px'}
             ),
 
     ]) # tab1 ends here
@@ -174,8 +207,9 @@ def update_n_clicks(n_clicks):
               [Input('n_clicks_storage',        'children')])
 
 def on_button_click(n_clicks):
-    print(n_clicks)
+    
     if n_clicks is not None:
+        print(n_clicks)
         fn.refresh_audio_devices()
         dl = fn.get_device_list()
         return dl
@@ -188,19 +222,22 @@ def on_button_click(n_clicks):
     [Input('device'                 ,'value'),
     Input('sample_rate'             ,'value'),
     Input('chunk_size'              ,'value'),
-    Input('catch'                   ,'value'),])
+    Input('catch'                   ,'value'),
+    Input('sample_length'           ,'value')
+    ])
 
-def save_settings(n_clicks, value1, value2, value3, value4):
+def save_settings(n_clicks, value1, value2, value3, value4, value5):
 
     if n_clicks == 0:
         device      = value1
         sample_rate = value2
         chunk_size  = value3
         catch       = value4
+        length      = value5
 
         conn = sql.connect("data.db")
         c = conn.cursor()
-        query = f"UPDATE settings SET device={device}, sample_rate={sample_rate}, chunk_size={chunk_size}, shapecatches={catch} WHERE id=0;"
+        query = f"UPDATE settings SET device={device}, sample_rate={sample_rate}, chunk_size={chunk_size}, shapecatches={catch}, sample_length={length} WHERE id=0;"
         c.execute(query)
         conn.commit()
 
@@ -224,7 +261,10 @@ def capture_pulse_shape(n_clicks):
     else:    
 
         shape = sc.shapecatcher()
+
         dots = list(range(len(shape)))
+
+        # print('len shape', len(shape))
         
         marker  = dict(size = 7, color = 'purple')
         data    = [{'x': dots, 'y': shape, 'type': 'line', 'name': 'SF', 'mode': 'markers+lines', 'marker': marker}]

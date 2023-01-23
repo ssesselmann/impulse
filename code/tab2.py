@@ -78,10 +78,10 @@ def show_tab2():
         html.Div(style={'width':'100%', 'height':'150px'}),
 
         html.Div(children=[
-            html.H1('i m p u l s e', style={'font-family':'arial','font-size':'90px', 'text-align':'center', 'color':'blue'}),
+            html.H1('i m p u l s e', style={'font-family':'arial','font-size':'110px', 'text-align':'center', 'color':'blue'}),
             
             html.P('by GammaSpectacular', style={'font-family':'arial','font-size':'18px', 'text-align':'center', 'color':'blue'}),
-            ], style={'width':'100%', 'height':'100px'}
+            ], style={'width':'100%', 'height':'100px','verticalAlign':'top'}
             ),
 
         
@@ -196,7 +196,6 @@ def save_settings(bin_qty, bin_size, max_counts, filename, threshold, tolerance)
     conn = sql.connect("data.db")
     c = conn.cursor()
 
-    
     query = f"UPDATE settings SET bins={bin_qty}, bin_size={bin_size}, max_counts={max_counts}, name='{filename}', threshold={threshold}, tolerance={tolerance} WHERE id=0;"
     
     #print(f'query: {query}', '\n')

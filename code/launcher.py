@@ -20,14 +20,14 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         name            TEXT    DEFAULT 'my_spectrum',
         device          INTEGER DEFAULT 1,              
         sample_rate     INTEGER DEFAULT 96000,
-        chunk_size      INTEGER DEFAULT 1025,                        
+        chunk_size      INTEGER DEFAULT 1024,                        
         threshold       INTEGER DEFAULT 100,
-        tolerance       INTEGER DEFAULT 10000,
+        tolerance       INTEGER DEFAULT 20000,
         bins            INTEGER DEFAULT 1000,
         bin_size        INTEGER DEFAULT 30,
         max_counts      INTEGER DEFAULT 1000,
         shapecatches    INTEGER DEFAULT 100,
-        energy_per_bin  INTEGER DEFAULT 0 );"""
+        sample_length   INTEGER DEFAULT 51 );"""
 
 query2  =  f'INSERT INTO settings (id, name) SELECT 0, "myspectrum" WHERE NOT EXISTS (SELECT 1 FROM settings WHERE id = 0);'
 

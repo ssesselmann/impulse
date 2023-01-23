@@ -20,7 +20,7 @@ height = 0.0
 p = pyaudio.PyAudio()
 
 
-# Finds pulses in data over a given threshold
+# Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
     samples =[]
     pulses = []
@@ -29,15 +29,15 @@ def find_pulses(left_channel):
         if samples[25] >= max(samples) and (max(samples)-min(samples)) > 100 and samples[25] < 32768:
             pulses.append(samples)
     if len(pulses) != 0:  # If the list is empty
-        #print(".",pulses) # For debugging
         next       
     return pulses
 
-def sum_pulses(pulses):
-    pulse_shape = np.zeros(51,dtype=int)
-    for i in range(len(pulses)):      
-        pulse_shape = np.add(pulse_shape, pulses[i])                
-    return pulse_shape     
+    # 
+# def sum_pulses(pulses):
+#     pulse_shape = np.zeros(51,dtype=int)
+#     for i in range(len(pulses)):      
+#         pulse_shape = np.add(pulse_shape, pulses[i])                
+#     return pulse_shape     
 
 # Calculates the average pulse shape
 def average_pulse(sum_pulse, count):       
@@ -46,7 +46,7 @@ def average_pulse(sum_pulse, count):
         average.append(x / count)
     return average 
 
-# Normalises the average pulse shape
+    # Normalises the average pulse shape
 def normalise_pulse(average):
     normalised = []
     mean = sum(average) / len(average)   
@@ -56,6 +56,7 @@ def normalise_pulse(average):
     # print(normalised)
     return normalised_int
 
+    # Normalised pulse samples less normalised shape samples squared summed and rooted
 def distortion(normalised, shape):
     product = [(x - y)**2 for x, y in zip(shape, normalised)]
     distortion = int(math.sqrt(sum(product)))
@@ -100,7 +101,6 @@ def write_histogram_to_csv(data):
 
 def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram):
 
-
     data =  {"schemaVersion":"NPESv1",
                 "resultData":{
                     "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
@@ -120,14 +120,7 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram):
 
     with open(f"../data/{name}.json", "w+") as f:
         json.dump(data, f)
-
-
-def write_settings_csv(data):
-    with open('../data/settings.csv', "w+") as f:
-        writer = csv.writer(f)
-        writer.writerow(['Setting','Value'])
-        for key, value in data.items():
-            writer.writerow([key, value])           
+     
 
 def load_settings():
     
@@ -137,10 +130,7 @@ def load_settings():
     query           = "SELECT * FROM settings "
     c.execute(query) 
     settings        = c.fetchall()[0]
-
     return settings
- 
-
 
 def load_shape():
     data = []
@@ -158,6 +148,7 @@ def load_shape():
            
 def get_device_list():
     input_devices = []
+    p = pyaudio.PyAudio()
     # Get a list of available audio input devices
     device_info = p.get_host_api_info_by_index(0).get('deviceCount')
     for i in range(device_info):
@@ -165,9 +156,8 @@ def get_device_list():
     return input_devices
 
 def refresh_audio_devices():
-    global p
-    p.terminate()
     p = pyaudio.PyAudio()
+    p.terminate()
     return
 
 # Function to open browser
