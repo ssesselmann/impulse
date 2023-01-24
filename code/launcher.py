@@ -40,10 +40,11 @@ with conn:
 #---Defines the tab buttons------------------------------------------------------------
 
 app.layout = html.Div([
+ 
     dcc.Tabs(
         id="tabs", 
         value='tab1', 
-        style={'fontWeight': 'bold'}, 
+        #style={'fontWeight': 'bold'}, 
         children=[
             dcc.Tab(
                 label= 'Settings & Control', 

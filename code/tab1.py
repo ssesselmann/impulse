@@ -44,28 +44,29 @@ def show_tab1():
 
     shape = fn.load_shape()
 
-    tab1 = html.Div([ 
+    tab1 = html.Div(id='tab1', children=[ 
 
 
         html.Div(id='n_clicks_storage', style={'display': 'none'}),
-        html.Button('Refresh Device Index ', id='get_device_button', style={'background-color':'lightgreen','border-radius':'9px', 'height':'30px', 'width':'150px'}),
+
+        html.Button('Refresh Device Index ', id='get_device_button'),
+
         html.Div( children=[
             dash_table.DataTable( id='container_device_list',
                 columns=[{"name": i, "id": i} for i in devices[0].keys()],
                 data=devices),
-            ],style ={'width':'94%'} ),
+            ]),
 #  --------------- User defined settings ------------------------------
 
-        html.H1("Settings & Pulse Shape Control", style={'text-align':'center'}),
+        html.Div(id='heading', children=[html.H1('Pulse Shape Capture and Settings')]),
         
-        html.Div( children=[ 
+        html.Div(id='tab1_settings', children=[ 
             html.Div(id='input_text', children='Enter Device index'),
             html.Div(dcc.Input(id='device', type='number', value = device, style={'fontSize':18, 'width':'100px'})),
             html.Div(id='selected_device_text', children='', style={'color': 'red'}),
-            ], style={'width':'10%','height':'80px','float': 'left','background-color':'lightgray', 'align':'center'}
-            ),
+            ]),
 
-        html.Div(children=[
+        html.Div(id='tab1_settings',children=[
             html.Div( children='Sample rate'),
             dcc.Dropdown(id="sample_rate",
                 options=[
@@ -78,12 +79,10 @@ def show_tab1():
                 clearable=False,
                 style={'width':'130px'} # style for dropdown
                 ),
-        html.Div(id="rate_output"),
-            ],style={'width':'10%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
-            ),
+            ]),
 
 
-        html.Div( children=[ 
+        html.Div(id='tab1_settings', children=[ 
             html.Div( children='Chunk Size'),
             html.Div(dcc.Dropdown(id='chunk_size', 
                 options=[
@@ -96,11 +95,10 @@ def show_tab1():
                 clearable=False,
                 style={'fontSize':16, 'width':'130px', 'align':'middle'})),
             html.Div(id='output_chunk_text', children='', style={'color': 'red'}),
-            ], style={'width':'10%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
-            ),
+            ]),
 
 
-        html.Div( children=[ 
+        html.Div(id='tab1_settings', children=[ 
             html.Div( children='Pulses to sample'),
             html.Div(dcc.Dropdown(id='catch', 
                 options=[
@@ -114,10 +112,9 @@ def show_tab1():
                 clearable=False, 
                 style={'fontSize':16, 'width':'130px'})),
             html.Div( children='', style={'color': 'red'}),
-            ], style={'width':'10%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
-            ),
+            ]),
 
-                    html.Div( children=[ 
+            html.Div(id='tab1_settings', children=[ 
             html.Div( children='Sample length'),
             html.Div(dcc.Dropdown(id='sample_length', 
                 options=[
@@ -129,42 +126,39 @@ def show_tab1():
                     ],
                 value =sample_length ,
                 clearable=False, 
-                style={'fontSize':16, 'width':'130px'})),
-            html.Div( children='', style={'color': 'red'}),
-            ], style={'width':'10%' , 'height':'80px','float': 'left', 'background-color':'lightgray', 'align':'center'}
-            ),
+                style={'fontSize':16, 'width':'130px'}))
+            ]),
 
+            html.Div(id='tab1_settings', children=''),
 
+            html.Div(id='tab1_settings', children=''),
 
-        html.Div( children=[ 
-            html.Button('Save Settings', 
-                id='submit', 
-                n_clicks=0, 
-                style={'visibility':'hidden'}
-                ),
+            html.Div(id='tab1_settings', children=''),
+
+            html.Div(id='tab1_settings', children=''),
+
+            html.Div(id='tab1_settings', children=''),
+
+            html.Button('Save Settings', id='submit', n_clicks=0, style={'visibility':'hidden'}),
                 
+            
+            html.Div(children=[ 
                 html.Div(id='button', children=[ 
                     html.Div(id='output_div'),
 #------------------------------------------------------------------------------------------------------------
-                       html.Div(id='graybox', children=[
-                        
-                            html.Div(id='output_div_2', children=[ 
-
-                                html.Button('Capture Pulse Shape',  id='get_shape', n_clicks=0, style={'background-color':'black','fontSize':18, 'color':'white'}), 
-
+                       html.Div(id='ps_button_box', children=[
+                                html.Button('Capture Pulse Shape',  id='get_shape', n_clicks=0), 
                             ]),
-                            ],style={'height':'40px', 'width':'97%', 'background-color':'lightgray', 'float':'left', 'padding':'10px'}
-                        ),
+                    
 #-----------------------------------------------------------------------------------------------------------
-                        
-                            html.Div(id='showplot',style={'width':'48%', 'float':'left'}), 
+                            html.Div(id='pulse_shape_div', children=[
+                                    html.Div(id='showplot', children=[
+                                    dcc.Graph(id='plot', figure={'data': [{}], 'layout': {}})
+                                    ]),
+                                ]),
                             
-                            html.Div(dcc.Graph(id='plot', figure={'data': [{}], 'layout': {}}), style={'width':'45%', 'float':'left', 'padding':'10px'} ),
-                            
-                            # html.Div(style={'height':'380px', 'widh':'20px', 'background-color':'lightgray', 'float':'left'}),
-
-                            html.Div(children=[ 
-                                html.Div(children=[
+                            html.Div(id='instruction_div', children=[ 
+                                html.Div(id='instructions', children=[
                                     html.H1('Operating Instructions'),
                                     html.P('1) Click the green button to get a list of audio devices connected to your computer', style={'text-align':'left'}),
                                     html.P('2) Look up the index number of the input device you want to use', style={'text-align':'left'}),
@@ -175,24 +169,23 @@ def show_tab1():
                                     html.H3('www.gammaspectacular.com'),
                                     html.Div(f'Note: Path to (../data/) are relative to {filepath}', style={'color':'red', 'float':'left'}),   
 
-                                    ],style={'background-color':'white', 'padding': '35px', 'height':'380px'}
-                                ), 
-                                ],style={ 'width':'40%', 'height':'400px','background-color':'lightgray', 'float':'left', 'text-align':'center', 'padding':'10px'}
-                                ),
+                                    ]), 
+                                ]),
                 ]),
 
        
-        html.Div(children=[
-            html.P('i m p u l s e', style={'font-family':'arial','font-size':'120px', 'font-weight':'bold', 'color':'blue'}),
-            html.P('by GammaSpectacular (V0.5)', style={'font-family':'arial','font-size':'18px', 'text-align':'center','color':'blue'}),
-            ], style={'width':'100%', 'height':'160px', 'background-color':'orange', 'float':'left', 'text-align':'center', 'margin-top':'10px'}
-            ),
+        html.Div(id='footer', children=[
+            html.Img(id='footer', src='assets/footer.jpg'),
+            html.P(id='url' , children='GammaSpectacular.com (V0.7)'),
+            html.Div(id="rate_output"),
+
+            ]),
 
     ]) # tab1 ends here
 
 
 
-    ], style={'width':'100%' , 'height':'100%','background-color':'lightgray', 'float': 'left', 'padding':'30px'}),
+    ]),
 
     return tab1
 
@@ -209,7 +202,6 @@ def update_n_clicks(n_clicks):
 def on_button_click(n_clicks):
     
     if n_clicks is not None:
-        print(n_clicks)
         fn.refresh_audio_devices()
         dl = fn.get_device_list()
         return dl

@@ -40,6 +40,7 @@ Things that are working
 
 Things to do
 ------------
+* Tidy up and move all styling to assets/styles.css
 * Build polynomial pulse height calibration and save calibration data
 * Build method for subtracting a background spectrum
 * Build function and chart to display distortion curve (useful)

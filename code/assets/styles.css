@@ -1,0 +1,116 @@
+
+
+#tab1_settings {
+	width:9.4%;
+	height:70px;
+	float: left;
+	background-color:orange;
+	text-align:center;
+}
+
+#get_device_button {
+	background-color:purple;
+	border-radius:9px;
+	height:35px;
+	width:180px;
+	margin:5px;
+	font-size:14px;
+	color:white;
+	font-weight:bold;
+}
+
+#container_device_list {
+	width:94%;
+}
+
+#heading {
+	width:94%;
+	Height:60px;
+	font-family:Arial;
+	color:black;
+	text-align: center;
+	float:left;
+	background-color:orange;
+}
+
+#tabs {
+	background-color:white;
+	margin-left:50px;
+	margin-right:50px;
+}
+
+
+#showplot {
+	width:96%;
+	margin:10px;
+	padding:10px;
+}
+
+#ps_button_box {
+	width:94%;
+	height:45px;
+	background-color: orange;
+	float:left;
+}
+
+#get_shape {
+	background-color:black;
+	font-size:18px;
+	color:white;
+	margin:5px;
+	border-radius:9px;
+	height:35px;
+	width:180px;
+	font-size:14px;
+	font-weight:bold;
+
+}
+
+#tab1 {
+	width:97%;
+	background-color:red;
+	float:left;
+	margin:10px;
+	height:100%;
+	background-color:lightgray;
+	float:left;
+	padding:30px;
+}
+
+#footer {
+	width:94%;
+	height: 200px;
+	background-color:orange;
+	text-align:center;
+	float:left;
+}
+
+#pulse_shape_div {
+	width:47%;
+	height:470px;
+	background-color: orange;
+	float:left;
+	text-align:center; 
+}
+
+#instruction_div {
+	width:47%;
+	height:470px;
+	background-color: orange;
+	float:left;
+	text-align:center; 
+
+	
+}
+
+#instructions {
+	background-color:white;
+	font-family:arial;
+	width:90%;
+	height:470px;
+	padding-left:10px;
+	padding-right:10px;
+
+	
+	
+}
