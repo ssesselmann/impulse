@@ -33,6 +33,10 @@ def pulsecatcher(mode):
 	bin_size        = settings[8]
 	max_counts      = settings[9]
 	energy_per_bin 	= settings[10]
+	coeff_1			= settings[18]
+	coeff_2			= settings[19]
+	coeff_3			= settings[20]
+
 
 	# Create an array of ewmpty bins
 	start = 0
@@ -111,7 +115,7 @@ def pulsecatcher(mode):
 
 						if n % 10 == 0:
 
-							fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram)
+							fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
 
 					
 

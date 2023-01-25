@@ -1,5 +1,9 @@
 
-
+Input {
+	text-align: right;
+	color:black;
+	font-size: 16px;
+}
 #tab1_settings {
 	width:9.4%;
 	height:70px;
@@ -72,14 +76,15 @@
 	width:180px;
 	font-size:14px;
 	font-weight:bold;
-
 }
 
-
+#filename {
+	text-align: left;
+}
 
 #footer {
 	width:94%;
-	height: 200px;
+	height: auto;
 	background-color:orange;
 	text-align:center;
 	float:left;
@@ -123,8 +128,10 @@
 
 #bar_chart_div {
 	width:96%;
-	height:25%;
+	height:600px;
 	padding:20px;
+	background-color: white;
+	margin: 30px;
 }
 
 #start {
@@ -138,6 +145,7 @@
 	font-weight:bold;
 }
 #stop {
+	visibility: hidden;
 	background-color:red;
 	border-radius:9px;
 	height:35px;
@@ -176,3 +184,28 @@
 	float:left;
 }
 
+#settings{
+	color:black;
+	font-weight:bold;
+	font-size: 10px ;
+	font-family:Arial;
+	padding:10px;
+}
+
+#tab3 {
+	padding:100px;
+	background-color:lightgray;
+}
+
+#tab3_text_div {
+	width: 100%;
+	background-color: white;
+	padding:30px;
+	text-align:center;
+	
+}
+
+img {
+	width:100%;
+	height: auto;
+}

@@ -99,7 +99,7 @@ def write_histogram_to_csv(data):
             writer.writerow([x, y])
 
 
-def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram):
+def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
 
     data =  {"schemaVersion":"NPESv1",
                 "resultData":{
@@ -109,7 +109,7 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram):
                         "numberOfChannels":bins,
                         "energyCalibration":{
                             "polynomialOrder":2,
-                            "coefficients":[1,1,0]
+                            "coefficients":[coeff_1,coeff_2,coeff_3]
                             },
                         "validPulseCount":n,
                         "measurementTime": elapsed,

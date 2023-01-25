@@ -19,15 +19,25 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
         name            TEXT    DEFAULT 'my_spectrum',
         device          INTEGER DEFAULT 1,              
-        sample_rate     INTEGER DEFAULT 96000,
+        sample_rate     INTEGER DEFAULT 192000,
         chunk_size      INTEGER DEFAULT 1024,                        
         threshold       INTEGER DEFAULT 100,
-        tolerance       INTEGER DEFAULT 20000,
+        tolerance       INTEGER DEFAULT 50000,
         bins            INTEGER DEFAULT 1000,
         bin_size        INTEGER DEFAULT 30,
-        max_counts      INTEGER DEFAULT 1000,
+        max_counts      INTEGER DEFAULT 10000,
         shapecatches    INTEGER DEFAULT 100,
-        sample_length   INTEGER DEFAULT 51 );"""
+        sample_length   INTEGER DEFAULT 51,
+        calib_bin_1     INTEGER DEFAULT 0,
+        calib_bin_2     INTEGER DEFAULT 500,
+        calib_bin_3     INTEGER DEFAULT 1000,
+        calib_e_1       REAL    DEFAULT 0,
+        calib_e_2       REAL    DEFAULT 500,
+        calib_e_3       REAL    DEFAULT 1000,
+        coeff_1         REAL    DEFAULT 1,
+        coeff_2         REAL    DEFAULT 1,
+        coeff_3         REAL    DEFAULT 0
+        );"""
 
 query2  =  f'INSERT INTO settings (id, name) SELECT 0, "myspectrum" WHERE NOT EXISTS (SELECT 1 FROM settings WHERE id = 0);'
 
@@ -53,7 +63,7 @@ app.layout = html.Div([
                 label='Pulse Height Histogram', 
                 value='tab2'),   
             dcc.Tab(
-                label='Spare', 
+                label='Spectrometer', 
                 value='tab3'),
 
         ]),

@@ -38,16 +38,18 @@ Things done, now working
 14) Assigned program name "impulse"
 15) Tidy up and move all styling to assets/styles.css
 16) Added function to show spectrum in log scale
+17) Added polynomial pulse height calibration and save calibration data
 
 
 Things to do
 ------------
 
-* Build polynomial pulse height calibration and save calibration data
+
 * Build method for subtracting a background spectrum
 * Build function and chart to display distortion curve (useful)
 * Build isotope peak tables 
 * Build interval histogram with Dead time calculation 
+* Build functionality to accept negative pulse values
 * Improve look and layout
 
 
