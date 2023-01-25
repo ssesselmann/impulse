@@ -18,8 +18,8 @@ When it's all working you can access the program in your browser at;
 http://localhost:8050
  
 
-Things that are working
------------------------
+Things done, now working
+------------------------
 
 0) creating a settings database in sqlite3
 1) Obtaining an indexed table of audio devices 
@@ -36,17 +36,20 @@ Things that are working
 12) Function to save histogram in JSON format
 13) Tab for displaying pulse height histogram and filter settings
 14) Assigned program name "impulse"
+15) Tidy up and move all styling to assets/styles.css
+16) Added function to show spectrum in log scale
 
 
 Things to do
 ------------
-* Tidy up and move all styling to assets/styles.css
+
 * Build polynomial pulse height calibration and save calibration data
 * Build method for subtracting a background spectrum
 * Build function and chart to display distortion curve (useful)
 * Build isotope peak tables 
-* Improve look and layout
 * Build interval histogram with Dead time calculation 
+* Improve look and layout
+
 
 If anyone has requests for additional features please contact me via the "Contact us" link at gammaspectacular.com
 

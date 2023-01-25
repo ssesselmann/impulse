@@ -4,6 +4,7 @@ import pulsecatcher as pc
 import functions as fn
 import os
 import json
+import numpy as np
 import sqlite3 as sql
 import dash_daq as daq
 from dash import dcc
@@ -35,61 +36,62 @@ def show_tab2():
     energy_per_bin  = settings[10]
 
 
-    html_tab2 = html.Div([
+    html_tab2 = html.Div(id='tab2', children=[
 
-        html.Div( children=[
-            dcc.Graph(id='bar-chart', figure={},),
-            dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0)
-        ],style={'width':'96%', 'height':'90%', 'background-color':'lightgray'}),
+        html.Div(id='bar_chart_div', # Histogram Chart
+            children=[
+                dcc.Graph(id='bar-chart', figure={},),
+                dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0) # Refresh rate 1s.
+        ]),
 
         #Start button
-        html.Div( children=[
-            html.Button( 'START' , id='start', style={'background-color':'lightgreen','border-radius':'9px', 'height':'30px', 'width':'150px'}),
-            html.Div(id='counts', children= '' , style={'fontSize':'50px','color':'blue', 'text-align':'center', 'fontFamily':'Arial', 'fontWeight' : 'bold'}),
+        html.Div(id='t2_setting_div', children=[
+            html.Button( 'START' , id='start'),
+            html.Div(id='counts', children= ''),
 
-            ],style={'width':'10%', 'height':'150px', 'padding':'20px', 'background-color':'orange', 'text-align':'center', 'color':'green', 'float':'left'}
-        ),
+            ]),
 
         #Stop button
-        html.Div( children=[
-            html.Button( 'CLEAR FILE' , id='stop', style={'background-color':'red','border-radius':'9px', 'height':'30px', 'width':'150px'}),
-            html.Div(id='elapsed', children= '' , style={'fontSize':'50px','color':'blue', 'text-align':'center', 'fontFamily':'Arial', 'fontWeight' : 'bold'}),
-            html.Div(id='stop_text', children= '' , style={'fontSize':'10px','color':'blue', 'text-align':'center', 'fontFamily':'Arial', 'fontWeight' : 'bold'}),
-            ],style={'width':'10%', 'height':'150px','padding':'20px', 'background-color':'orange', 'text-align':'center', 'color':'green', 'float':'left'}
-        ),
+        html.Div(id='t2_setting_div', children=[
+            html.Button( 'CLEAR FILE' , id='stop'),
+            html.Div(id='elapsed', children= '' ),
+            html.Div(id='stop_text', children= ''),
+            ]),
 
-        html.Div(children=[
+        html.Div(id='t2_setting_div', children=[
             html.Div(['File name     :', dcc.Input(id='filename', type='text', value=filename, style={'text-align':'right'})]),
             html.Div(['Number of bins:', dcc.Input(id='bin_qty', type='number', value=bins, style={'text-align':'right'})]),
             html.Div(['Bin Size      :', dcc.Input(id='bin_size', type='number', value=bin_size, style={'text-align':'right'})]),
+            ]),
+
+
+        html.Div(id='t2_setting_div', children=[
             html.Div(['Max counts    :', dcc.Input(id='max_counts', type='number', value=max_counts, style={'text-align':'right'})]),
-        ],style={'width':'10%', 'height':'150px','padding':'20px', 'background-color':'orange', 'text-align':'right', 'color':'blue', 'float':'left', 'fontFamily':'Arial'}
-        ),
-
-
-        html.Div(children=[
             html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold, style={'text-align':'right'})]),
             html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance, style={'text-align':'right'})]),
-            html.Div(['Enable Energy per bin', daq.BooleanSwitch(id='energy_per_bin',on=False, color='purple',)]),
+            ]),
 
-        ],style={'width':'10%', 'height':'150px','padding':'20px', 'background-color':'orange', 'text-align':'right', 'color':'blue', 'float':'left', 'fontFamily':'Arial'}
-        ),
+        html.Div(id='t2_setting_div', children=[
+            html.Div(['Energy per bin', daq.BooleanSwitch(id='energy_per_bin',on=False, color='purple',)]),
+            html.Div(['Show log(y)', daq.BooleanSwitch(id='log_scale',on=False, color='purple',)]),
+            ]),
 
-        html.Div(style={'width':'100%', 'height':'150px'}),
+        
+        html.Div(id='t2_setting_div', children=[]),
 
-        html.Div(children=[
-            html.H1('i m p u l s e', style={'font-family':'arial','font-size':'110px', 'text-align':'center', 'color':'blue'}),
-            
-            html.P('by GammaSpectacular', style={'font-family':'arial','font-size':'18px', 'text-align':'center', 'color':'blue'}),
-            ], style={'width':'100%', 'height':'100px','verticalAlign':'top'}
-            ),
+        html.Div(id='t2_setting_div', children=[]),
+
+        html.Div(id='t2_setting_div', children=[]),
+
+
+        html.Div(children=[ html.Img(id='footer', src='assets/footer.jpg'),]),
 
         
         html.Div(id='start_text' , children =''),
         html.Div(id='settings'  , children =''),
         
 
-    ],style={'width':'100%' , 'height':'100%','background-color':'orange', 'float': 'left', 'padding':'30px'}) # End of tab 2 render
+    ]) # End of tab 2 render
 
     return html_tab2
 
@@ -121,10 +123,15 @@ def update_output(n_clicks):
 
 #----------------------------------------------------------------
 
-@app.callback([ Output('bar-chart'  ,'figure'), Output('counts'     ,'children'),Output('elapsed'    ,'children')],
-              [ Input('interval-component'   ,'n_intervals'), Input('filename'    ,'value'), Input('energy_per_bin', 'on')])
+@app.callback([ Output('bar-chart'          ,'figure'), 
+                Output('counts'             ,'children'),
+                Output('elapsed'            ,'children')],
+               [Input('interval-component'  ,'n_intervals'), 
+                Input('filename'            ,'value'), 
+                Input('energy_per_bin'      ,'on'),
+                Input('log_scale'           ,'on')])
 
-def update_graph(n, filename, energy_per_bin):
+def update_graph(n, filename, energy_per_bin, log_scale):
 
     if os.path.exists(f'../data/{filename}.json'):
         with open(f"../data/{filename}.json", "r") as f:
@@ -143,7 +150,10 @@ def update_graph(n, filename, energy_per_bin):
 
             if energy_per_bin == True:
                 y = [i * count for i, count in enumerate(spectrum)]
-            else:    
+
+            elif log_scale == True:
+                y = [i * np.log10(count) for i, count in enumerate(spectrum)]
+            else: 
                 y = spectrum
 
             trace = go.Bar(x=x, y=y, width=1, marker={'color': 'darkblue'})
