@@ -109,7 +109,7 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coe
                         "numberOfChannels":bins,
                         "energyCalibration":{
                             "polynomialOrder":2,
-                            "coefficients":[coeff_1,coeff_2,coeff_3]
+                            "coefficients":[coeff_3,coeff_2,coeff_1]
                             },
                         "validPulseCount":n,
                         "measurementTime": elapsed,
