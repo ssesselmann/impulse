@@ -1,3 +1,6 @@
+# This is the main sript for running the program
+# Navigate to this file from the teminal and type python3 run.py
+
 import functions as fn
 import webbrowser
 import logging
