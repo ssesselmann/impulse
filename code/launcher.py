@@ -10,11 +10,11 @@ from tab1 import show_tab1
 from tab2 import show_tab2
 from tab3 import show_tab3
 
-#devices = fn.get_device_list()
-
+# Connects to database
 conn    = sql.connect("data.db")
 c       = conn.cursor()
 
+# This query creates a table in the database when used for the first time
 query   = """CREATE TABLE IF NOT EXISTS settings (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
         name            TEXT    DEFAULT 'my_spectrum',
@@ -39,15 +39,16 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         coeff_3         REAL    DEFAULT 0
         );"""
 
+# This query inserts the first record in settings with defaults
 query2  =  f'INSERT INTO settings (id, name) SELECT 0, "myspectrum" WHERE NOT EXISTS (SELECT 1 FROM settings WHERE id = 0);'
 
-
+# This excecutes the sqli query
 with conn:
     c.execute(query).execute(query2)
     conn.commit()
 
 
-#---Defines the tab buttons------------------------------------------------------------
+#---Defines the browser tabs------------------------------------------------------------
 
 app.layout = html.Div([
  
