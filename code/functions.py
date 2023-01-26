@@ -30,14 +30,7 @@ def find_pulses(left_channel):
             pulses.append(samples)
     if len(pulses) != 0:  # If the list is empty
         next       
-    return pulses
-
-    # 
-# def sum_pulses(pulses):
-#     pulse_shape = np.zeros(51,dtype=int)
-#     for i in range(len(pulses)):      
-#         pulse_shape = np.add(pulse_shape, pulses[i])                
-#     return pulse_shape     
+    return pulses   
 
 # Calculates the average pulse shape
 def average_pulse(sum_pulse, count):       
@@ -90,15 +83,7 @@ def update_bin(n, bins, bin_counts):
     bin_counts[bin_num] += 1
     return bin_counts
 
-
-def write_histogram_to_csv(data):
-    with open('../data/plot.csv', "w+") as f:
-        writer = csv.writer(f)
-        writer.writerow(["bin", "counts"])
-        for x, y in data.items():
-            writer.writerow([x, y])
-
-
+# This function writes histogram to JSON file according to NPESv1 schema.
 def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
 
     data =  {"schemaVersion":"NPESv1",
@@ -121,9 +106,8 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coe
     with open(f"../data/{name}.json", "w+") as f:
         json.dump(data, f)
      
-
+# This function loads settings from sqli database
 def load_settings():
-    
     settings        = []
     conn            = sql.connect("data.db")
     c               = conn.cursor()
@@ -132,9 +116,9 @@ def load_settings():
     settings        = c.fetchall()[0]
     return settings
 
+# This function opens the csv and loads the pulse shape  
 def load_shape():
     data = []
-
     if os.path.exists('../data/shape.csv'):
         with open('../data/shape.csv', 'r') as f:
             reader = csv.reader(f)
@@ -145,22 +129,23 @@ def load_shape():
     else:
         shape = pd.DataFrame(data = {'Shape': [0]*51})   
         return shape 
-           
+
+# This function gets a list of audio devices connected to the computer           
 def get_device_list():
     input_devices = []
     p = pyaudio.PyAudio()
-    # Get a list of available audio input devices
     device_info = p.get_host_api_info_by_index(0).get('deviceCount')
     for i in range(device_info):
         input_devices.append(p.get_device_info_by_host_api_device_index(0, i).copy())
     return input_devices
 
+# This function terminates the audio connection
 def refresh_audio_devices():
     p = pyaudio.PyAudio()
     p.terminate()
     return
 
-# Function to open browser
+# Function to open browser on localhost
 def open_browser(port):
     webbrowser.open_new("http://localhost:{}".format(port))    
     return
