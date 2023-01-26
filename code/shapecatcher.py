@@ -1,3 +1,9 @@
+# This page contains a function to generate a pulse shape file
+# First it finds a list of pulses, then
+# the pulses are summed, averaged and normalised, 
+# finally saved as a csv file.
+# Ultimately this file should also be a JSON file as I have too many file types here. 
+
 import pyaudio
 import wave
 import math
@@ -8,8 +14,8 @@ import functions as fn
 import pandas as pd
 from collections import defaultdict
 
-
-t0 				= time.perf_counter() # Starts timer
+# Starts timer
+t0 				= time.perf_counter() 
 data 			= None
 left_channel 	= []
 sample_list 	= []
@@ -17,7 +23,6 @@ sample_list 	= []
 # Function to catch pulses and output time, pulkse height and distortion
 def shapecatcher():
 
-	
 	n 				= 0
 	shape 			= None
 	samples_sum 	= None
@@ -27,7 +32,6 @@ def shapecatcher():
 	shapecatches	= None
 	sample_length 	= None
 	pulse_list		= []
-	
 	
 	p = pyaudio.PyAudio()
 	audio_format = pyaudio.paInt16
@@ -53,7 +57,7 @@ def shapecatcher():
 	peak 			= int((sample_length-1)/2)
 
 
-	# Create an array of ewmpty bins
+	# Create an array of empty bins
 	start = 0
 	stop = bins * bin_size
 	bin_array = fn.create_bin_array(start, stop, bin_size)
@@ -72,7 +76,7 @@ def shapecatcher():
 		input_device_index=device,
 		frames_per_buffer=chunk_size)
 
-
+	# Loops through and finds a number of pulses (shapecatches) as loaded from settings
 	while True:
 		# Read the audio data stream
 		data = stream.read(chunk_size, exception_on_overflow=False)
@@ -96,16 +100,12 @@ def shapecatcher():
 				if n >= (shapecatches-1): # number of pulses to average
 					# Zip sum all lists
 					pulses_sum = [sum(x)/len(pulse_list) for x in zip(*pulse_list)] 
-					
 
 					# Normalise summed list
 					shape = fn.normalise_pulse(pulses_sum)
 
-
 					# convert floats to ints
 					shape_int = [int(x) for x in shape]
-
-
 
 					# Format and save to csv file
 					df = pd.DataFrame(shape_int)
