@@ -51,7 +51,7 @@ Things to do
 * Build interval histogram with Dead time calculation 
 * Build functionality to accept negative pulse values
 * Improve look and layout
-
+* Build option for switching theme between fun/boring :)
 
 If anyone has requests for additional features please contact me via the "Contact us" link at gammaspectacular.com
 
