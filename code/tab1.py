@@ -155,13 +155,19 @@ def show_tab1():
                             
                             html.Div(id='instruction_div', children=[ 
                                 html.Div(id='instructions', children=[
-                                    html.H1('Operating Instructions'),
-                                    html.P('1) Click the green button to get a list of audio devices connected to your computer', style={'text-align':'left'}),
-                                    html.P('2) Look up the index number of the input device you want to use', style={'text-align':'left'}),
-                                    html.P('3) Enter your preferred audio settings, your choice is automatically saved in settings.db', style={'text-align':'left'}),
-                                    html.P('4) Click the black pulse capture button to start pulse shape training', style={'text-align':'left'}),
-                                    html.P('This function records the sum avarage pulse shape from 100 pulses and saves it as shape.csv',style={'text-align':'left'}),
-                                    html.P('This open source software is being developed by Bee Research Pty for use with sound card gamma spectrometers.', style={'text-align':'left'}),
+                                    html.H1('Easy step by step setup'),
+                                    html.P('1) Click the Refresh Device Index button to get a list of audio devices', style={'text-align':'left'}),
+                                    html.P('2) Look up the index number of the input device you want to use (first column)', style={'text-align':'left'}),
+                                    html.P('3) Enter device index, sample rate, chunk size, number of pulses to average and length of pulse', style={'text-align':'left'}),
+                                    html.P('4) Click the Capture Pulse Shape button to start pulse shape training', style={'text-align':'left'}),
+                                    html.Hr(),
+                                    html.P("""The computer collects the specified number of pulses, does a a zip sum of the samples
+                                        and calculates the mean before normalising the pulse. Normalising means taking the sum average and deducting this from each
+                                        sample such that the sum of all samples becomes zero. It then saves the pulse shape to a csv file in ../impulse/data/. 
+                                        This shape file becomes an important template for filtering pulses at the next stage. Scintillation detectors 
+                                        produce pulses of varying height, but invariant shape, this feature is exploited to filter out Pulse Pile Up (PPU).""", style={'text-align':'justify'}),
+                                    html.P('I would love to get your feedback and suggestions for future enhancements.', style={'text-align':'left'}),
+                                    html.P('Steven Sesselmann'),
                                     html.H3('www.gammaspectacular.com'),
                                     html.Div(f'Note: Path to (../data/) are relative to {filepath}', style={'color':'red', 'float':'left'}),   
 
