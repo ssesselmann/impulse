@@ -86,7 +86,7 @@ def show_tab2():
         html.Div(id='t2_setting_div'    , children=[
             html.Div(['Energy per bin'  , daq.BooleanSwitch(id='epb_switch',on=False, color='purple',)]),
             html.Div(['Show log(y)'     , daq.BooleanSwitch(id='log_switch',on=False, color='purple',)]),
-            html.Div(['Calibtration'    , daq.BooleanSwitch(id='cal_switch',on=False, color='purple',)]),
+            html.Div(['Calibration'    , daq.BooleanSwitch(id='cal_switch',on=False, color='purple',)]),
             ]),
 
         
