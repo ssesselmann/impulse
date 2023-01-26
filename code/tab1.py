@@ -1,6 +1,5 @@
 import dash
 import plotly.graph_objects as go
-import pyaudio
 import functions as fn
 import sqlite3 as sql
 import shapecatcher as sc
@@ -11,7 +10,6 @@ from dash import html
 from dash.dependencies import Input, Output
 from server import app
 
-n_clicks = None
 
 # ----------- Audio input selection ---------------------------------
 
@@ -35,7 +33,6 @@ def show_tab1():
     shapes          = settings[10]
     sample_length   = settings[11]
 
-
     filepath = os.path.dirname(__file__)
 
     devices = fn.get_device_list()
@@ -45,9 +42,6 @@ def show_tab1():
     shape = fn.load_shape()
 
     tab1 = html.Div(id='tab1', children=[ 
-
-
-        html.Div(id='n_clicks_storage', style={'display': 'none'}),
 
         html.Button('Refresh Device Index ', id='get_device_button'),
 
@@ -139,6 +133,8 @@ def show_tab1():
 
             html.Div(id='tab1_settings', children=''),
 
+            
+            html.Div(id='n_clicks_storage', style={'display': 'none'}),
             html.Button('Save Settings', id='submit', n_clicks=0, style={'visibility':'hidden'}),
                 
             
@@ -172,8 +168,7 @@ def show_tab1():
                                     ]), 
                                 ]),
                 ]),
-
-       
+   
         html.Div(id='footer', children=[
             html.Img(id='footer', src='assets/footer.jpg'),
             html.Div(id="rate_output"),
@@ -181,8 +176,6 @@ def show_tab1():
             ]),
 
     ]) # tab1 ends here
-
-
 
     ]),
 
@@ -202,7 +195,7 @@ def on_button_click(n_clicks):
     
     if n_clicks is not None:
         fn.refresh_audio_devices()
-        dl = fn.get_device_list()
+        dl = fn.get_device_list() # This is not working
         return dl
 
 # Callback to save settings ---------------------------
@@ -236,7 +229,6 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5):
 
 #-------- Callback to capture and save mean pulse shape ----------
 
-
 @app.callback(
     [Output('plot'      ,'figure'),
     Output('showplot'   ,'figure')],
@@ -250,17 +242,12 @@ def capture_pulse_shape(n_clicks):
         fig = {'data': [{}], 'layout': {}}
         
     else:    
-
         shape = sc.shapecatcher()
-
         dots = list(range(len(shape)))
-
-        # print('len shape', len(shape))
         
         marker  = dict(size = 7, color = 'purple')
         data    = [{'x': dots, 'y': shape, 'type': 'line', 'name': 'SF', 'mode': 'markers+lines', 'marker': marker}]
         layout  = {'title': 'Mean Shape Plot'}
-        
         
         fig = {'data': data, 'layout': layout}
 
