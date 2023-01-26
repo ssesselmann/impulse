@@ -11,7 +11,6 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from server import app
-from datetime import datetime
 
 path = None
 n_clicks = 0
@@ -173,8 +172,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch):
 
             if cal_switch == True:
                 polynomial_function = np.poly1d(coefficients)
-                x = np.polyval(polynomial_function, x)
-
+                fx = np.polyval(polynomial_function, x)
 
             if epb_switch == True:
                 y = [i * count for i, count in enumerate(spectrum)]
