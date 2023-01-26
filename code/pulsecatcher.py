@@ -1,3 +1,7 @@
+# This page is the main pulse catcher file, it 
+# collects, normalises and filters the pulses 
+# ultimately saving the histogram file to JSON.
+
 import pyaudio
 import wave
 import math
@@ -41,19 +45,15 @@ def pulsecatcher(mode):
 	# Create an array of ewmpty bins
 	start = 0
 	stop = bins * bin_size
-
 	histogram = [0] * bins
 
-
-	# bin_array = fn.create_bin_array(start, stop, bin_size)
-	# print('bin_array',bin_array)
-	# bin_counts = defaultdict(int)
-	# print('bin_counts', bin_counts)
 	audio_format = pyaudio.paInt16
 	device_channels = devices[device]['maxInputChannels']
 
+	# Loads pulse shape from csv
 	shapestring = fn.load_shape()
-	# Convert string to float
+
+	# Converts string to float
 	shape = [int(x) for x in shapestring]
 
 	samples 	= []
