@@ -9,9 +9,15 @@ Python Scripted MCA for gamma spectrometry.
  This is a beta development version and still unfinished. 
  To run the program, download the gs_plot folder, then navigate to the code folder from your terminal and type in at the command prompt; 
  
+ ```
  ~ %  Python3 run.py
+ ```
  
-You may need to install the latest version of python3 and various other dependencies. 
+You may need to install the latest version of python3 and various other dependencies. To do so, use the `requirements.txt`;
+
+```
+ ~ %  pip install -r requirements.txt
+```
 
 When it's all working you can access the program in your browser at;
 
