@@ -39,13 +39,12 @@ Things done, now working
 15) Tidy up and move all styling to assets/styles.css
 16) Added function to show spectrum in log scale
 17) Added polynomial pulse height calibration and save calibration data
+18) Completed method for subtracting a background spectrum
 
 
 Things to do
 ------------
 
-
-* Build method for subtracting a background spectrum
 * Build function and chart to display distortion curve (useful)
 * Build isotope peak tables 
 * Build interval histogram with Dead time calculation 

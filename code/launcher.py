@@ -36,7 +36,8 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         calib_e_3       REAL    DEFAULT 1000,
         coeff_1         REAL    DEFAULT 1,
         coeff_2         REAL    DEFAULT 1,
-        coeff_3         REAL    DEFAULT 0
+        coeff_3         REAL    DEFAULT 0,
+        comparison      TEXT    DEFAULT ''    
         );"""
 
 # This query inserts the first record in settings with defaults

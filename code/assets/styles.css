@@ -17,10 +17,7 @@ Input {
 	height:100%;
 	float:left;
 	background-color:orange;
-
 }
-
-
 
 #get_device_button {
 	background-color:black;
@@ -52,7 +49,6 @@ Input {
 	background-color:white;
 }
 
-
 #showplot {
 	width:96%;
 	margin:10px;
@@ -82,6 +78,10 @@ Input {
 	text-align: left;
 }
 
+#filename2 {
+	text-align: left;
+}
+
 #footer {
 	width:94%;
 	height: auto;
@@ -104,8 +104,6 @@ Input {
 	background-color: orange;
 	float:left;
 	text-align:center; 
-
-	
 }
 
 #instructions {
@@ -156,8 +154,6 @@ Input {
 	font-weight:bold;
 }
 
-
-
 #counts {
 	 font-size:50px;
 	 color:blue;
@@ -202,7 +198,6 @@ Input {
 	background-color: white;
 	padding:30px;
 	text-align:center;
-	
 }
 
 img {

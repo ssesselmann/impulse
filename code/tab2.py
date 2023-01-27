@@ -44,6 +44,7 @@ def show_tab2():
     coeff_1         = settings[18]
     coeff_2         = settings[19]
     coeff_3         = settings[20]
+    filename2       = settings[21]
 
 
     html_tab2 = html.Div(id='tab2', children=[
@@ -70,7 +71,7 @@ def show_tab2():
             ]),
 
         html.Div(id='t2_setting_div', children=[
-            html.Div(['File name     :', dcc.Input(id='filename'    ,type='text'    ,value=filename )]),
+            html.Div(['Spectrum file name:', dcc.Input(id='filename' ,type='text' ,value=filename )]),
             html.Div(['Number of bins:', dcc.Input(id='bins'        ,type='number'  ,value=bins )]),
             html.Div(['bin size      :', dcc.Input(id='bin_size'    ,type='number'  ,value=bin_size )]),
             ]), 
@@ -82,14 +83,20 @@ def show_tab2():
             html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance )]),
             ]),
 
+        html.Div(id='t2_setting_div', children=[
+
+            html.Div(['Comparison-file .json', dcc.Input(id='filename2' ,type='text' ,value=filename2 )]),
+            html.Div(['Show Comparison'      , daq.BooleanSwitch(id='compare_switch',on=False, color='purple',)]),
+            html.Div(['Subtract Comparison'  , daq.BooleanSwitch(id='difference_switch',on=False, color='purple',)]),
+
+            ]),
+
+
         html.Div(id='t2_setting_div'    , children=[
             html.Div(['Energy per bin'  , daq.BooleanSwitch(id='epb_switch',on=False, color='purple',)]),
             html.Div(['Show log(y)'     , daq.BooleanSwitch(id='log_switch',on=False, color='purple',)]),
             html.Div(['Calibration'    , daq.BooleanSwitch(id='cal_switch',on=False, color='purple',)]),
-            ]),
-
-        
-        html.Div(id='t2_setting_div', children=[]),
+            ]),   
 
         html.Div(id='t2_setting_div', children=[
             html.Div('Calibration Bins'),
@@ -151,10 +158,13 @@ def update_output(n_clicks):
                 Input('filename'            ,'value'), 
                 Input('epb_switch'          ,'on'),
                 Input('log_switch'          ,'on'),
-                Input('cal_switch'          ,'on')
+                Input('cal_switch'          ,'on'),
+                Input('filename2'           ,'value'),
+                Input('compare_switch'      ,'on'),
+                Input('difference_switch'   ,'on'),
                 ])
 
-def update_graph(n, filename, epb_switch, log_switch, cal_switch):
+def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch):
 
     if os.path.exists(f'../data/{filename}.json'):
         with open(f"../data/{filename}.json", "r") as f:
@@ -167,22 +177,52 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch):
             coefficients        = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
             spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
 
-
+            coefficients        = coefficients[::-1] # Revese order
+     
             x = list(range(numberOfChannels))
+            y = spectrum
 
             if cal_switch == True:
-                polynomial_function = np.poly1d(coefficients)
-                fx = np.polyval(polynomial_function, x)
+                x = np.polyval(np.poly1d(coefficients), x)
 
             if epb_switch == True:
                 y = [i * count for i, count in enumerate(spectrum)]
 
-            elif log_switch == True:
+            if log_switch == True:
                 y = [i * np.log10(count) for i, count in enumerate(spectrum)]
-            else: 
-                y = spectrum
+                
+            trace1 = go.Scatter(x=x, y=y, mode='lines+markers', fill='tozeroy' ,  marker={'color': 'darkblue', 'size':3})
+ 
+#-------Comparison spectrum ---------------------------------------------------------------------------
 
-            trace = go.Bar(x=x, y=y, width=1, marker={'color': 'darkblue'})
+            if os.path.exists(f'../data/{filename2}.json'):
+                with open(f"../data/{filename2}.json", "r") as f:
+
+                    
+                    data_2 = json.load(f)
+
+                    numberOfChannels_2    = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
+                    elapsed_2             = data_2["resultData"]["energySpectrum"]["measurementTime"]
+                    spectrum_2            = data_2["resultData"]["energySpectrum"]["spectrum"]
+
+                    steps = (elapsed/elapsed_2)
+
+                    x2 = list(range(numberOfChannels_2))
+                    y2 = spectrum_2
+                    y2 = [n * steps for n in spectrum_2]
+
+                    if epb_switch == True:
+                        y2 = [i * n * steps for i, n in enumerate(spectrum_2)]
+
+                    if log_switch == True:
+                        y2 = [i * np.log10(n) * steps for i, n in enumerate(spectrum_2)]
+
+
+                    trace2 = go.Scatter(x=x2, y=y2, mode='lines+markers',  marker={'color': 'red', 'size':1})
+
+#----------------------------------------------------------------------------------------------------------------                   
+
+
             layout = go.Layout(
                 paper_bgcolor = 'white', 
                 plot_bgcolor = 'white',
@@ -197,9 +237,20 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch):
                 height  =600, 
                 autosize=True,
                 xaxis=dict(dtick=50, tickangle = 90),
-
                 )
-            return go.Figure(data=[trace], layout=layout), validPulseCount, elapsed
+            
+            if compare_switch == False:
+                fig = go.Figure(data=[trace1], layout=layout), validPulseCount, elapsed
+
+            if compare_switch == True: 
+                fig = go.Figure(data=[trace1, trace2], layout=layout), validPulseCount, elapsed
+
+            if difference_switch == True:
+                y3 = [a - b for a, b in zip(y, y2)]
+                trace3 = go.Scatter(x=x, y=y3, mode='lines+markers', fill='tozeroy',  marker={'color': 'green', 'size':1})
+                fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed
+
+            return fig
 
     else:
         layout = go.Layout(title={
@@ -217,12 +268,13 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch):
             )
         return go.Figure(data=[], layout=layout), 0, 0
 
-#--------UPDATE SETTINGS-------------------
+#--------UPDATE SETTINGS------------------------------------------------------------------------------------------
 @app.callback( Output('settings'        ,'children'),
                 [Input('bins'           ,'value'),
                 Input('bin_size'        ,'value'),
                 Input('max_counts'      ,'value'),
                 Input('filename'        ,'value'),
+                Input('filename2'       ,'value'),
                 Input('threshold'       ,'value'),
                 Input('tolerance'       ,'value'),
                 Input('calib_bin_1'     ,'value'),
@@ -234,7 +286,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch):
                 ])  
 
 
-def save_settings(bins, bin_size, max_counts, filename, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
+def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
 
     conn = sql.connect("data.db")
     c = conn.cursor()
@@ -244,6 +296,7 @@ def save_settings(bins, bin_size, max_counts, filename, threshold, tolerance, ca
                     bin_size={bin_size}, 
                     max_counts={max_counts}, 
                     name='{filename}', 
+                    comparison='{filename2}',
                     threshold={threshold}, 
                     tolerance={tolerance}, 
                     calib_bin_1={calib_bin_1},
@@ -254,6 +307,7 @@ def save_settings(bins, bin_size, max_counts, filename, threshold, tolerance, ca
                     calib_e_3={calib_e_3}
                     WHERE id=0;"""
     
+
     c.execute(query)
     conn.commit()
 
