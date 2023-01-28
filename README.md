@@ -7,7 +7,7 @@ Python Scripted MCA for gamma spectrometry.
  Installation
  ------------
  This is a beta development version and still unfinished. 
- To run the program, download the gs_plot folder, then navigate to the code folder from your terminal and type in at the command prompt; 
+ To run the program, download the impulse folder, then navigate to the code folder from your terminal and type in at the command prompt; 
  
  ```
  ~ %  Python3 run.py
