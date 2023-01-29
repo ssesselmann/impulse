@@ -188,7 +188,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             if log_switch == True:
                 y = [i * np.log10(count) for i, count in enumerate(spectrum)]
                 
-            trace1 = go.Scatter(x=x, y=y, mode='lines+markers', fill='tozeroy' ,  marker={'color': 'darkblue', 'size':3})
+            trace1 = go.Scatter(x=x, y=y, mode='lines+markers', fill='tozeroy' ,  marker={'color': 'darkblue', 'size':3}, line={'width':1})
  
 #-------Comparison spectrum ---------------------------------------------------------------------------
 
@@ -214,7 +214,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                         y2 = [i * np.log10(n) * steps for i, n in enumerate(spectrum_2)]
 
 
-                    trace2 = go.Scatter(x=x2, y=y2, mode='lines+markers',  marker={'color': 'red', 'size':1})
+                    trace2 = go.Scatter(x=x2, y=y2, mode='lines+markers',  marker={'color': 'red', 'size':1}, line={'width':2})
 
 #----------------------------------------------------------------------------------------------------------------                   
 
@@ -243,7 +243,14 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
             if difference_switch == True:
                 y3 = [a - b for a, b in zip(y, y2)]
-                trace3 = go.Scatter(x=x, y=y3, mode='lines+markers', fill='tozeroy',  marker={'color': 'green', 'size':1})
+                trace3 = go.Scatter(
+                                x=x, 
+                                y=y3, 
+                                mode='lines+markers', 
+                                fill='tozeroy',  
+                                marker={'color': 'green', 'size':3}, 
+                                line={'width':1}
+                                )
                 fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed
 
             return fig
