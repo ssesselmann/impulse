@@ -150,7 +150,11 @@ def open_browser(port):
     webbrowser.open_new("http://localhost:{}".format(port))    
     return
 
-
+def create_dummy_csv(filepath):
+    with open(filepath, mode='w', newline='') as csv_file:
+        writer = csv.writer(csv_file)
+        for i in range(0, 50):
+            writer.writerow([i, 0])
  
 
 
