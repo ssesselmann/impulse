@@ -9,6 +9,22 @@ from dash.dependencies import Input, Output
 from tab1 import show_tab1
 from tab2 import show_tab2
 from tab3 import show_tab3
+from tab4 import show_tab4
+
+data_directory = '../data'
+filename = '../data/shape.csv'
+
+try:
+    if not os.path.exists(data_directory):
+        os.makedirs(data_directory)
+except:
+    pass
+
+try:
+    if not os.path.exists(filename):
+        fn.create_dummy_csv("../data/shape.csv")
+except:
+    pass
 
 # Connects to database
 conn    = sql.connect("data.db")
@@ -67,6 +83,9 @@ app.layout = html.Div([
             dcc.Tab(
                 label='Spectrometer', 
                 value='tab3'),
+            dcc.Tab(
+                label='Important! Exit Here', 
+                value='tab4'),
 
         ]),
     html.Div(id = 'tabs-content'),# Empty Div, where the out of render_tabs is sent to. (The page content)
@@ -91,7 +110,9 @@ def render_content(tab):
         html_tab3 = show_tab3()
         return html_tab3    
         
-
+    elif tab == 'tab4':
+        html_tab4 = show_tab4()
+        return html_tab4   
    
 
     
