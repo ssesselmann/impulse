@@ -204,3 +204,10 @@ img {
 	width:100%;
 	height: auto;
 }
+#exit-button {
+	text-align:center;
+	padding:10px;
+	background-color:red;
+	font-weight:bold;
+	width:300;
+}
