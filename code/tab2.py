@@ -113,9 +113,7 @@ def show_tab2():
             html.Div(id='settings'  , children =''),
             ]),
 
-
         html.Div(children=[ html.Img(id='footer', src='assets/footer.jpg'),]),
-
         
         html.Div(id='start_text' , children =''),
         
@@ -123,7 +121,6 @@ def show_tab2():
     ]) # End of tab 2 render
 
     return html_tab2
-
 
 #------START---------------------------------
 
@@ -198,7 +195,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             if os.path.exists(f'../data/{filename2}.json'):
                 with open(f"../data/{filename2}.json", "r") as f:
 
-                    
                     data_2 = json.load(f)
 
                     numberOfChannels_2    = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
@@ -306,7 +302,6 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
                     calib_e_2={calib_e_2},
                     calib_e_3={calib_e_3}
                     WHERE id=0;"""
-    
 
     c.execute(query)
     conn.commit()
