@@ -113,7 +113,12 @@ def pulsecatcher(mode):
 
 						n += 1
 
-						if n % 10 == 0:
+						if n % 100 == 0:
+
+							settings 		= fn.load_settings()
+							coeff_1			= settings[18]
+							coeff_2			= settings[19]
+							coeff_3			= settings[20]
 
 							fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
 
