@@ -161,6 +161,14 @@ Input {
 	 font-family:Arial;
 	 font-weight:bold;
 }
+#cps {
+	 font-size:18px;
+	 color:green;
+	 text-align:center;
+	 vertical-align: middle;
+	 font-weight:bold;
+	 height:55px;
+}
 
 #elapsed {
 	 font-size:50px;
@@ -168,6 +176,7 @@ Input {
 	 text-align:center;
 	 font-family:Arial;
 	 font-weight:bold;
+	 vertical-align: text-top;
 }
 
 #t2_setting_div {
@@ -204,6 +213,7 @@ img {
 	width:100%;
 	height: auto;
 }
+
 #exit-button {
 	text-align:center;
 	padding:10px;
@@ -211,4 +221,9 @@ img {
 	font-weight:bold;
 	width:300;
 	border-radius:9px;
+}
+
+#add {
+	width:50%;
+	margin: auto;
 }
