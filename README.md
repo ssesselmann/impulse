@@ -50,7 +50,7 @@ Things done, now working
 
 Things to do
 ------------
-
+* Build function to display resolution (FWHM)
 * Build function and chart to display distortion curve (useful)
 * Build isotope peak tables 
 * Build interval histogram with Dead time calculation 
