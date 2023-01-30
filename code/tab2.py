@@ -60,11 +60,12 @@ def show_tab2():
             html.Button( 'START' , id='start'),
             html.Div(id='counts', children= ''),
             html.Div('Counts'),
+
             ]),
 
         #Stop button
         html.Div(id='t2_setting_div', children=[
-            html.Button( 'CLEAR FILE' , id='stop'),
+            html.Div(id='cps', children=''),
             html.Div(id='elapsed', children= '' ),
             html.Div('Seconds'),
             html.Div(id='stop_text', children= ''),
@@ -115,7 +116,9 @@ def show_tab2():
 
         html.Div(children=[ html.Img(id='footer', src='assets/footer.jpg'),]),
         
+        
         html.Div(id='start_text' , children =''),
+        html.Button( 'CLEAR FILE' , id='stop'),
         
 
     ]) # End of tab 2 render
@@ -150,7 +153,8 @@ def update_output(n_clicks):
 
 @app.callback([ Output('bar-chart'          ,'figure'), 
                 Output('counts'             ,'children'),
-                Output('elapsed'            ,'children')],
+                Output('elapsed'            ,'children'),
+                Output('cps'                ,'children')],
                [Input('interval-component'  ,'n_intervals'), 
                 Input('filename'            ,'value'), 
                 Input('epb_switch'          ,'on'),
@@ -175,6 +179,11 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
 
             coefficients        = coefficients[::-1] # Revese order
+
+            mu = 0
+            sigma = 2
+
+            cps = int(validPulseCount/elapsed)
      
             x = list(range(numberOfChannels))
             y = spectrum
@@ -236,10 +245,10 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 )
             
             if compare_switch == False:
-                fig = go.Figure(data=[trace1], layout=layout), validPulseCount, elapsed
+                fig = go.Figure(data=[trace1], layout=layout), validPulseCount, elapsed, f'cps {cps}'
 
             if compare_switch == True: 
-                fig = go.Figure(data=[trace1, trace2], layout=layout), validPulseCount, elapsed
+                fig = go.Figure(data=[trace1, trace2], layout=layout), validPulseCount, elapsed, f'cps {cps}'
 
             if difference_switch == True:
                 y3 = [a - b for a, b in zip(y, y2)]
@@ -251,7 +260,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                                 marker={'color': 'green', 'size':3}, 
                                 line={'width':1}
                                 )
-                fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed
+                fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed, f'cps {cps}'
 
             return fig
 
@@ -269,7 +278,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             xaxis=dict(dtick=50),
 
             )
-        return go.Figure(data=[], layout=layout), 0, 0
+        return go.Figure(data=[], layout=layout), 0, 0, 0
 
 #--------UPDATE SETTINGS------------------------------------------------------------------------------------------
 @app.callback( Output('settings'        ,'children'),
@@ -313,7 +322,7 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
     c.execute(query)
     conn.commit()
 
-    calibration_input = [{'bin':-1*calib_e_1, 'energy':-1*calib_e_1}, {'bin':-1*calib_bin_2, 'energy':-1*calib_e_2}, {'bin':-1*calib_bin_3, 'energy':-1*calib_e_3}, {'bin':calib_e_1, 'energy':calib_e_1}, {'bin':calib_bin_2, 'energy':calib_e_2}, {'bin':calib_bin_3, 'energy':calib_e_3}]
+    calibration_input = [{'bin':-1*calib_bin_3, 'energy':-1*calib_e_3}, {'bin':-1*calib_bin_2, 'energy':-1*calib_e_2}, {'bin':-1*calib_e_1, 'energy':-1*calib_e_1},{'bin':calib_e_1, 'energy':calib_e_1}, {'bin':calib_bin_2, 'energy':calib_e_2}, {'bin':calib_bin_3, 'energy':calib_e_3}]
 
     x_data = [item['bin'] for item in calibration_input]
     y_data = [item['energy'] for item in calibration_input]
