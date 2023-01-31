@@ -84,22 +84,12 @@ def pulsecatcher(mode):
 			samples = left_channel[i:i+51]  # Get the first 51 samples
 		  
 			if samples[25] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[25] < 32768:
-
-				# Time capture
-				t1 = datetime.datetime.now()
-				te = time.time()
-				elapsed = int(te - tb)
-
 				# Function normalises sample to zero
 				normalised = fn.normalise_pulse(samples)
-				# Function calculates pulse distortion
-
 				# Converts normalised to integers
 				normalised_int = [int(round(x)) for x in normalised]
-
 				# Calculates distortion
 				distortion = fn.distortion(normalised_int, shape)
-
 				# Function calculates pulse height
 				height = fn.pulse_height(normalised_int)
 				
@@ -108,17 +98,20 @@ def pulsecatcher(mode):
 					bin_index = int(height/bin_size)
 
 					if bin_index < bins:
-
 						histogram[bin_index] += 1
-
 						n += 1
 
 						if n % 100 == 0:
-
 							settings 		= fn.load_settings()
 							coeff_1			= settings[18]
 							coeff_2			= settings[19]
 							coeff_3			= settings[20]
+							max_counts      = settings[9]
+
+							# Time capture
+							t1 = datetime.datetime.now()
+							te = time.time()
+							elapsed = int(te - tb)
 
 							fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
 

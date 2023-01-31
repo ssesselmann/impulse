@@ -10,7 +10,7 @@ Python Scripted MCA for gamma spectrometry.
  To run the program, download the impulse folder, then navigate to the code folder from your terminal and type in at the command prompt; 
  
  ```
- ~ %  Python3 run.py
+ ~ %  python3 run.py
  ```
  
 You may need to install the latest version of python3 and various other dependencies. To do so, use the `requirements.txt`;
