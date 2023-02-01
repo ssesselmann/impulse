@@ -45,8 +45,8 @@ def show_tab1():
 
         html.Button('Refresh Device Index ', id='get_device_button'),
 
-        html.Div( children=[
-            dash_table.DataTable( id='container_device_list',
+        html.Div(children=[
+                dash_table.DataTable( id='container_device_list',
                 columns=[{"name": i, "id": i} for i in devices[0].keys()],
                 data=devices),
             ]),
@@ -56,7 +56,7 @@ def show_tab1():
         
         html.Div(id='tab1_settings', children=[ 
             html.Div(id='input_text', children='Enter Device index'),
-            html.Div(dcc.Input(id='device', type='number', value = device, style={'fontSize':18, 'width':'100px'})),
+            html.Div(dcc.Input(id='device', type='number', value = device,)),
             html.Div(id='selected_device_text', children='', style={'color': 'red'}),
             ]),
 
@@ -71,7 +71,6 @@ def show_tab1():
                 ], 
                 value=sample_rate,  # pre-selected option
                 clearable=False,
-                style={'width':'130px'} # style for dropdown
                 ),
             ]),
 
@@ -87,7 +86,7 @@ def show_tab1():
                     ],
                 value= chunk_size, 
                 clearable=False,
-                style={'fontSize':16, 'width':'130px', 'align':'middle'})),
+                )),
             html.Div(id='output_chunk_text', children='', style={'color': 'red'}),
             ]),
 
@@ -104,7 +103,7 @@ def show_tab1():
                     ],
                 value =shapes ,
                 clearable=False, 
-                style={'fontSize':16, 'width':'130px'})),
+                )),
             html.Div( children='', style={'color': 'red'}),
             ]),
 
@@ -120,18 +119,9 @@ def show_tab1():
                     ],
                 value =sample_length ,
                 clearable=False, 
-                style={'fontSize':16, 'width':'130px'}))
+                ))
             ]),
 
-            html.Div(id='tab1_settings', children=''),
-
-            html.Div(id='tab1_settings', children=''),
-
-            html.Div(id='tab1_settings', children=''),
-
-            html.Div(id='tab1_settings', children=''),
-
-            html.Div(id='tab1_settings', children=''),
 
             
             html.Div(id='n_clicks_storage', style={'display': 'none'}),

@@ -57,7 +57,7 @@ def show_tab2():
 
         #Start button
         html.Div(id='t2_setting_div', children=[
-            html.Button( 'START' , id='start'),
+            html.Button('START', id='start'),
             html.Div(id='counts', children= ''),
             html.Div('Counts'),
 
@@ -79,7 +79,7 @@ def show_tab2():
 
 
         html.Div(id='t2_setting_div', children=[
-            html.Div(['Max counts    :', dcc.Input(id='max_counts', type='number', value=max_counts )]),
+            html.Div(['Stop after n counts:', dcc.Input(id='max_counts', type='number', value=max_counts )]),
             html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold )]),
             html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance )]),
             ]),
@@ -134,8 +134,7 @@ def update_output(n_clicks):
     
     if n_clicks != None:
 
-        mode = 1
-        pc.pulsecatcher(mode)
+        pc.pulsecatcher()
 
         return
 
@@ -273,7 +272,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             'yanchor': 'top',
             'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
         },
-            height=600, 
+            height=500, 
             autosize=True,
             xaxis=dict(dtick=50),
 

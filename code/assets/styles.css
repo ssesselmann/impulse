@@ -4,8 +4,34 @@ Input {
 	color:black;
 	font-size: 16px;
 }
+
+#device {
+	width: 80%;
+	font-size: 16px;
+}
+
+#sample_rate {
+	width: 80%;
+	font-size: 16px;
+}
+
+#chunk_size {
+	width: 80%;
+	font-size: 16px;
+}
+
+#catch {
+	width: 80%;
+	font-size: 16px;
+}
+
+#sample_length {
+	width: 80%;
+	font-size: 16px;
+}
+
 #tab1_settings {
-	width:9.4%;
+	width:20%;
 	height:70px;
 	float: left;
 	background-color:orange;
@@ -31,7 +57,7 @@ Input {
 }
 
 #container_device_list {
-	width:94%;
+	width:90%;
 	margin:20px;
 }
 
@@ -50,7 +76,7 @@ Input {
 }
 
 #showplot {
-	width:96%;
+	width:90%;
 	margin:10px;
 	padding:10px;
 }
@@ -76,14 +102,16 @@ Input {
 
 #filename {
 	text-align: left;
+	width:95%;
 }
 
 #filename2 {
 	text-align: left;
+	width:95%;
 }
 
 #footer {
-	width:94%;
+	width:100%;
 	height: auto;
 	background-color:orange;
 	text-align:center;
@@ -125,18 +153,20 @@ Input {
 }
 
 #bar_chart_div {
-	width:96%;
+	width:90%;
 	height:600px;
 	padding:20px;
 	background-color: white;
 	margin: 30px;
 }
 
+
+
 #start {
 	background-color:green;
 	border-radius:9px;
 	height:35px;
-	width:180px;
+	width:100%;
 	margin:10px;
 	font-size:14px;
 	color:white;
@@ -147,7 +177,7 @@ Input {
 	background-color:red;
 	border-radius:9px;
 	height:35px;
-	width:180px;
+	width:100%;
 	margin:10px;
 	font-size:14px;
 	color:white;
@@ -155,7 +185,7 @@ Input {
 }
 
 #counts {
-	 font-size:50px;
+	 font-size:40px;
 	 color:blue;
 	 text-align:center;
 	 font-family:Arial;
@@ -165,13 +195,13 @@ Input {
 	 font-size:18px;
 	 color:green;
 	 text-align:center;
-	 vertical-align: middle;
+	 vertical-align: text-bottom;
 	 font-weight:bold;
 	 height:55px;
 }
 
 #elapsed {
-	 font-size:50px;
+	 font-size:40px;
 	 color:blue;
 	 text-align:center;
 	 font-family:Arial;
@@ -227,3 +257,50 @@ img {
 	width:50%;
 	margin: auto;
 }
+
+#bins {
+	width:95%;
+}
+
+#bin_size {
+	width:95%;
+}
+
+#max_counts {
+	width:95%
+}
+
+#threshold {
+	width:95%;
+}
+
+#tolerance {
+	width:95%;
+}
+
+#calib_bin_1 {
+	width:95%;
+}
+
+#calib_bin_2 {
+	width:95%;
+}
+
+#calib_bin_3 {
+	width:95%;
+}
+
+#calib_e_1 {
+	width:95%;
+}
+
+#calib_e_2 {
+	width:95%;
+}
+
+#calib_e_3 {
+	width:95%;
+}
+
+
+

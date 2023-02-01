@@ -23,7 +23,7 @@ plot 			= {}
 
 
 # Function to catch pulses and output time, pulkse height and distortion
-def pulsecatcher(mode):
+def pulsecatcher():
 
 	settings 		= fn.load_settings()
 
