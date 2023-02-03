@@ -51,12 +51,13 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         calib_bin_2     INTEGER DEFAULT 500,
         calib_bin_3     INTEGER DEFAULT 1000,
         calib_e_1       REAL    DEFAULT 0,
-        calib_e_2       REAL    DEFAULT 500,
-        calib_e_3       REAL    DEFAULT 1000,
+        calib_e_2       REAL    DEFAULT 1500,
+        calib_e_3       REAL    DEFAULT 3000,
         coeff_1         REAL    DEFAULT 1,
         coeff_2         REAL    DEFAULT 1,
         coeff_3         REAL    DEFAULT 0,
-        comparison      TEXT    DEFAULT ''    
+        comparison      TEXT    DEFAULT '',
+        flip            INTEGER DEFAULT 1    
         );"""
 
 # This query inserts the first record in settings with defaults

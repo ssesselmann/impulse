@@ -6,9 +6,16 @@ Input {
 }
 
 #device {
-	width: 80%;
+	width: 30%;
 	font-size: 16px;
 }
+
+/*#flip {
+		width: 30%;
+	font-size: 16px;
+	float:left;
+	padding:10px;
+}*/
 
 #sample_rate {
 	width: 80%;
