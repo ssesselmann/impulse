@@ -19,7 +19,7 @@ def show_tab3():
             html.P('This software is Free open source software.'), 
             html.P(),
             html.P('Steven Sesselmann'),
-            html.Div(id='add', children=[html.Img(src='assets/gs_pro_v5.png')]),
+            html.Div(id='add', children=[html.Img(src='https://www.gammaspectacular.com/steven/impulse/gs_pro_v5.png')]),
             ]),
 
         
