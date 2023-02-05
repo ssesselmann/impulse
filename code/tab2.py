@@ -114,7 +114,7 @@ def show_tab2():
             html.Div(id='settings'  , children =''),
             ]),
 
-        html.Div(children=[ html.Img(id='footer', src='assets/footer.jpg'),]),
+        html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.png'),]),
         
         
         html.Div(id='start_text' , children =''),

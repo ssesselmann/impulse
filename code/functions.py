@@ -158,7 +158,7 @@ def create_dummy_csv(filepath):
  
 # Function to automatically switch between positive and negative pulses
 def detect_pulse_direction(samples):
-    if max(samples) >= 4000:
+    if max(samples) >= 3000:
         conn = sql.connect("data.db")
         c = conn.cursor()
         query = f"UPDATE settings SET flip = 1 WHERE id=0;"
@@ -166,7 +166,7 @@ def detect_pulse_direction(samples):
         conn.commit()
         return 1
 
-    if min(samples) <= -4000:
+    if min(samples) <= -3000:
         conn = sql.connect("data.db")
         c = conn.cursor()
         query = f"UPDATE settings SET flip = -1 WHERE id=0;"

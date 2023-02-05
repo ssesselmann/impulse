@@ -166,7 +166,7 @@ def show_tab1():
                 ]),
    
         html.Div(id='footer', children=[
-            html.Img(id='footer', src='assets/footer.jpg'),
+            html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.png'),
             html.Div(id="rate_output"),
 
             ]),

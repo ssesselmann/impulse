@@ -72,7 +72,7 @@ with conn:
 #---Defines the browser tabs------------------------------------------------------------
 
 app.layout = html.Div([
- 
+    
     dcc.Tabs(
         id="tabs", 
         value='tab1', 
@@ -93,7 +93,7 @@ app.layout = html.Div([
 
         ]),
     html.Div(id = 'tabs-content'),# Empty Div, where the out of render_tabs is sent to. (The page content)
-    ],style={ 'background-color':'white', 'margin:':'50px'})
+    ],className='app-styles')
 
 #---Tab values call function and provide page contents
 

@@ -12,7 +12,7 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 # Define default `8050` port
-port = 8050 
+port = 8060 
 
 # Function to open browser
 fn.open_browser(port)
