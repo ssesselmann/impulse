@@ -134,9 +134,9 @@ def load_shape():
 def get_device_list():
     input_devices = []
     p = pyaudio.PyAudio()
-    device_info = p.get_host_api_info_by_index(0).get('deviceCount')
-    for i in range(device_info):
-        input_devices.append(p.get_device_info_by_host_api_device_index(0, i).copy())
+    device_count = p.get_device_count()
+    for i in range(device_count):
+        input_devices.append(p.get_device_info_by_index(i).copy())
     return input_devices
 
 # This function terminates the audio connection
