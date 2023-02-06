@@ -37,8 +37,6 @@ def show_tab1():
 
     devices = fn.get_device_list()
 
-    # device_channels = devices[device]['maxInputChannels']
-
     shape = fn.load_shape()
 
     tab1 = html.Div(id='tab1', children=[ 
