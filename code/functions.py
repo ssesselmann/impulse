@@ -136,8 +136,14 @@ def get_device_list():
     p = pyaudio.PyAudio()
     device_count = p.get_device_count()
     for i in range(device_count):
-        input_devices.append(p.get_device_info_by_index(i).copy())
+        longrow = p.get_device_info_by_index(i)
+        shortrow = extract_keys(longrow.copy(), ['index', 'name', 'maxInputChannels', 'maxOutputChannels', 'defaultSampleRate'])
+        input_devices.append(shortrow)
     return input_devices
+
+# Function extracts keys from dictionary
+def extract_keys(dict_, keys):
+    return {k: dict_.get(k, None) for k in keys}
 
 # This function terminates the audio connection
 def refresh_audio_devices():

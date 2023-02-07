@@ -44,7 +44,7 @@ def show_tab1():
         html.Button('Refresh Device Index ', id='get_device_button'),
 
         html.Div(children=[
-                dash_table.DataTable( id='container_device_list',
+                dash_table.DataTable( id='container_device_list_short',
                 columns=[{"name": i, "id": i} for i in devices[0].keys()],
                 data=devices),
             ]),
@@ -62,10 +62,11 @@ def show_tab1():
             html.Div( children='Sample rate'),
             dcc.Dropdown(id="sample_rate",
                 options=[
-                    {"label": "48 kHz", "value": "48000"},
-                    {"label": "96 kHz", "value": "96000"},
-                    {"label": "192 kHz", "value": "192000"},
-                    {"label": "384 kHz", "value": "384000"}
+                    {"label": "44.1 kHz"    , "value": "44100"},
+                    {"label": "48 kHz"      , "value": "48000"},
+                    {"label": "96 kHz"      , "value": "96000"},
+                    {"label": "192 kHz"     , "value": "192000"},
+                    {"label": "384 kHz"     , "value": "384000"}
                 ], 
                 value=sample_rate,  # pre-selected option
                 clearable=False,
