@@ -1,4 +1,4 @@
-IMPULSE V(0.7) 2023/01/24
+IMPULSE BETA 08 February 2023
 --------------
 Python Scripted MCA for gamma spectrometry.
 ----------------------------------------
@@ -46,16 +46,17 @@ Things done, now working
 16) Added function to show spectrum in log scale
 17) Added polynomial pulse height calibration and save calibration data
 18) Completed method for subtracting a background spectrum
+19) Added 482 isotope peak libraries in json format
 
 
 Things to do
 ------------
 * Build function to display resolution (FWHM)
-* Build function and chart to display distortion curve (useful)
-* Build isotope peak tables 
+* Build function and chart to display distortion curve (useful) 
 * Build interval histogram with Dead time calculation 
 * Build functionality to accept negative pulse values
 * Improve look and layout
+* Add browse button for isotope comparisons
 * Build option for switching theme between fun/boring :)
 
 If anyone has requests for additional features please contact me via the "Contact us" link at gammaspectacular.com
