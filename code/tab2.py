@@ -234,7 +234,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 paper_bgcolor = 'white', 
                 plot_bgcolor = 'white',
                 title={
-                'text': 'Pulse Height Histogram',
+                'text': filename,
                 'x': 0.5,
                 'y': 0.9,
                 'xanchor': 'center',
@@ -268,7 +268,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
     else:
         layout = go.Layout(title={
-            'text': 'Pulse Height Histogram',
+            'text': filename,
             'x': 0.5,
             'y': 0.9,
             'xanchor': 'center',
