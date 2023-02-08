@@ -38,7 +38,7 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
         name            TEXT    DEFAULT 'my_spectrum',
         device          INTEGER DEFAULT 1,              
-        sample_rate     INTEGER DEFAULT 192000,
+        sample_rate     INTEGER DEFAULT 44100,
         chunk_size      INTEGER DEFAULT 1024,                        
         threshold       INTEGER DEFAULT 100,
         tolerance       INTEGER DEFAULT 50000,
@@ -90,7 +90,6 @@ app.layout = html.Div([
             dcc.Tab(
                 label='Important! Exit Here', 
                 value='tab4'),
-
         ]),
     html.Div(id = 'tabs-content'),# Empty Div, where the out of render_tabs is sent to. (The page content)
     ],className='app-styles')
