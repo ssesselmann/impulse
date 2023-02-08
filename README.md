@@ -47,6 +47,7 @@ Things done, now working
 17) Added polynomial pulse height calibration and save calibration data
 18) Completed method for subtracting a background spectrum
 19) Added 482 isotope peak libraries in json format
+20) Program now auto detects negative pulse direction and inverts samples
 
 
 Things to do
@@ -54,8 +55,6 @@ Things to do
 * Build function to display resolution (FWHM)
 * Build function and chart to display distortion curve (useful) 
 * Build interval histogram with Dead time calculation 
-* Build functionality to accept negative pulse values
-* Improve look and layout
 * Add browse button for isotope comparisons
 * Build option for switching theme between fun/boring :)
 
