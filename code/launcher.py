@@ -45,7 +45,7 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         bins            INTEGER DEFAULT 1000,
         bin_size        INTEGER DEFAULT 30,
         max_counts      INTEGER DEFAULT 10000,
-        shapecatches    INTEGER DEFAULT 100,
+        shapecatches    INTEGER DEFAULT 10,
         sample_length   INTEGER DEFAULT 51,
         calib_bin_1     INTEGER DEFAULT 0,
         calib_bin_2     INTEGER DEFAULT 500,
