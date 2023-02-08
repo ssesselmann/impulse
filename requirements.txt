@@ -5,5 +5,3 @@ pandas~=1.5.3
 plotly~=5.13.0
 PyAudio~=0.2.13
 setuptools~=57.4.0
-wave~=0.0.2
-wheel~=0.38.4
