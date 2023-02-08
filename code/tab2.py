@@ -181,6 +181,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
             mu = 0
             sigma = 2
+            lin_log = 'linear'
 
             cps = int(validPulseCount/elapsed)
      
@@ -194,7 +195,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 y = [i * count for i, count in enumerate(spectrum)]
 
             if log_switch == True:
-                y = [i * np.log10(count) for i, count in enumerate(spectrum)]
+                lin_log = 'log'
                 
             trace1 = go.Scatter(x=x, y=y, mode='lines+markers', fill='tozeroy' ,  marker={'color': 'darkblue', 'size':3}, line={'width':1})
  
@@ -222,8 +223,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                         y2 = [i * n * steps for i, n in enumerate(spectrum_2)]
 
                     if log_switch == True:
-                        y2 = [i * np.log10(n) * steps for i, n in enumerate(spectrum_2)]
-
+                        lin_log = 'log'
 
                     trace2 = go.Scatter(x=x2, y=y2, mode='lines+markers',  marker={'color': 'red', 'size':1}, line={'width':2})
 
@@ -244,6 +244,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 height  =600, 
                 autosize=True,
                 xaxis=dict(dtick=50, tickangle = 90),
+                yaxis=dict(type=lin_log)
                 )
             
             if compare_switch == False:
