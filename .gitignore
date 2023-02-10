@@ -1,4 +1,5 @@
 .DS_Store
+.eggs
 __pycache__/
 /code/data.db
 /code/setup.py
