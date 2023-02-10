@@ -11,13 +11,14 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from server import app
+from pathlib import Path
 
 path = None
 n_clicks = 0
 
 def show_tab2():
-
-    conn            = sql.connect("data.db")
+    wd = Path(__file__).absolute().parent
+    conn            = sql.connect(wd/'data.db')
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
     c.execute(query) 
@@ -165,9 +166,11 @@ def update_output(n_clicks):
                 ])
 
 def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch):
+    
+    wd = Path(__file__).absolute().parent
 
-    if os.path.exists(f'../data/{filename}.json'):
-        with open(f"../data/{filename}.json", "r") as f:
+    if os.path.exists(f'{wd}/data/{filename}.json'):
+        with open(f"{wd}/data/{filename}.json", "r") as f:
 
             data = json.load(f)
             numberOfChannels    = data["resultData"]["energySpectrum"]["numberOfChannels"]
@@ -183,7 +186,10 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             sigma = 2
             lin_log = 'linear'
 
-            cps = int(validPulseCount/elapsed)
+            if elapsed == 0:
+                cps = 0  
+            else:
+                cps = int(validPulseCount/elapsed)    
      
             x = list(range(numberOfChannels))
             y = spectrum
@@ -201,8 +207,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
  
 #-------Comparison spectrum ---------------------------------------------------------------------------
 
-            if os.path.exists(f'../data/{filename2}.json'):
-                with open(f"../data/{filename2}.json", "r") as f:
+            if os.path.exists(f'{wd}/data/{filename2}.json'):
+                with open(f"{wd}/data/{filename2}.json", "r") as f:
 
                     data_2 = json.load(f)
 
@@ -210,22 +216,25 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     elapsed_2             = data_2["resultData"]["energySpectrum"]["measurementTime"]
                     spectrum_2            = data_2["resultData"]["energySpectrum"]["spectrum"]
 
-                    steps = (elapsed/elapsed_2)
+                    
+                    if elapsed > 0:
+                        steps = (elapsed/elapsed_2)
+                    else:
+                        steps = 0.1    
 
                     x2 = list(range(numberOfChannels_2))
-                    y2 = spectrum_2
-                    y2 = [n * steps for n in spectrum_2]
+                    u2t = [int(n * steps) for n in spectrum_2]
 
                     if cal_switch == True:
-                        x2 = np.polyval(np.poly1d(coefficients), x2)
+                        x2b = np.polyval(np.poly1d(coefficients), x2)
 
                     if epb_switch == True:
-                        y2 = [i * n * steps for i, n in enumerate(spectrum_2)]
+                        u2t = [i * n * steps for i, n in enumerate(spectrum_2)]
 
                     if log_switch == True:
                         lin_log = 'log'
 
-                    trace2 = go.Scatter(x=x2, y=y2, mode='lines+markers',  marker={'color': 'red', 'size':1}, line={'width':2})
+                    trace2 = go.Scatter(x=x2, y=u2t, mode='lines+markers',  marker={'color': 'red', 'size':1}, line={'width':2})
 
 #----------------------------------------------------------------------------------------------------------------                   
 
@@ -254,7 +263,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 fig = go.Figure(data=[trace1, trace2], layout=layout), validPulseCount, elapsed, f'cps {cps}'
 
             if difference_switch == True:
-                y3 = [a - b for a, b in zip(y, y2)]
+                y3 = [a - b for a, b in zip(y, u2t)]
                 trace3 = go.Scatter(
                                 x=x, 
                                 y=y3, 
@@ -302,8 +311,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
 
 def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
-
-    conn = sql.connect("data.db")
+    wd = Path(__file__).absolute().parent
+    conn = sql.connect(wd/'data.db')
     c = conn.cursor()
 
     query = f"""UPDATE settings SET 
@@ -334,7 +343,7 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
 
     polynomial_fn = np.poly1d(coefficients)
 
-    conn = sql.connect("data.db")
+    conn = sql.connect(wd/'data.db')
     c = conn.cursor()
 
     query = f"""UPDATE settings SET 

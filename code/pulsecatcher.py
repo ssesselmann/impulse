@@ -12,9 +12,7 @@ import datetime
 from collections import defaultdict
 import csv
 
-# Start timer
-t0				= datetime.datetime.now()
-tb				= time.time()
+
 data 			= None
 left_channel 	= None
 devices 		= fn.get_device_list()
@@ -24,6 +22,10 @@ plot 			= {}
 
 # Function to catch pulses and output time, pulkse height and distortion
 def pulsecatcher():
+
+	# Start timer
+	t0				= datetime.datetime.now()
+	tb				= time.time()
 
 	settings 		= fn.load_settings()
 

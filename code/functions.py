@@ -13,11 +13,7 @@ import sqlite3 as sql
 import pandas as pd
 from collections import defaultdict
 from datetime import datetime
-
-peak = 0.0
-trough = 0.0
-height = 0.0
-p = pyaudio.PyAudio()
+from pathlib import Path
 
 
 # Finds pulses in string of data over a given threshold
@@ -57,7 +53,6 @@ def distortion(normalised, shape):
     return distortion
 
 def pulse_height(passed):
-    #print("pass ",passed)  
     peak = passed[passed.index(max(passed))]
     trough = passed[passed.index(min(passed))]
     height = int(peak-trough)
@@ -85,7 +80,7 @@ def update_bin(n, bins, bin_counts):
 
 # This function writes histogram to JSON file according to NPESv1 schema.
 def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
-
+    wd = Path(__file__).absolute().parent
     data =  {"schemaVersion":"NPESv1",
                 "resultData":{
                     "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
@@ -103,13 +98,14 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coe
                     }
                 }
 
-    with open(f"../data/{name}.json", "w+") as f:
+    with open(f"{wd}/data/{name}.json", "w+") as f:
         json.dump(data, f)
      
 # This function loads settings from sqli database
 def load_settings():
+    wd = Path(__file__).absolute().parent
     settings        = []
-    conn            = sql.connect("data.db")
+    conn            = sql.connect(wd/'data.db')
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
     c.execute(query) 
@@ -118,9 +114,10 @@ def load_settings():
 
 # This function opens the csv and loads the pulse shape  
 def load_shape():
+    wd = Path(__file__).absolute().parent
     data = []
-    if os.path.exists('../data/shape.csv'):
-        with open('../data/shape.csv', 'r') as f:
+    if os.path.exists(wd/'data/shape.csv'):
+        with open(wd/'data/shape.csv', 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 data.append(row[1])
@@ -164,8 +161,9 @@ def create_dummy_csv(filepath):
  
 # Function to automatically switch between positive and negative pulses
 def detect_pulse_direction(samples):
+    wd = Path(__file__).absolute().parent
     if max(samples) >= 3000:
-        conn = sql.connect("data.db")
+        conn = sql.connect(wd/'data.db')
         c = conn.cursor()
         query = f"UPDATE settings SET flip = 1 WHERE id=0;"
         c.execute(query)
@@ -173,19 +171,12 @@ def detect_pulse_direction(samples):
         return 1
 
     if min(samples) <= -3000:
-        conn = sql.connect("data.db")
+        conn = sql.connect(wd/'data.db')
         c = conn.cursor()
         query = f"UPDATE settings SET flip = -1 WHERE id=0;"
         c.execute(query)
         conn.commit()
         return -1
-
     else:
         return 0
-
-
-
-        
-
-
 

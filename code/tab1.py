@@ -9,13 +9,15 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from server import app
-
+from pathlib import Path
 
 # ----------- Audio input selection ---------------------------------
 
 def show_tab1():
 
-    conn = sql.connect("data.db")
+    wd = Path(__file__).absolute().parent
+
+    conn = sql.connect(wd/'data.db')
     c = conn.cursor()
     query = "SELECT * FROM settings "
     c.execute(query) 
@@ -158,7 +160,7 @@ def show_tab1():
                                     html.P('I would love to get your feedback and suggestions for future enhancements.', style={'text-align':'left'}),
                                     html.P('Steven Sesselmann'),
                                     html.H3('www.gammaspectacular.com'),
-                                    html.Div(f'Note: Path to (../data/) are relative to {filepath}', style={'color':'red', 'float':'left'}),   
+                                    html.Div(f'Note: Path to (data/) are relative to {wd}', style={'color':'red', 'float':'left'}),   
 
                                     ]), 
                                 ]),
@@ -206,7 +208,7 @@ def on_button_click(n_clicks):
     ])
 
 def save_settings(n_clicks, value1, value2, value3, value4, value5):
-
+    wd = Path(__file__).absolute().parent
     if n_clicks == 0:
         device      = value1
         sample_rate = value2
@@ -214,7 +216,7 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5):
         catch       = value4
         length      = value5
 
-        conn = sql.connect("data.db")
+        conn = sql.connect(wd/'data.db')
         c = conn.cursor()
         query = f"UPDATE settings SET device={device}, sample_rate={sample_rate}, chunk_size={chunk_size}, shapecatches={catch}, sample_length={length} WHERE id=0;"
         c.execute(query)

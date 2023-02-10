@@ -5,14 +5,15 @@ import functions as fn
 import webbrowser
 import logging
 from threading import Timer
-from launcher import app
+import launcher
+from server import app
 
 # The following three lines limit output to errors
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 # Define default `8050` port
-port = 8060 
+port = 8050 
 
 # Function to open browser
 fn.open_browser(port)

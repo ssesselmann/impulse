@@ -13,6 +13,7 @@ import sqlite3 as sql
 import functions as fn
 import pandas as pd
 from collections import defaultdict
+from pathlib import Path
 
 # Starts timer
 t0 				= time.perf_counter() 
@@ -23,6 +24,7 @@ sample_list 	= []
 # Function to catch pulses and output time, pulkse height and distortion
 def shapecatcher():
 
+	wd 				= Path(__file__).absolute().parent
 	n 				= 0
 	shape 			= None
 	samples_sum 	= None
@@ -32,11 +34,8 @@ def shapecatcher():
 	shapecatches	= None
 	sample_length 	= None
 	pulse_list		= []
-	
-	p = pyaudio.PyAudio()
-	audio_format = pyaudio.paInt16
 
-	conn = sql.connect("data.db")
+	conn = sql.connect(wd/'data.db')
 	c = conn.cursor()
 	query = "SELECT * FROM settings "
 	c.execute(query) 
@@ -63,7 +62,10 @@ def shapecatcher():
 	bin_array = fn.create_bin_array(start, stop, bin_size)
 	bin_counts = defaultdict(int)
 
+	# Get audio parameters
 	devices = fn.get_device_list()
+	p = pyaudio.PyAudio()
+	audio_format = pyaudio.paInt16
 	device_channels = devices[device]['maxInputChannels']
 	
 	# Open the selected audio input device
@@ -115,7 +117,7 @@ def shapecatcher():
 					df = pd.DataFrame(shape_int)
 
 					# Write to csv
-					df.to_csv('../data/shape.csv', index='Shape', header=0)
+					df.to_csv(wd/'data/shape.csv', index='Shape', header=0)
 
 					return shape_int  	
 
