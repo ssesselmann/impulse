@@ -1,7 +1,15 @@
-dash~=2.8.0
-dash-daq~=0.5.0
-numpy~=1.24.1
-pandas~=1.5.3
-plotly~=5.13.0
-PyAudio~=0.2.13
-setuptools>=57.4.0
+collections
+dash
+dash.dependencies
+datetime
+flask
+jason
+matchcsv
+numpynumpy
+os
+pandas
+pathlib
+plotly.graph_objects
+pyaudio, sqlite3
+wave
+webbrowser
