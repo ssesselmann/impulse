@@ -1,15 +1,10 @@
-collections
 dash
-dash.dependencies
 datetime
 flask
 jason
-matchcsv
-numpynumpy
-os
+numpy
 pandas
 pathlib
-plotly.graph_objects
-pyaudio, sqlite3
+plotly
+pyaudio
 wave
-webbrowser
