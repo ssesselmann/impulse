@@ -10,13 +10,11 @@ from tab1 import show_tab1
 from tab2 import show_tab2
 from tab3 import show_tab3
 from tab4 import show_tab4
-from pathlib import Path
 from server import app
 
-wd = Path(__file__).absolute().parent
-
-data_directory = wd/'data'
-filename = wd/'data/shape.csv'
+data_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+database = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data.db")
+shapecsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'shape.csv')
 
 try:
     if not os.path.exists(data_directory):
@@ -26,12 +24,12 @@ except:
 
 try:
     if not os.path.exists(filename):
-        fn.create_dummy_csv(wd/'data/shape.csv')
+        fn.create_dummy_csv(shapecsv)
 except:
     pass
 
 # Connects to database
-conn    = sql.connect(wd/'data.db')
+conn    = sql.connect(database)
 c       = conn.cursor()
 
 # This query creates a table in the database when used for the first time

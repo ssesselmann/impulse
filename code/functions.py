@@ -13,7 +13,6 @@ import sqlite3 as sql
 import pandas as pd
 from collections import defaultdict
 from datetime import datetime
-from pathlib import Path
 
 
 # Finds pulses in string of data over a given threshold
@@ -80,7 +79,9 @@ def update_bin(n, bins, bin_counts):
 
 # This function writes histogram to JSON file according to NPESv1 schema.
 def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
-    wd = Path(__file__).absolute().parent
+    
+    jsonfile = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', f"{name}.json")
+
     data =  {"schemaVersion":"NPESv1",
                 "resultData":{
                     "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
@@ -98,14 +99,15 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coe
                     }
                 }
 
-    with open(f"{wd}/data/{name}.json", "w+") as f:
+    with open(jsonfile, "w+") as f:
         json.dump(data, f)
      
 # This function loads settings from sqli database
 def load_settings():
-    wd = Path(__file__).absolute().parent
+
+    database = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data.db")
     settings        = []
-    conn            = sql.connect(wd/'data.db')
+    conn            = sql.connect(database)
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
     c.execute(query) 
@@ -114,10 +116,12 @@ def load_settings():
 
 # This function opens the csv and loads the pulse shape  
 def load_shape():
-    wd = Path(__file__).absolute().parent
+
+    shapecsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'shape.csv')
+   
     data = []
-    if os.path.exists(wd/'data/shape.csv'):
-        with open(wd/'data/shape.csv', 'r') as f:
+    if os.path.exists(shapecsv):
+        with open(shapecsv, 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 data.append(row[1])
@@ -161,9 +165,9 @@ def create_dummy_csv(filepath):
  
 # Function to automatically switch between positive and negative pulses
 def detect_pulse_direction(samples):
-    wd = Path(__file__).absolute().parent
+    database = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data.db")
     if max(samples) >= 3000:
-        conn = sql.connect(wd/'data.db')
+        conn = sql.connect(database)
         c = conn.cursor()
         query = f"UPDATE settings SET flip = 1 WHERE id=0;"
         c.execute(query)
@@ -171,7 +175,7 @@ def detect_pulse_direction(samples):
         return 1
 
     if min(samples) <= -3000:
-        conn = sql.connect(wd/'data.db')
+        conn = sql.connect(database)
         c = conn.cursor()
         query = f"UPDATE settings SET flip = -1 WHERE id=0;"
         c.execute(query)

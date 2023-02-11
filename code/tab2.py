@@ -11,14 +11,16 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from server import app
-from pathlib import Path
+
 
 path = None
 n_clicks = 0
 
 def show_tab2():
-    wd = Path(__file__).absolute().parent
-    conn            = sql.connect(wd/'data.db')
+
+    database = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.db')
+
+    conn            = sql.connect(database)
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
     c.execute(query) 
@@ -167,10 +169,11 @@ def update_output(n_clicks):
 
 def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch):
     
-    wd = Path(__file__).absolute().parent
+    histogram1 = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', f'{filename}.json')
+    histogram2 = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', f'{filename2}.json')
 
-    if os.path.exists(f'{wd}/data/{filename}.json'):
-        with open(f"{wd}/data/{filename}.json", "r") as f:
+    if os.path.exists(histogram1):
+        with open(histogram1, "r") as f:
 
             data = json.load(f)
             numberOfChannels    = data["resultData"]["energySpectrum"]["numberOfChannels"]
@@ -179,7 +182,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             polynomialOrder     = data["resultData"]["energySpectrum"]["energyCalibration"]["polynomialOrder"]
             coefficients        = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
             spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
-
             coefficients        = coefficients[::-1] # Revese order
 
             mu = 0
@@ -207,8 +209,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
  
 #-------Comparison spectrum ---------------------------------------------------------------------------
 
-            if os.path.exists(f'{wd}/data/{filename2}.json'):
-                with open(f"{wd}/data/{filename2}.json", "r") as f:
+            if os.path.exists(histogram2):
+                with open(histogram2, "r") as f:
 
                     data_2 = json.load(f)
 
@@ -311,8 +313,10 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
 
 def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
-    wd = Path(__file__).absolute().parent
-    conn = sql.connect(wd/'data.db')
+    
+    database = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.db')
+
+    conn = sql.connect(database)
     c = conn.cursor()
 
     query = f"""UPDATE settings SET 
@@ -343,7 +347,7 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
 
     polynomial_fn = np.poly1d(coefficients)
 
-    conn = sql.connect(wd/'data.db')
+    conn = sql.connect(database)
     c = conn.cursor()
 
     query = f"""UPDATE settings SET 
