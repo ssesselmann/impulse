@@ -26,9 +26,7 @@ def pulsecatcher():
 	# Start timer
 	t0				= datetime.datetime.now()
 	tb				= time.time()
-
 	settings 		= fn.load_settings()
-
 	name            = settings[1]
 	device          = settings[2]             
 	sample_rate     = settings[3]

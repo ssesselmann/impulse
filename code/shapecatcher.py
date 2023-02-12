@@ -25,8 +25,8 @@ sample_list 	= []
 # Function to catch pulses and output time, pulkse height and distortion
 def shapecatcher():
 
-	database = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.db')
-	shapecsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'shape.csv')
+	database = fn.get_path('data.db')
+	shapecsv = fn.get_path('data/shape.csv')
 	n 				= 0
 	shape 			= None
 	samples_sum 	= None

@@ -2,7 +2,6 @@
 .eggs
 __pycache__/
 /code/data.db
-/code/setup.py
 /code/run.spec
 /code/build/
 /code/dist/

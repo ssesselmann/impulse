@@ -12,9 +12,9 @@ from tab3 import show_tab3
 from tab4 import show_tab4
 from server import app
 
-data_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-database = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data.db")
-shapecsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'shape.csv')
+data_directory = fn.get_path('data')
+database = fn.get_path('data.db')
+shapecsv = fn.get_path('data/shape.csv')
 
 try:
     if not os.path.exists(data_directory):
@@ -73,7 +73,7 @@ with conn:
 app.layout = html.Div([
     
     dcc.Tabs(
-        id="tabs", 
+        id='tabs', 
         value='tab1', 
         #style={'fontWeight': 'bold'}, 
         children=[

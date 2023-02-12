@@ -18,7 +18,7 @@ n_clicks = 0
 
 def show_tab2():
 
-    database = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.db')
+    database = fn.get_path('data.db')
 
     conn            = sql.connect(database)
     c               = conn.cursor()
@@ -169,8 +169,8 @@ def update_output(n_clicks):
 
 def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch):
     
-    histogram1 = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', f'{filename}.json')
-    histogram2 = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', f'{filename2}.json')
+    histogram1 = fn.get_path(f'data/{filename}.json')
+    histogram2 = fn.get_path(f'data/{filename2}.json')
 
     if os.path.exists(histogram1):
         with open(histogram1, "r") as f:
@@ -314,7 +314,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
 def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
     
-    database = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.db')
+    database = fn.get_path('data.db')
 
     conn = sql.connect(database)
     c = conn.cursor()

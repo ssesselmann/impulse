@@ -6,11 +6,12 @@ Usage:
 """
 
 from setuptools import setup
+import functions as fn
 import os
 
-datafolder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+datafolder = fn.get_path('data')
 
-isotopes = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'isotopes')
+isotopes = fn.get_path('isotopes')
 
 print('data directory: ', datafolder)
 

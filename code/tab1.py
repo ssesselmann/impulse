@@ -15,8 +15,8 @@ from server import app
 
 def show_tab1():
 
-    database = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.db')
-    datafolder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+    database = fn.get_path('data.db')
+    datafolder = fn.get_path('data')
 
     conn = sql.connect(database)
     c = conn.cursor()
@@ -210,7 +210,7 @@ def on_button_click(n_clicks):
 
 def save_settings(n_clicks, value1, value2, value3, value4, value5):
     
-    database = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data.db')
+    database = fn.get_path('data.db')
     if n_clicks == 0:
         device      = value1
         sample_rate = value2

@@ -9,6 +9,7 @@ import math
 import csv
 import json
 import os
+import platform
 import sqlite3 as sql
 import pandas as pd
 from collections import defaultdict
@@ -80,7 +81,7 @@ def update_bin(n, bins, bin_counts):
 # This function writes histogram to JSON file according to NPESv1 schema.
 def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
     
-    jsonfile = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', f"{name}.json")
+    jsonfile = get_path(f'data/{name}.json')
 
     data =  {"schemaVersion":"NPESv1",
                 "resultData":{
@@ -105,7 +106,7 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coe
 # This function loads settings from sqli database
 def load_settings():
 
-    database = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data.db")
+    database = get_path('data.db')
     settings        = []
     conn            = sql.connect(database)
     c               = conn.cursor()
@@ -117,7 +118,7 @@ def load_settings():
 # This function opens the csv and loads the pulse shape  
 def load_shape():
 
-    shapecsv = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'shape.csv')
+    shapecsv = get_path('data/shape.csv')
    
     data = []
     if os.path.exists(shapecsv):
@@ -165,7 +166,7 @@ def create_dummy_csv(filepath):
  
 # Function to automatically switch between positive and negative pulses
 def detect_pulse_direction(samples):
-    database = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data.db")
+    database = get_path('data.db')
     if max(samples) >= 3000:
         conn = sql.connect(database)
         c = conn.cursor()
@@ -184,3 +185,13 @@ def detect_pulse_direction(samples):
     else:
         return 0
 
+def get_path(filename):
+    name = os.path.splitext(filename)[0]
+    ext = os.path.splitext(filename)[1]
+
+    if platform.system() == "Darwin":
+        from AppKit import NSBundle
+        file = NSBundle.mainBundle().pathForResource_ofType_(name, ext)
+        return file or os.path.realpath(filename)
+    else:
+        return os.path.realpath(filename)
