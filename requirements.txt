@@ -1,0 +1,12 @@
+dash
+datetime
+flask
+jason
+numpy
+os
+numpy
+pandas
+pathlib
+plotly
+pyaudio
+wave
