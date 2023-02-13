@@ -89,7 +89,7 @@ def show_tab2():
 
         html.Div(id='t2_setting_div', children=[
 
-            html.Div(['Comparison-file .json', dcc.Input(id='filename2' ,type='text' ,value=filename2 )]),
+            html.Div(['Overlay name or i/...', dcc.Input(id='filename2' ,type='text' ,value=filename2 )]),
             html.Div(['Show Comparison'      , daq.BooleanSwitch(id='compare_switch',on=False, color='purple',)]),
             html.Div(['Subtract Comparison'  , daq.BooleanSwitch(id='difference_switch',on=False, color='purple',)]),
 
