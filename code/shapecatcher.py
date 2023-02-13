@@ -117,6 +117,13 @@ def shapecatcher():
 
 					# Format and save to csv file
 					df = pd.DataFrame(shape_int)
+					# Save Pulse Direction to database
+					database = fn.get_path('data.db')
+					conn = sql.connect(database)
+					c = conn.cursor()
+					query = f"UPDATE settings SET flip = {flip} WHERE id=0;"
+					c.execute(query)
+					conn.commit()
 
 					# Write to csv
 					df.to_csv(shapecsv, index='Shape', header=0)

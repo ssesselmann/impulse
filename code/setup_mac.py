@@ -31,7 +31,7 @@ setup(
         ],
     app=['run.py'],
     options={'py2app': {'argv_emulation': True, 'iconfile': 'favicon',}},
-    data_files=[datafolder, isotopes],
+    data_files=[datafolder],
 
     setup_requires=['py2app'],
 )
