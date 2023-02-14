@@ -64,72 +64,76 @@ def shapecatcher():
 	bin_array = fn.create_bin_array(start, stop, bin_size)
 	bin_counts = defaultdict(int)
 
-	# Get audio parameters
-	devices = fn.get_device_list()
-	p = pyaudio.PyAudio()
-	audio_format = pyaudio.paInt16
-	device_channels = devices[device]['maxInputChannels']
+
 	
-	# Open the selected audio input device
-	stream = p.open(
-		format=audio_format,
-		channels=device_channels,
-		rate=sample_rate,
-		input=True,
-		output=False,
-		input_device_index=device,
-		frames_per_buffer=chunk_size)
+	try:
+		# Get audio parameters
+		devices = fn.get_device_list()
+		p = pyaudio.PyAudio()
+		audio_format = pyaudio.paInt16
+		device_channels = devices[device]['maxInputChannels']
+		# Open the selected audio input device
+		stream = p.open(
+			format=audio_format,
+			channels=device_channels,
+			rate=sample_rate,
+			input=True,
+			output=False,
+			input_device_index=device,
+			frames_per_buffer=chunk_size)
 
-	# Loops through and finds a number of pulses (shapecatches) as loaded from settings
-	while True:
-		# Read the audio data stream
-		data = stream.read(chunk_size, exception_on_overflow=False)
-		# Convert hex to numbers
-		values = list(wave.struct.unpack("%dh" % (chunk_size * device_channels), data))
-	    # Extract every other element (left channel)
-		left_channel = values[::2]
-		# Cycle through list of sample strings
-		for i in range(len(left_channel) - sample_length):
-			# Get the first string of  samples
-			samples = left_channel[i:i+sample_length]  
-			# Function checks if pulse is positive or negative
-			flip = fn.detect_pulse_direction(samples)
-			# Flips samples if pulse is positive
-			samples = [flip * x for x in samples]
+		# Loops through and finds a number of pulses (shapecatches) as loaded from settings
+		while True:
+			# Read the audio data stream
+			data = stream.read(chunk_size, exception_on_overflow=False)
+			# Convert hex to numbers
+			values = list(wave.struct.unpack("%dh" % (chunk_size * device_channels), data))
+		    # Extract every other element (left channel)
+			left_channel = values[::2]
+			# Cycle through list of sample strings
+			for i in range(len(left_channel) - sample_length):
+				# Get the first string of  samples
+				samples = left_channel[i:i+sample_length]  
+				# Function checks if pulse is positive or negative
+				flip = fn.detect_pulse_direction(samples)
+				# Flips samples if pulse is positive
+				samples = [flip * x for x in samples]
 
-			# Find pulses based only on the peak height being in the middle 80% of 32000
-			if samples[peak] >= max(samples) and (max(samples)-min(samples)) > 3200 and samples[peak] < 28800:
-				
-				# gather a list of samples 
-				pulse_list.append(samples)
-				# Counter
-				n += 1
-				# Stop[ afer n samples]
-				if n >= (shapecatches-1): # number of pulses to average
-					# Zip sum all lists
-					pulses_sum = [sum(x)/len(pulse_list) for x in zip(*pulse_list)] 
+				# Find pulses based only on the peak height being in the middle 80% of 32000
+				if samples[peak] >= max(samples) and (max(samples)-min(samples)) > 3200 and samples[peak] < 28800:
+					
+					# gather a list of samples 
+					pulse_list.append(samples)
+					# Counter
+					n += 1
+					# Stop[ afer n samples]
+					if n >= (shapecatches-1): # number of pulses to average
+						# Zip sum all lists
+						pulses_sum = [sum(x)/len(pulse_list) for x in zip(*pulse_list)] 
 
-					# Normalise summed list
-					shape = fn.normalise_pulse(pulses_sum)
+						# Normalise summed list
+						shape = fn.normalise_pulse(pulses_sum)
 
-					# convert floats to ints
-					shape_int = [int(x) for x in shape]
+						# convert floats to ints
+						shape_int = [int(x) for x in shape]
 
-					# Format and save to csv file
-					df = pd.DataFrame(shape_int)
-					# Save Pulse Direction to database
-					database = fn.get_path('data.db')
-					conn = sql.connect(database)
-					c = conn.cursor()
-					query = f"UPDATE settings SET flip = {flip} WHERE id=0;"
-					c.execute(query)
-					conn.commit()
+						# Format and save to csv file
+						df = pd.DataFrame(shape_int)
+						# Save Pulse Direction to database
+						database = fn.get_path('data.db')
+						conn = sql.connect(database)
+						c = conn.cursor()
+						query = f"UPDATE settings SET flip = {flip} WHERE id=0;"
+						c.execute(query)
+						conn.commit()
 
-					# Write to csv
-					df.to_csv(shapecsv, index='Shape', header=0)
+						# Write to csv
+						df.to_csv(shapecsv, index='Shape', header=0)
 
-					return shape_int  	
+						return shape_int  	
+	except:
+		shape_int = [0] * 51
+		return shape_int
 
 
-
-    
+	    
