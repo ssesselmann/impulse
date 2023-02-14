@@ -1,4 +1,4 @@
-IMPULSE BETA 08 February 2023
+IMPULSE Version 1.0 February 2023
 --------------
 Python Scripted MCA for gamma spectrometry.
 ----------------------------------------
@@ -48,6 +48,8 @@ Things done, now working
 18) Completed method for subtracting a background spectrum
 19) Added 482 isotope peak libraries in json format
 20) Program now auto detects negative pulse direction and inverts samples
+21) Modified devise list to only show input devices
+22) Wrapped shape function in a try: except: in case no audio device is available.
 
 
 Things to do
