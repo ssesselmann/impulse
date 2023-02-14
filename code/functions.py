@@ -5,6 +5,7 @@ import pyaudio
 import webbrowser
 import wave
 import numpy as np
+import subprocess
 import math
 import csv
 import json
@@ -132,26 +133,31 @@ def load_shape():
         shape = pd.DataFrame(data = {'Shape': [0]*51})   
         return shape 
 
-# This function gets a list of audio devices connected to the computer           
-def get_device_list():
-    input_devices = []
-    p = pyaudio.PyAudio()
-    device_count = p.get_device_count()
-    for i in range(device_count):
-        longrow = p.get_device_info_by_index(i)
-        shortrow = extract_keys(longrow.copy(), ['index', 'name', 'maxInputChannels', 'maxOutputChannels', 'defaultSampleRate'])
-        input_devices.append(shortrow)
-    return input_devices
-
 # Function extracts keys from dictionary
 def extract_keys(dict_, keys):
     return {k: dict_.get(k, None) for k in keys}
 
 # This function terminates the audio connection
 def refresh_audio_devices():
+    try:
+        p = pyaudio.PyAudio()
+        p.terminate()
+        time.sleep(1)
+        return
+    except:
+        return
+
+# This function gets a list of audio devices connected to the computer           
+def get_device_list():
+    refresh_audio_devices()
+    input_devices = [{'index': 99, 'name': 'device name', 'maxInputChannels': 99, 'maxOutputChannels': 99, 'defaultSampleRate': 99}]
     p = pyaudio.PyAudio()
-    p.terminate()
-    return
+    try:
+        device_count = p.get_device_count()
+        input_devices = [extract_keys(p.get_device_info_by_index(i), ['index', 'name', 'maxInputChannels', 'maxOutputChannels', 'defaultSampleRate']) for i in range(device_count) if p.get_device_info_by_index(i)['maxInputChannels'] >= 1]
+        return input_devices
+    except:
+        return[99,'no device', 99, 99, 99]     
 
 # Function to open browser on localhost
 def open_browser(port):
@@ -183,3 +189,8 @@ def get_path(filename):
         return file or os.path.realpath(filename)
     else:
         return os.path.realpath(filename)
+
+def restart_program():
+    subprocess.Popen(['python', 'app.py'])
+    return
+

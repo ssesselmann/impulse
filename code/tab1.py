@@ -10,7 +10,6 @@ from dash import html
 from dash.dependencies import Input, Output
 from server import app
 
-
 # ----------- Audio input selection ---------------------------------
 
 def show_tab1():
@@ -38,13 +37,13 @@ def show_tab1():
 
     filepath = os.path.dirname(__file__)
 
-    devices = fn.get_device_list()
+    devices = [{'index': 99, 'name': 'device name', 'maxInputChannels': 99, 'maxOutputChannels': 99, 'defaultSampleRate': 99}]
 
     shape = fn.load_shape()
 
     tab1 = html.Div(id='tab1', children=[ 
 
-        html.Button('Refresh Device Index ', id='get_device_button'),
+        html.Button('Get Device Table ', id='get_device_button'),
 
         html.Div(children=[
                 dash_table.DataTable( id='container_device_list_short',
@@ -180,21 +179,15 @@ def show_tab1():
     return tab1
 
 # Callback for getting device index -----------------------
-@app.callback(Output('n_clicks_storage', 'children'),
+
+@app.callback(Output('container_device_list_short', 'data'),
               [Input('get_device_button', 'n_clicks')])
 
-def update_n_clicks(n_clicks):
-    return n_clicks
-
-@app.callback(Output('container_device_list',   'data'),
-              [Input('n_clicks_storage',        'children')])
-
 def on_button_click(n_clicks):
-    
     if n_clicks is not None:
-        fn.refresh_audio_devices()
-        dl = fn.get_device_list() # This is not working
-        return dl
+        dl = None # This should clear the variable
+        dl = fn.get_device_list() # This should connect and get a new device list
+        return dl # dl is the variable for the device list
 
 # Callback to save settings ---------------------------
 
@@ -252,4 +245,3 @@ def capture_pulse_shape(n_clicks):
 
         return fig, fig
         
-

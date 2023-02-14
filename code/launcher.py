@@ -1,4 +1,5 @@
 import dash
+import time
 import os
 import functions as fn
 import sqlite3 as sql
