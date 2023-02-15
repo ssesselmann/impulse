@@ -228,7 +228,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     u2t = [int(n * steps) for n in spectrum_2]
 
                     if cal_switch == True:
-                        x2b = np.polyval(np.poly1d(coefficients), x2)
+                        x2 = np.polyval(np.poly1d(coefficients), x2)
 
                     if epb_switch == True:
                         u2t = [i * n * steps for i, n in enumerate(spectrum_2)]
