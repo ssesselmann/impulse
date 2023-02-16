@@ -205,9 +205,32 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             if log_switch == True:
                 lin_log = 'log'
                 
-            trace1 = go.Scatter(x=x, y=y, mode='lines+markers', fill='tozeroy' ,  marker={'color': 'darkblue', 'size':3}, line={'width':1})
+            trace1 = go.Scatter(
+                x=x, 
+                y=y, 
+                mode='lines+markers', 
+                fill='tozeroy' ,  
+                marker={'color': 'darkblue', 'size':3}, 
+                line={'width':1})
  
 #-------Comparison spectrum ---------------------------------------------------------------------------
+
+            layout = go.Layout(
+                paper_bgcolor = 'white', 
+                plot_bgcolor = 'white',
+                title={
+                'text': filename,
+                'x': 0.5,
+                'y': 0.9,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+                },
+                height  =600, 
+                autosize=True,
+                xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
+                yaxis=dict(type=lin_log)
+                )
 
             if os.path.exists(histogram2):
                 with open(histogram2, "r") as f:
@@ -225,23 +248,49 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                         steps = 0.1    
 
                     x2 = list(range(numberOfChannels_2))
-                    u2t = [int(n * steps) for n in spectrum_2]
+                    y2 = [int(n * steps) for n in spectrum_2]
 
                     if cal_switch == True:
                         x2 = np.polyval(np.poly1d(coefficients), x2)
 
                     if epb_switch == True:
-                        u2t = [i * n * steps for i, n in enumerate(spectrum_2)]
+                        y2 = [i * n * steps for i, n in enumerate(spectrum_2)]
 
                     if log_switch == True:
                         lin_log = 'log'
 
-                    trace2 = go.Scatter(x=x2, y=u2t, mode='lines+markers',  marker={'color': 'red', 'size':1}, line={'width':2})
+                    trace2 = go.Scatter(
+                        x=x2, 
+                        y=y2, 
+                        mode='lines+markers',  
+                        marker={'color': 'red', 'size':1}, 
+                        line={'width':2})
 
 #----------------------------------------------------------------------------------------------------------------                   
+            
+            if compare_switch == False:
+                fig = go.Figure(data=[trace1], layout=layout), validPulseCount, elapsed, f'cps {cps}'
 
+            if compare_switch == True: 
+                fig = go.Figure(data=[trace1, trace2], layout=layout), validPulseCount, elapsed, f'cps {cps}'
 
-            layout = go.Layout(
+            if difference_switch == True:
+                y3 = [a - b for a, b in zip(y, y2)]
+                trace3 = go.Scatter(
+                                x=x, 
+                                y=y3, 
+                                mode='lines+markers', 
+                                fill='tozeroy',  
+                                marker={'color': 'green', 'size':3}, 
+                                line={'width':1}
+                                )
+
+                fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed, f'cps {cps}'
+
+            return fig
+
+    else:
+        layout = go.Layout(
                 paper_bgcolor = 'white', 
                 plot_bgcolor = 'white',
                 title={
@@ -251,47 +300,12 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 'xanchor': 'center',
                 'yanchor': 'top',
                 'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
-            },
+                },
                 height  =600, 
                 autosize=True,
-                xaxis=dict(dtick=50, tickangle = 90),
+                xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
                 yaxis=dict(type=lin_log)
                 )
-            
-            if compare_switch == False:
-                fig = go.Figure(data=[trace1], layout=layout), validPulseCount, elapsed, f'cps {cps}'
-
-            if compare_switch == True: 
-                fig = go.Figure(data=[trace1, trace2], layout=layout), validPulseCount, elapsed, f'cps {cps}'
-
-            if difference_switch == True:
-                y3 = [a - b for a, b in zip(y, u2t)]
-                trace3 = go.Scatter(
-                                x=x, 
-                                y=y3, 
-                                mode='lines+markers', 
-                                fill='tozeroy',  
-                                marker={'color': 'green', 'size':3}, 
-                                line={'width':1}
-                                )
-                fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed, f'cps {cps}'
-
-            return fig
-
-    else:
-        layout = go.Layout(title={
-            'text': filename,
-            'x': 0.5,
-            'y': 0.9,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
-        },
-            height=500, 
-            autosize=True,
-            xaxis=dict(dtick=50),
-
-            )
         return go.Figure(data=[], layout=layout), 0, 0, 0
 
 #--------UPDATE SETTINGS------------------------------------------------------------------------------------------
