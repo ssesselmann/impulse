@@ -77,7 +77,7 @@ def show_tab1():
 
 
         html.Div(id='tab1_settings', children=[ 
-            html.Div( children='Chunk Size'),
+            html.Div( children='Buffer Size'),
             html.Div(dcc.Dropdown(id='chunk_size', 
                 options=[
                     {'label': '516', 'value':  '516'},
