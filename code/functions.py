@@ -16,7 +16,6 @@ import pandas as pd
 from collections import defaultdict
 from datetime import datetime
 
-
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
     samples =[]
@@ -194,3 +193,6 @@ def restart_program():
     subprocess.Popen(['python', 'app.py'])
     return
 
+def shutdown():
+    print('Shutting down server...')
+    os._exit(0)
