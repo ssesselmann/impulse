@@ -24,7 +24,7 @@ When it's all working you can access the program in your browser at;
 http://localhost:8050
  
 
-Things done, now working
+Change log
 ------------------------
 
 0) creating a settings database in sqlite3
@@ -50,6 +50,7 @@ Things done, now working
 20) Program now auto detects negative pulse direction and inverts samples
 21) Modified devise list to only show input devices
 22) Wrapped shape function in a try: except: in case no audio device is available.
+23) Fixed an issue where the x axis changed scale when comparison was switched on.
 
 
 Things to do
