@@ -13,6 +13,7 @@ import os
 import platform
 import sqlite3 as sql
 import pandas as pd
+from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
 from datetime import datetime
 
@@ -196,3 +197,23 @@ def restart_program():
 def shutdown():
     print('Shutting down server...')
     os._exit(0)
+
+def peakfinder(y_values, prominence, min_width):
+    # y * bin to give higher value toweards the right
+    y_bin = [y * i for i, y in enumerate(y_values)]
+    # Find all peaks of prominence
+    peaks, _ = find_peaks(y_bin, prominence=prominence)
+    # Get the fwhm for all foundpeaks
+    widths, _, _, _ = peak_widths(y_values, peaks, rel_height=0.5)
+    # Filter out peaks where width >= min-width
+    filtered_peaks = [p for i, p in enumerate(peaks) if widths[i] >= min_width * i]
+    # Define array
+    fwhm = []
+    # Get widths of filtered_peaks
+    for i in range(len(filtered_peaks)):
+        w, _, _, _ = peak_widths(y_values, [filtered_peaks[i]], rel_height=0.5)
+        w = np.round(w,1)
+        fwhm.append(w[0])
+    return filtered_peaks, fwhm
+
+

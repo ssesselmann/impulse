@@ -19,7 +19,6 @@ n_clicks = 0
 def show_tab2():
 
     database = fn.get_path('data.db')
-
     conn            = sql.connect(database)
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
@@ -48,6 +47,7 @@ def show_tab2():
     coeff_2         = settings[19]
     coeff_3         = settings[20]
     filename2       = settings[21]
+    peakfinder      = settings[23]
 
 
     html_tab2 = html.Div(id='tab2', children=[
@@ -107,6 +107,8 @@ def show_tab2():
             html.Div(dcc.Input(id='calib_bin_1', type='number', value=calib_bin_1)),
             html.Div(dcc.Input(id='calib_bin_2', type='number', value=calib_bin_2)),
             html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3)),
+            html.Div('peakfinder'),
+            html.Div(dcc.Slider(id='peakfinder', min=0 ,max=1, step=0.01, value= peakfinder, marks=None,)),
             ]),
 
         html.Div(id='t2_setting_div', children=[
@@ -165,9 +167,10 @@ def update_output(n_clicks):
                 Input('filename2'           ,'value'),
                 Input('compare_switch'      ,'on'),
                 Input('difference_switch'   ,'on'),
+                Input('peakfinder'          ,'value')
                 ])
 
-def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch):
+def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder):
     
     histogram1 = fn.get_path(f'data/{filename}.json')
     histogram2 = fn.get_path(f'data/{filename2}.json')
@@ -204,7 +207,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
             if log_switch == True:
                 lin_log = 'log'
-                
+
             trace1 = go.Scatter(
                 x=x, 
                 y=y, 
@@ -212,25 +215,97 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 fill='tozeroy' ,  
                 marker={'color': 'darkblue', 'size':3}, 
                 line={'width':1})
- 
-#-------Comparison spectrum ---------------------------------------------------------------------------
 
-            layout = go.Layout(
-                paper_bgcolor = 'white', 
-                plot_bgcolor = 'white',
-                title={
-                'text': filename,
-                'x': 0.5,
-                'y': 0.9,
-                'xanchor': 'center',
-                'yanchor': 'top',
-                'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
-                },
-                height  =600, 
-                autosize=True,
-                xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
-                yaxis=dict(type=lin_log)
+  #-------------------annotations-----------------------------------------------          
+            
+            peaks, fwhm = fn.peakfinder(y, 3, peakfinder)
+
+            num_peaks = len(peaks)
+
+            
+            annotations = []
+            lines       = []
+
+            for i in range(num_peaks):
+                peak_value = peaks[i]
+                counts = y[peaks[i]]
+                x_pos = peaks[i]
+                y_pos = y[peaks[i]]
+                resolution = (fwhm[i]/peaks[i])*100
+
+                if cal_switch == True:
+                    peak_value = np.polyval(np.poly1d(coefficients), peak_value)
+                    x_pos = peak_value
+
+                if log_switch == True:
+                    y_pos = y_pos    
+
+                annotations.append(
+                    dict(
+                        x= x_pos,
+                        y= y_pos + peak_value/20,
+                        xref='x',
+                        yref='y',
+                        text=f'cts: {counts}<br>bin: {peak_value:.1f}<br>{resolution:.1f}%',
+                        showarrow=True,
+                        arrowhead=1,
+                        ax=0,
+                        ay=-40
+                    )
                 )
+
+                lines.append(
+                    dict(
+                        type='line',
+                        x0=x_pos,
+                        y0=0,
+                        x1=x_pos,
+                        y1=y_pos,
+                        line=dict(
+                            color='red',
+                            width=1,
+                            dash='dot'
+                        )
+                    )
+                )
+
+            if log_switch == True: # This is a botch due to a bub in plotly
+                layout = go.Layout(
+                    paper_bgcolor = 'white', 
+                    plot_bgcolor = 'white',
+                    title={
+                    'text': filename,
+                    'x': 0.5,
+                    'y': 0.9,
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+                    },
+                    height  =600, 
+                    autosize=True,
+                    xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
+                    yaxis=dict(type=lin_log),
+                    )
+            else:
+                layout = go.Layout(
+                    paper_bgcolor = 'white', 
+                    plot_bgcolor = 'white',
+                    title={
+                    'text': filename,
+                    'x': 0.5,
+                    'y': 0.9,
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+                    },
+                    height  =600, 
+                    autosize=True,
+                    xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
+                    yaxis=dict(type=lin_log),
+                    annotations=annotations,
+                    shapes=lines,
+                    )
+#-------Comparison spectrum ---------------------------------------------------------------------------
 
             if os.path.exists(histogram2):
                 with open(histogram2, "r") as f:
@@ -287,6 +362,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
                 fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed, f'cps {cps}'
 
+
             return fig
 
     else:
@@ -322,11 +398,12 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 Input('calib_bin_3'     ,'value'),
                 Input('calib_e_1'       ,'value'),
                 Input('calib_e_2'       ,'value'),
-                Input('calib_e_3'       ,'value')
+                Input('calib_e_3'       ,'value'),
+                Input('peakfinder'      ,'value')
                 ])  
 
 
-def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
+def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3, peakfinder):
     
     database = fn.get_path('data.db')
 
@@ -346,13 +423,21 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
                     calib_bin_3={calib_bin_3},
                     calib_e_1={calib_e_1},
                     calib_e_2={calib_e_2},
-                    calib_e_3={calib_e_3}
+                    calib_e_3={calib_e_3},
+                    peakfinder={peakfinder}
                     WHERE id=0;"""
 
     c.execute(query)
     conn.commit()
 
-    calibration_input = [{'bin':-1*calib_bin_3, 'energy':-1*calib_e_3}, {'bin':-1*calib_bin_2, 'energy':-1*calib_e_2}, {'bin':-1*calib_e_1, 'energy':-1*calib_e_1},{'bin':calib_e_1, 'energy':calib_e_1}, {'bin':calib_bin_2, 'energy':calib_e_2}, {'bin':calib_bin_3, 'energy':calib_e_3}]
+    calibration_input = [
+        {'bin':-1*calib_bin_3, 'energy':-1*calib_e_3}, 
+        {'bin':-1*calib_bin_2, 'energy':-1*calib_e_2}, 
+        {'bin':-1*calib_bin_1, 'energy':-1*calib_e_1},
+        {'bin':   calib_bin_1, 'energy':   calib_e_1}, 
+        {'bin':   calib_bin_2, 'energy':   calib_e_2}, 
+        {'bin':   calib_bin_3, 'energy':   calib_e_3}
+        ]
 
     x_data = [item['bin'] for item in calibration_input]
     y_data = [item['energy'] for item in calibration_input]

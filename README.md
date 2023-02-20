@@ -1,4 +1,4 @@
-IMPULSE Version 1.0 February 2023
+IMPULSE Version 1.1 February 2023
 --------------
 Python Scripted MCA for gamma spectrometry.
 ----------------------------------------
@@ -51,11 +51,10 @@ Change log
 21) Modified devise list to only show input devices
 22) Wrapped shape function in a try: except: in case no audio device is available.
 23) Fixed an issue where the x axis changed scale when comparison was switched on.
-
+24) Added peakfinder function with resolution notation (Bug prevents notation showing in log scale)
 
 Things to do
 ------------
-* Build function to display resolution (FWHM)
 * Build function and chart to display distortion curve (useful) 
 * Build interval histogram with Dead time calculation 
 * Add browse button for isotope comparisons

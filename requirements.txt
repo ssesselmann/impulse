@@ -8,3 +8,4 @@ pathlib
 plotly
 wave
 pyaudio
+scipy
