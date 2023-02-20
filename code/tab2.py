@@ -243,7 +243,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 annotations.append(
                     dict(
                         x= x_pos,
-                        y= y_pos + peak_value/20,
+                        y= y_pos + 10,
                         xref='x',
                         yref='y',
                         text=f'cts: {counts}<br>bin: {peak_value:.1f}<br>{resolution:.1f}%',
