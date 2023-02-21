@@ -1,7 +1,7 @@
 import dash
 
 # external CSS stylesheets
-external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles.css']
+external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles2.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
