@@ -86,7 +86,7 @@ app.layout = html.Div([
                 label='Pulse Height Histogram', 
                 value='tab2'),   
             dcc.Tab(
-                label='Spectrometer', 
+                label='Count Rate Histogram', 
                 value='tab3'),
             dcc.Tab(
                 label='Important! Exit Here', 
