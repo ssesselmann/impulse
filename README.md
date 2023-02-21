@@ -52,10 +52,10 @@ Change log
 22) Wrapped shape function in a try: except: in case no audio device is available.
 23) Fixed an issue where the x axis changed scale when comparison was switched on.
 24) Added peakfinder function with resolution notation (Bug prevents notation showing in log scale)
+25) Added new function and chart to display distortion curve (useful) 
 
 Things to do
 ------------
-* Build function and chart to display distortion curve (useful) 
 * Build interval histogram with Dead time calculation 
 * Add browse button for isotope comparisons
 * Build option for switching theme between fun/boring :)
