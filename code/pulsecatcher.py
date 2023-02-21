@@ -36,7 +36,7 @@ def pulsecatcher():
 	bins            = settings[7]
 	bin_size        = settings[8]
 	max_counts      = settings[9]
-	energy_per_bin 	= settings[10]
+
 	coeff_1			= settings[18]
 	coeff_2			= settings[19]
 	coeff_3			= settings[20]
@@ -94,6 +94,7 @@ def pulsecatcher():
 				normalised_int = [int(round(x)) for x in normalised]
 				# Calculates distortion
 				distortion = fn.distortion(normalised_int, shape)
+
 				# Function calculates pulse height
 				height = fn.pulse_height(normalised_int)
 				
