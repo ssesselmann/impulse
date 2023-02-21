@@ -215,5 +215,3 @@ def peakfinder(y_values, prominence, min_width):
         w = np.round(w,1)
         fwhm.append(w[0])
     return filtered_peaks, fwhm
-
-
