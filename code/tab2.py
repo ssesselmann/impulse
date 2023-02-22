@@ -193,6 +193,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             mu = 0
             sigma = 2
             lin_log = 'linear'
+            prominence = 0.5
 
             if elapsed == 0:
                 cps = 0  
@@ -222,7 +223,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
   #-------------------annotations-----------------------------------------------          
             
-            peaks, fwhm = fn.peakfinder(y, 3, peakfinder)
+
+            peaks, fwhm = fn.peakfinder(y, prominence, peakfinder)
             num_peaks   = len(peaks)
             annotations = []
             lines       = []

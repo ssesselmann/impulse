@@ -200,7 +200,7 @@ def peakfinder(y_values, prominence, min_width):
     # y * bin to give higher value toweards the right
     y_bin = [y * i for i, y in enumerate(y_values)]
     # Find all peaks of prominence
-    peaks, _ = find_peaks(y_bin, prominence=prominence)
+    peaks, _ = find_peaks(y_bin, prominence=prominence, distance = 40)
     # Get the fwhm for all foundpeaks
     widths, _, _, _ = peak_widths(y_values, peaks, rel_height=0.5)
     # Filter out peaks where width >= min-width
