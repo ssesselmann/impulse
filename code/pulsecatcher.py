@@ -36,6 +36,7 @@ def pulsecatcher():
 	bins            = settings[7]
 	bin_size        = settings[8]
 	max_counts      = settings[9]
+	sample_length	= settings[11]
 
 	coeff_1			= settings[18]
 	coeff_2			= settings[19]
@@ -81,8 +82,8 @@ def pulsecatcher():
 		# Extract every other element (left channel)
 		left_channel = values[::2]
 		#global plot_data
-		for i, sample in enumerate(left_channel[:-51]):
-			samples = left_channel[i:i+51]  # Get the first 51 samples
+		for i, sample in enumerate(left_channel[:-sample_length]):
+			samples = left_channel[i:i+sample_length]  # Get the first 51 samples
 			# Flip inverts all samples if detector pulses are positive
 			samples = [flip * x for x in samples]
 			if samples[25] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[25] < 32768:
