@@ -61,7 +61,8 @@ def pulsecatcher():
 	pulses 		= []
 	left_data 	= []
 	p = pyaudio.PyAudio()
-	n =0
+	pulse_count =0
+	n = 0
 
 	# Open the selected audio input device
 	stream = p.open(
@@ -79,45 +80,40 @@ def pulsecatcher():
 		values = list(wave.struct.unpack("%dh" % (chunk_size * device_channels), data))
 		# Extract every other element (left channel)
 		left_channel = values[::2]
-
 		#global plot_data
-		for i in range(len(left_channel) - 51):
+		for i, sample in enumerate(left_channel[:-51]):
 			samples = left_channel[i:i+51]  # Get the first 51 samples
-
 			# Flip inverts all samples if detector pulses are positive
 			samples = [flip * x for x in samples]
-		  
 			if samples[25] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[25] < 32768:
 				# Function normalises sample to zero
 				normalised = fn.normalise_pulse(samples)
 				# Converts normalised to integers
-				normalised_int = [int(round(x)) for x in normalised]
+				normalised_int = [int(x + 0.5) for x in normalised]
 				# Calculates distortion
 				distortion = fn.distortion(normalised_int, shape)
-
 				# Function calculates pulse height
 				height = fn.pulse_height(normalised_int)
-				
+				# Filter
 				if distortion < tolerance:
-					
+					# Sort pulse into correct bin
 					bin_index = int(height/bin_size)
-
+					# Add 1 to bin
 					if bin_index < bins:
 						histogram[bin_index] += 1
 						n += 1
-
-						if n % 100 == 0:
+						pulse_count += 1
+						if pulse_count == 100:
+							pulse_count = 0
 							settings 		= fn.load_settings()
 							coeff_1			= settings[18]
 							coeff_2			= settings[19]
 							coeff_3			= settings[20]
 							max_counts      = settings[9]
-
 							# Time capture
 							t1 = datetime.datetime.now()
 							te = time.time()
 							elapsed = int(te - tb)
-
 							fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
 
 					

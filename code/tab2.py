@@ -15,6 +15,7 @@ from server import app
 
 path = None
 n_clicks = 0
+global_counts = 0
 
 def show_tab2():
 
@@ -172,6 +173,8 @@ def update_output(n_clicks):
 
 def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder):
     
+    global global_counts
+
     histogram1 = fn.get_path(f'data/{filename}.json')
     histogram2 = fn.get_path(f'data/{filename2}.json')
 
@@ -194,7 +197,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             if elapsed == 0:
                 cps = 0  
             else:
-                cps = int(validPulseCount/elapsed)    
+                cps = validPulseCount - global_counts
+                global_counts = validPulseCount  
      
             x = list(range(numberOfChannels))
             y = spectrum
@@ -219,23 +223,20 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
   #-------------------annotations-----------------------------------------------          
             
             peaks, fwhm = fn.peakfinder(y, 3, peakfinder)
-
-            num_peaks = len(peaks)
-
-            
+            num_peaks   = len(peaks)
             annotations = []
             lines       = []
 
             for i in range(num_peaks):
-                peak_value = peaks[i]
-                counts = y[peaks[i]]
-                x_pos = peaks[i]
-                y_pos = y[peaks[i]]
-                resolution = (fwhm[i]/peaks[i])*100
+                peak_value  = peaks[i]
+                counts      = y[peaks[i]]
+                x_pos       = peaks[i]
+                y_pos       = y[peaks[i]]
+                resolution  = (fwhm[i]/peaks[i])*100
 
                 if cal_switch == True:
-                    peak_value = np.polyval(np.poly1d(coefficients), peak_value)
-                    x_pos = peak_value
+                    peak_value  = np.polyval(np.poly1d(coefficients), peak_value)
+                    x_pos       = peak_value
 
                 if log_switch == True:
                     y_pos = y_pos    
@@ -262,7 +263,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                         x1=x_pos,
                         y1=y_pos,
                         line=dict(
-                            color='red',
+                            color='white',
                             width=1,
                             dash='dot'
                         )

@@ -91,7 +91,8 @@ def shapecatcher():
 		    # Extract every other element (left channel)
 			left_channel = values[::2]
 			# Cycle through list of sample strings
-			for i in range(len(left_channel) - sample_length):
+			#for i in range(len(left_channel) - sample_length):
+			for i, sample in enumerate(left_channel[:-sample_length]):	
 				# Get the first string of  samples
 				samples = left_channel[i:i+sample_length]  
 				# Function checks if pulse is positive or negative
@@ -132,7 +133,7 @@ def shapecatcher():
 
 						return shape_int  	
 	except:
-		shape_int = [0] * 51
+		shape_int = [0] * sample_length
 		return shape_int
 
 

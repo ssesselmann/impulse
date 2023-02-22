@@ -41,9 +41,7 @@ def normalise_pulse(average):
     normalised = []
     mean = sum(average) / len(average)   
     normalised = [n - mean for n in average]  
-    # Converts normalised to integers
     normalised_int = [int(x) for x in normalised]
-    # print(normalised)
     return normalised_int
 
     # Normalised pulse samples less normalised shape samples squared summed and rooted
