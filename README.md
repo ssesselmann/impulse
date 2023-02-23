@@ -20,18 +20,29 @@ Open your terminal to the command line and navigate to the folder impulse-main
 
 Step 5) 
 It is necessary to install some python libraries required for Impulse, so copy and paste the following into your terminal;
+```
 pip install -r requirements.txt
-
+```
 Step 6) 
 If you are using macOS or iOS, you also need to install PyObjC. To do this, copy and paste the following into your terminal:
+```
 pip install -r requirements_macos.txt
-
+```
 Step 7) 
-Navigate up to the code directory \impulse\code\ by typing cd code
-
+Navigate up to the code directory \impulse\code\ by typing 
+```
+cd code
+```
 Step 8) 
-Now run the program by typing python run.py, mac users may have to type "python3 run.py"
-python run.py Fingers crossed your default browser should open up and show tab 1
+Now run the program by typing 
+```
+python run.py
+```
+mac users may have to type
+```
+python3 run.py
+```
+Fingers crossed your default browser should open up and show tab 1
 
 Step 9) 
 Always exit the program from tab 4 by clicking the exit button (important)
