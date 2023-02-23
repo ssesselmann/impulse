@@ -9,5 +9,4 @@ pathlib
 plotly
 wave
 pyaudio
-pyobjc
 scipy
