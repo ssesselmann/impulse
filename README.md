@@ -6,26 +6,35 @@ Python Scripted MCA for gamma spectrometry.
  
  Installation
  ------------
- This is a beta development version and still unfinished. 
- To run the program, download the impulse folder, then navigate to the code folder from your terminal and type in at the command prompt; 
- 
- ```
- ~ %  python3 run.py
- ```
- 
-You may need to install the latest version of python3 and various other dependencies. To do so, use the `requirements.txt`;
+Step 1)
+Download the package from the Github repository here 
 
-```
- ~ %  pip install -r requirements.txt
-```
-Mac Users use this version;
+Step 2) 
+Unzip the package to the preferred location on your computer 
 
-```
- ~ %  pip install -r requirements_mac.txt
-```
+Step 3)
+If not already installed on your computer, download and install the latest version of Python 3 from the official site, consider upgrading if you are on a very old version ... www.python.org
 
+Step 4)
+Open your terminal to the command line and navigate to the folder impulse-main
 
+Step 5) 
+It is necessary to install some python libraries required for Impulse, so copy and paste the following into your terminal;
+pip install -r requirements.txt
 
+Step 6) 
+If you are using macOS or iOS, you also need to install PyObjC. To do this, copy and paste the following into your terminal:
+pip install -r requirements_macos.txt
+
+Step 7) 
+Navigate up to the code directory \impulse\code\ by typing cd code
+
+Step 8) 
+Now run the program by typing python run.py, mac users may have to type "python3 run.py"
+python run.py Fingers crossed your default browser should open up and show tab 1
+
+Step 9) 
+Always exit the program from tab 4 by clicking the exit button (important)
 
 When it's all working you can access the program in your browser at;
 
