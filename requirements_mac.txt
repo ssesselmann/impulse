@@ -1,1 +1,13 @@
-
+dash
+dash_daq
+datetime
+flask
+jason
+numpy
+pandas
+pathlib
+plotly
+wave
+pyaudio
+pyobjc
+scipy
