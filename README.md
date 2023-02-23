@@ -18,6 +18,14 @@ You may need to install the latest version of python3 and various other dependen
 ```
  ~ %  pip install -r requirements.txt
 ```
+Mac Users use this version;
+
+```
+ ~ %  pip install -r requirements_mac.txt
+```
+
+
+
 
 When it's all working you can access the program in your browser at;
 
