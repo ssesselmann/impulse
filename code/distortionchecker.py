@@ -11,7 +11,7 @@ import csv
 
 data 			= None
 left_channel 	= None
-devices 		= fn.get_device_list()
+device_list 		= fn.get_device_list()
 path 			= None
 plot 			= {}
 
@@ -42,7 +42,7 @@ def distortion_finder():
 	histogram = [0] * bins
 
 	audio_format = pyaudio.paInt16
-	device_channels = devices[device]['maxInputChannels']
+	device_channels = fn.get_max_input_channels(device_list, device)
 
 	# Loads pulse shape from csv
 	shapestring = fn.load_shape()
