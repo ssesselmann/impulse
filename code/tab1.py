@@ -38,18 +38,16 @@ def show_tab1():
 
     filepath = os.path.dirname(__file__)
 
-    devices = [{'index': 99, 'name': 'device name', 'maxInputChannels': 99, 'maxOutputChannels': 99, 'defaultSampleRate': 99}]
+    device_list = [{'index': 99, 'name': 'device name', 'maxInputChannels': 99, 'maxOutputChannels': 99, 'defaultSampleRate': 99}]
 
     shape = fn.load_shape()
 
     tab1 = html.Div(id='tab1', children=[ 
 
-        
-
         html.Div(children=[
                 dash_table.DataTable( id='container_device_list_short',
-                columns=[{"name": i, "id": i} for i in devices[0].keys()],
-                data=devices),
+                columns=[{"name": i, "id": i} for i in device_list[0].keys()],
+                data=device_list),
             ]),
 #  --------------- User defined settings ------------------------------
 
@@ -76,7 +74,6 @@ def show_tab1():
                 ),
             ]),
 
-
         html.Div(id='tab1_settings', children=[ 
             html.Div( children='Buffer Size'),
             html.Div(dcc.Dropdown(id='chunk_size', 
@@ -91,7 +88,6 @@ def show_tab1():
                 )),
             html.Div(id='output_chunk_text', children='', style={'color': 'red'}),
             ]),
-
 
         html.Div(id='tab1_settings', children=[ 
             html.Div( children='Pulses to sample'),
@@ -123,13 +119,10 @@ def show_tab1():
                 clearable=False, 
                 ))
             ]),
-
-
-            
+       
             html.Div(id='n_clicks_storage', style={'display': 'none'}),
             html.Button('Save Settings', id='submit', n_clicks=0, style={'visibility':'hidden'}),
                 
-            
             html.Div(children=[ 
                 html.Div(id='button', children=[ 
                     html.Div(id='output_div'),
@@ -138,6 +131,7 @@ def show_tab1():
                                 html.Button('Get Device Table ', id='get_device_button'),
                                 html.Button('Capture Pulse Shape',  id='get_shape_button', n_clicks=0), 
                                 html.Button('Get Distortion Curve',  id='get_curve_button', n_clicks=0),
+                                
                             ]),
                     
 #-----------------------------------------------------------------------------------------------------------
@@ -161,7 +155,7 @@ def show_tab1():
                                     html.P('I would love to get your feedback and suggestions for future enhancements.'),
                                     html.P('Steven Sesselmann'),
                                     html.H3('www.gammaspectacular.com'),
-                                    html.Div(f'Note: Data folder is at: {datafolder}', style={'color':'red', 'float':'left'}),   
+                                    html.Div(f'Note: Data folder is at: {datafolder}', style={'color':'red', 'float':'left'}),
 
                                     ]), 
                                 ]),
@@ -169,6 +163,7 @@ def show_tab1():
                             html.Div(id='pulse_shape_div', children=[
                                 html.Div(id='showplot', children=[
                                     dcc.Graph(id='plot', figure={'data': [{}], 'layout': {}})]),
+
                                 ]),
 
                             html.Div(id='distortion_div', children=[
@@ -229,7 +224,7 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5):
         c.execute(query)
         conn.commit()
 
-        return f'Device ({device}) selected'
+    return f'Device ({device}) selected'
 
 #-------- Callback to capture and save mean pulse shape ----------
 
@@ -240,8 +235,9 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5):
 
 def capture_pulse_shape(n_clicks):
     #prevent click on page load
-    if n_clicks is None:
+    if n_clicks == 0:
         fig = {'data': [{}], 'layout': {}}
+        feedback = ''
     else:    
         shape = sc.shapecatcher()
         dots = list(range(len(shape)))
@@ -250,7 +246,7 @@ def capture_pulse_shape(n_clicks):
         layout  = {'title': 'Mean Shape Plot','margin':{'l':'40', 'r':'10', 't':'40', 'b':'40'}}
         fig = {'data': data, 'layout': layout}
 
-        return fig, fig
+    return fig, fig
 
 #------- Distortion curve -----------------------------------
 
@@ -261,7 +257,7 @@ def capture_pulse_shape(n_clicks):
 
 def distortion_curve(n_clicks):
     #prevent click on page load
-    if n_clicks is None: 
+    if n_clicks == 0: 
         fig = {'data': [{}], 'layout': {}}
     else: 
         lines  = dict(size = 3, color = 'purple')
@@ -269,8 +265,7 @@ def distortion_curve(n_clicks):
         x = list(range(len(y)))
         data = [{'x': x, 'y': y, 'type': 'line', 'name': 'SF', 'mode': 'lines', 'marker':lines}]
         layout  = {'title': 'Distortion Curve', 'margin':{'l':'40', 'r':'40', 't':'40', 'b':'40'}}
-            
-    fig = {'data': data, 'layout': layout}
+        fig = {'data': data, 'layout': layout}
 
     return fig, fig
         
