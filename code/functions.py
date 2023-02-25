@@ -136,7 +136,7 @@ def extract_keys(dict_, keys):
     return {k: dict_.get(k, None) for k in keys}
 
 # This function terminates the audio connection
-def refresh_audio_devices():
+def refresh_audio_device_list():
     try:
         p = pyaudio.PyAudio()
         p.terminate()
@@ -145,17 +145,24 @@ def refresh_audio_devices():
     except:
         return
 
-# This function gets a list of audio devices connected to the computer           
+# This function gets a list of audio device_list connected to the computer           
 def get_device_list():
-    refresh_audio_devices()
-    input_devices = [{'index': 99, 'name': 'device name', 'maxInputChannels': 99, 'maxOutputChannels': 99, 'defaultSampleRate': 99}]
+    refresh_audio_device_list()
+    input_device_list = [{'index': 99, 'name': 'device name', 'maxInputChannels': 99, 'maxOutputChannels': 99, 'defaultSampleRate': 99}]
     p = pyaudio.PyAudio()
     try:
         device_count = p.get_device_count()
-        input_devices = [extract_keys(p.get_device_info_by_index(i), ['index', 'name', 'maxInputChannels', 'maxOutputChannels', 'defaultSampleRate']) for i in range(device_count) if p.get_device_info_by_index(i)['maxInputChannels'] >= 1]
-        return input_devices
+        input_device_list = [extract_keys(p.get_device_info_by_index(i), ['index', 'name', 'maxInputChannels', 'maxOutputChannels', 'defaultSampleRate']) for i in range(device_count) if p.get_device_info_by_index(i)['maxInputChannels'] >= 1]
+        return input_device_list
     except:
         return[99,'no device', 99, 99, 99]     
+
+# Returns maxInputChannels in an unordered list
+def get_max_input_channels(devices, device_index):
+    for device in devices:
+        if device['index'] == device_index:
+            return device['maxInputChannels']
+    return None
 
 # Function to open browser on localhost
 def open_browser(port):
