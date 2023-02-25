@@ -1,7 +1,6 @@
 # This page is the main pulse catcher file, it 
 # collects, normalises and filters the pulses 
 # ultimately saving the histogram file to JSON.
-
 import pyaudio
 import wave
 import math
@@ -12,18 +11,17 @@ import datetime
 from collections import defaultdict
 import csv
 
-
 data 			= None
 left_channel 	= None
-devices 		= fn.get_device_list()
+device_list 		= fn.get_device_list()
 path 			= None
 plot 			= {}
-
 
 # Function to catch pulses and output time, pulkse height and distortion
 def pulsecatcher():
 
 	# Start timer
+	timer_start		= time.time()
 	t0				= datetime.datetime.now()
 	tb				= time.time()
 	settings 		= fn.load_settings()
@@ -43,14 +41,13 @@ def pulsecatcher():
 	coeff_3			= settings[20]
 	flip 			= settings[22]
 
-
 	# Create an array of ewmpty bins
 	start = 0
 	stop = bins * bin_size
 	histogram = [0] * bins
 
 	audio_format = pyaudio.paInt16
-	device_channels = devices[device]['maxInputChannels']
+	device_channels = fn.get_max_input_channels(device_list, device)
 
 	# Loads pulse shape from csv
 	shapestring = fn.load_shape()
@@ -62,7 +59,6 @@ def pulsecatcher():
 	pulses 		= []
 	left_data 	= []
 	p = pyaudio.PyAudio()
-	pulse_count =0
 	n = 0
 
 	# Open the selected audio input device
@@ -76,6 +72,7 @@ def pulsecatcher():
 		frames_per_buffer=chunk_size)
 
 	while n <= max_counts:
+		t = time.time()
 		# Read the audio data from the stream
 		data = stream.read(chunk_size, exception_on_overflow=False)
 		values = list(wave.struct.unpack("%dh" % (chunk_size * device_channels), data))
@@ -102,10 +99,9 @@ def pulsecatcher():
 					# Add 1 to bin
 					if bin_index < bins:
 						histogram[bin_index] += 1
-						n += 1
-						pulse_count += 1
-						if pulse_count == 100:
-							pulse_count = 0
+						n   += 1	
+						if t - timer_start >= 1:
+							timer_start = t
 							settings 		= fn.load_settings()
 							coeff_1			= settings[18]
 							coeff_2			= settings[19]
@@ -117,7 +113,7 @@ def pulsecatcher():
 							elapsed = int(te - tb)
 							fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
 
-					
+						
 
 
 					
