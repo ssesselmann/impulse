@@ -12,7 +12,6 @@ from dash import html
 from dash.dependencies import Input, Output
 from server import app
 
-
 path = None
 n_clicks = 0
 global_counts = 0
@@ -137,22 +136,16 @@ def show_tab2():
                 [Input('start'      ,'n_clicks')])
 
 def update_output(n_clicks):
-    
     if n_clicks != None:
-
         pc.pulsecatcher()
-
         return
-
 #----STOP------------------------------------------------------------
 
 @app.callback( Output('stop_text'  ,'children'),
                 [Input('stop'      ,'n_clicks')])
 
 def update_output(n_clicks):
-
     if n_clicks != 0:
-
         return 
 #----------------------------------------------------------------
 
