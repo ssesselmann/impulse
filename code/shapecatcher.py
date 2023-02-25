@@ -63,15 +63,14 @@ def shapecatcher():
 	stop = bins * bin_size
 	bin_array = fn.create_bin_array(start, stop, bin_size)
 	bin_counts = defaultdict(int)
-
-
 	
 	try:
 		# Get audio parameters
-		devices = fn.get_device_list()
+		device_list = fn.get_device_list()
+		device_channels = fn.get_max_input_channels(device_list, device)
 		p = pyaudio.PyAudio()
 		audio_format = pyaudio.paInt16
-		device_channels = devices[device]['maxInputChannels']
+		
 		# Open the selected audio input device
 		stream = p.open(
 			format=audio_format,
