@@ -16,6 +16,10 @@ import pandas as pd
 from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
 from datetime import datetime
+# import urlopen from urllib.request
+from urllib.request import urlopen
+
+cps_list = []
 
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
@@ -79,9 +83,7 @@ def update_bin(n, bins, bin_counts):
 
 # This function writes histogram to JSON file according to NPESv1 schema.
 def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
-    
     jsonfile = get_path(f'data/{name}.json')
-
     data =  {"schemaVersion":"NPESv1",
                 "resultData":{
                     "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
@@ -99,6 +101,15 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coe
                     }
                 }
 
+    with open(jsonfile, "w+") as f:
+        json.dump(data, f)
+
+def write_cps_json(name, cps):
+    global cps_list
+    jsonfile = get_path(f'data/{name}-cps.json')
+    #gps      = get_gps_loc()
+    cps_list.append(cps)
+    data     = {'cps': cps_list }
     with open(jsonfile, "w+") as f:
         json.dump(data, f)
      
@@ -220,3 +231,12 @@ def peakfinder(y_values, prominence, min_width):
         w = np.round(w,1)
         fwhm.append(w[0])
     return filtered_peaks, fwhm
+
+def get_gps_loc():
+    # load data into array
+    data = json.load(urlopen("https://ipinfo.io/json"))
+    # extract lattitude
+    lat = data['loc'].split(',')[0]
+    # extract longitude
+    lon = data['loc'].split(',')[1]
+    return lat, lon
