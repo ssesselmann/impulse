@@ -60,6 +60,7 @@ def pulsecatcher():
 	left_data 	= []
 	p = pyaudio.PyAudio()
 	n = 0
+	cps = 0
 
 	# Open the selected audio input device
 	stream = p.open(
@@ -100,6 +101,7 @@ def pulsecatcher():
 					if bin_index < bins:
 						histogram[bin_index] += 1
 						n   += 1	
+						cps += 1
 						if t - timer_start >= 1:
 							timer_start = t
 							settings 		= fn.load_settings()
@@ -112,8 +114,9 @@ def pulsecatcher():
 							te = time.time()
 							elapsed = int(te - tb)
 							fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
-
-						
+							fn.write_cps_json(name,cps)
+							cps = 0
+							
 
 
 					
