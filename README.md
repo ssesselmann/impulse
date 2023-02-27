@@ -81,12 +81,13 @@ Change log
 23) Fixed an issue where the x axis changed scale when comparison was switched on.
 24) Added peakfinder function with resolution notation (Bug prevents notation showing in log scale)
 25) Added new function and chart to display distortion curve (useful) 
+26) Added tab3 with counts per second histogram, data saves to json file
 
 Things to do
 ------------
 * Build interval histogram with Dead time calculation 
 * Add browse button for isotope comparisons
-* Build option for switching theme between fun/boring :)
+* Build option for switching theme between fun/boring theme :)
 
 If anyone has requests for additional features please contact me via the "Contact us" link at gammaspectacular.com
 
