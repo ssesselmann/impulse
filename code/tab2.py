@@ -11,6 +11,7 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from server import app
+from dash.exceptions import PreventUpdate
 
 path = None
 n_clicks = 0
@@ -161,13 +162,16 @@ def update_output(n_clicks):
                 Input('filename2'           ,'value'),
                 Input('compare_switch'      ,'on'),
                 Input('difference_switch'   ,'on'),
-                Input('peakfinder'          ,'value')
+                Input('peakfinder'          ,'value'),
+                Input('tabs', 'value')
                 ])
 
-def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder):
+def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, active_tab):
     
-    global global_counts
+    if active_tab != 'tab2':  # only update the chart when "tab3" is active
+        raise PreventUpdate
 
+    global global_counts
     histogram1 = fn.get_path(f'data/{filename}.json')
     histogram2 = fn.get_path(f'data/{filename2}.json')
 
