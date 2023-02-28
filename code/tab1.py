@@ -49,6 +49,7 @@ def show_tab1():
                 columns=[{"name": i, "id": i} for i in device_list[0].keys()],
                 data=device_list),
             ]),
+
 #  --------------- User defined settings ------------------------------
 
         html.Div(id='heading', children=[html.H1('Pulse Shape Capture and Settings')]),
@@ -146,16 +147,11 @@ def show_tab1():
                                     html.P('4) Click the Capture Pulse Shape button to start pulse shape training, then wait for pulse.'),
                                     html.P('5) Click the get Distortion Curve and wait for chart to update'),
                                     html.P('6) Well done, setup is ready, go to tab2 for recording your first spectrum'),
-                                    html.Hr(),
-                                    html.P("""The computer collects the specified number of pulses, does a a zip sum of the samples
-                                        and calculates the mean before normalising the pulse. Normalising means taking the sum average and deducting this from each
-                                        sample such that the sum of all samples becomes zero. It then saves the pulse shape to a csv file in ../impulse/data/. 
-                                        This shape file becomes an important template for filtering pulses at the next stage. Scintillation detectors 
-                                        produce pulses of varying height, but invariant shape, this feature is exploited to filter out Pulse Pile Up (PPU)."""),
-                                    html.P('I would love to get your feedback and suggestions for future enhancements.'),
                                     html.P('Steven Sesselmann'),
-                                    html.H3('www.gammaspectacular.com'),
-                                    html.Div(f'Note: Data folder is at: {datafolder}', style={'color':'red', 'float':'left'}),
+                                    html.Div(dcc.Link('steven@gammaspectacular.com', 'mailto:steven@gammaspectacular.com')),
+                                    html.Div(dcc.Link('https://www.gammaspectacular.com', 'https://www.gammaspectacular.com')),
+                                    html.Hr(),
+                                    html.Div(f'Note: {datafolder}', style={'color':'red', 'float':'left'}),
 
                                     ]), 
                                 ]),
@@ -234,16 +230,18 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5):
     [Input('get_shape_button'  ,'n_clicks')])
 
 def capture_pulse_shape(n_clicks):
+
+    layout  = {'title': 'Mean Shape Plot','margin':{'l':'40', 'r':'10', 't':'40', 'b':'40'}, 'height': '350'}
+
     #prevent click on page load
     if n_clicks == 0:
-        fig = {'data': [{}], 'layout': {}}
+        fig = {'data': [{}], 'layout': layout}
         feedback = ''
     else:    
         shape = sc.shapecatcher()
         dots = list(range(len(shape)))
         marker  = dict(size = 5, color = 'purple')
         data    = [{'x': dots, 'y': shape, 'type': 'line', 'name': 'SF', 'mode': 'markers+lines', 'marker': marker}]
-        layout  = {'title': 'Mean Shape Plot','margin':{'l':'40', 'r':'10', 't':'40', 'b':'40'}}
         fig = {'data': data, 'layout': layout}
 
     return fig, fig
@@ -256,15 +254,17 @@ def capture_pulse_shape(n_clicks):
             [Input('get_curve_button'   ,'n_clicks')])
 
 def distortion_curve(n_clicks):
+
+    layout  = {'title': 'Distortion Curve', 'margin':{'l':'40', 'r':'40', 't':'40', 'b':'40'}, 'height': '350'}
+
     #prevent click on page load
     if n_clicks == 0: 
-        fig = {'data': [{}], 'layout': {}}
+        fig = {'data': [{}], 'layout': layout}
     else: 
         lines  = dict(size = 3, color = 'purple')
         y = dcr.distortion_finder()
         x = list(range(len(y)))
         data = [{'x': x, 'y': y, 'type': 'line', 'name': 'SF', 'mode': 'lines', 'marker':lines}]
-        layout  = {'title': 'Distortion Curve', 'margin':{'l':'40', 'r':'40', 't':'40', 'b':'40'}}
         fig = {'data': data, 'layout': layout}
 
     return fig, fig

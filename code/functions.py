@@ -240,3 +240,4 @@ def get_gps_loc():
     # extract longitude
     lon = data['loc'].split(',')[1]
     return lat, lon
+

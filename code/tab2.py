@@ -98,7 +98,7 @@ def show_tab2():
 
 
         html.Div(id='t2_setting_div'    , children=[
-            html.Div(['Energy per bin'  , daq.BooleanSwitch(id='epb_switch',on=False, color='purple',)]),
+            html.Div(['Energy by bin'  , daq.BooleanSwitch(id='epb_switch',on=False, color='purple',)]),
             html.Div(['Show log(y)'     , daq.BooleanSwitch(id='log_switch',on=False, color='purple',)]),
             html.Div(['Calibration'    , daq.BooleanSwitch(id='cal_switch',on=False, color='purple',)]),
             ]),   
@@ -269,7 +269,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     )
                 )
 
-            if log_switch == True: # This is a botch due to a bub in plotly
+            if log_switch == True: # This is a botch due to a bug in plotly
                 layout = go.Layout(
                     paper_bgcolor = 'white', 
                     plot_bgcolor = 'white',
@@ -279,9 +279,13 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     'y': 0.9,
                     'xanchor': 'center',
                     'yanchor': 'top',
-                    'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+                    'font': {'family': 'Arial', 'size': 24, 'color': 'black'},
                     },
-                    height  =600, 
+                    height  =450, 
+                    margin_t=0,
+                    margin_b=0,
+                    margin_l=0,
+                    margin_r=0,
                     autosize=True,
                     xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
                     yaxis=dict(type=lin_log),
@@ -296,9 +300,13 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     'y': 0.9,
                     'xanchor': 'center',
                     'yanchor': 'top',
-                    'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+                    'font': {'family': 'Arial', 'size': 24, 'color': 'black'},
                     },
-                    height  =600, 
+                    height  =450, 
+                    margin_t=0,
+                    margin_b=0,
+                    margin_l=0,
+                    margin_r=0,
                     autosize=True,
                     xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
                     yaxis=dict(type=lin_log),
@@ -377,7 +385,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 'yanchor': 'top',
                 'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
                 },
-                height  =600, 
+                height  =450, 
                 autosize=True,
                 xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
                 yaxis=dict(type=lin_log)

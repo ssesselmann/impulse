@@ -24,7 +24,10 @@ def show_tab3():
     #------------------------------------------
 
     html_tab3 = html.Div(id='tab3', children=[
+
         html.Div(dcc.Input(id='filename', type='text', value=settings[1], style={'display': 'none'})),
+        
+
         html.Div(id='count_rate_div', # Histogram Chart
             children=[
                 dcc.Graph(id='count_rate_chart', figure= {}),
@@ -90,7 +93,7 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
                     tickfont=dict(family='Arial', size=14, color='black'),
                     titlefont=dict(family='Arial', size=18, color='black')
                 ),
-                height=600,
+                height=500,
                 margin=dict(l=80, r=50, t=100, b=80),
                 paper_bgcolor='white',
                 plot_bgcolor='white'

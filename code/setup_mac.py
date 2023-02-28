@@ -19,9 +19,11 @@ setup(
     name='impulse',
     version='1.0',
     py_modules=[
-        'run','functions', 
+        'distortionchecker',
+        'functions', 
         'launcher', 
         'pulsecatcher', 
+        'run',
         'server', 
         'shapecatcher', 
         'tab1', 
@@ -32,7 +34,6 @@ setup(
     app=['run.py'],
     options={'py2app': {'argv_emulation': True, 'iconfile': 'favicon',}},
     data_files=[datafolder],
-
     setup_requires=['py2app'],
 )
 
