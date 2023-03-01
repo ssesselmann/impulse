@@ -105,10 +105,11 @@ def pulsecatcher():
 						if t - timer_start >= 1:
 							timer_start = t
 							settings 		= fn.load_settings()
+							name            = settings[1]
+							max_counts      = settings[9]
 							coeff_1			= settings[18]
 							coeff_2			= settings[19]
 							coeff_3			= settings[20]
-							max_counts      = settings[9]
 							# Time capture
 							t1 = datetime.datetime.now()
 							te = time.time()

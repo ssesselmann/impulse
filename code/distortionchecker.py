@@ -11,7 +11,7 @@ import csv
 
 data 			= None
 left_channel 	= None
-device_list 		= fn.get_device_list()
+device_list 	= fn.get_device_list()
 path 			= None
 plot 			= {}
 

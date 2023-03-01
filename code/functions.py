@@ -107,12 +107,15 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coe
 def write_cps_json(name, cps):
     global cps_list
     jsonfile = get_path(f'data/{name}-cps.json')
-    #gps      = get_gps_loc()
     cps_list.append(cps)
     data     = {'cps': cps_list }
     with open(jsonfile, "w+") as f:
         json.dump(data, f)
-     
+  
+def clear_global_cps_list():
+    global cps_list
+    cps_list = []
+
 # This function loads settings from sqli database
 def load_settings():
 

@@ -16,6 +16,7 @@ from dash.exceptions import PreventUpdate
 path = None
 n_clicks = 0
 global_counts = 0
+global cps_list
 
 def show_tab2():
 
@@ -76,21 +77,21 @@ def show_tab2():
             ]),
 
         html.Div(id='t2_setting_div', children=[
-            html.Div(['Spectrum file name:', dcc.Input(id='filename' ,type='text' ,value=filename )]),
+            html.Div(['File name:', dcc.Input(id='filename' ,type='text' ,value=filename )]),
             html.Div(['Number of bins:', dcc.Input(id='bins'        ,type='number'  ,value=bins )]),
             html.Div(['bin size      :', dcc.Input(id='bin_size'    ,type='number'  ,value=bin_size )]),
             ]), 
 
 
         html.Div(id='t2_setting_div', children=[
-            html.Div(['Stop after n counts:', dcc.Input(id='max_counts', type='number', value=max_counts )]),
+            html.Div(['Stop at n counts', dcc.Input(id='max_counts', type='number', value=max_counts )]),
             html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold )]),
             html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance )]),
             ]),
 
         html.Div(id='t2_setting_div', children=[
 
-            html.Div(['Overlay name or i/...', dcc.Input(id='filename2' ,type='text' ,value=filename2 )]),
+            html.Div(['Overlay or i/..', dcc.Input(id='filename2' ,type='text' ,value=filename2 )]),
             html.Div(['Show Comparison'      , daq.BooleanSwitch(id='compare_switch',on=False, color='purple',)]),
             html.Div(['Subtract Comparison'  , daq.BooleanSwitch(id='difference_switch',on=False, color='purple',)]),
 
@@ -113,7 +114,7 @@ def show_tab2():
             ]),
 
         html.Div(id='t2_setting_div', children=[
-            html.Div('Calibration Energies'),
+            html.Div('Energies'),
             html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1)),
             html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2)),
             html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3)),
@@ -138,6 +139,7 @@ def show_tab2():
 
 def update_output(n_clicks):
     if n_clicks != None:
+        fn.clear_global_cps_list()
         pc.pulsecatcher()
         return
 #----STOP------------------------------------------------------------

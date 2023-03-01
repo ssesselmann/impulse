@@ -55,6 +55,7 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
         raise PreventUpdate
 
     cps_file = fn.get_path(f'data/{filename}-cps.json')
+
     if os.path.exists(cps_file):
         with open(cps_file, "r") as f:
             count_data = json.load(f)
@@ -101,6 +102,7 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
             fig = go.Figure(data=[bars], layout=layout)
 
     else:
+        
         fig = {'data': [{'type': 'bar', 'x': [], 'y': []}], 'layout': {'title': 'No data available'}}
 
     return fig
