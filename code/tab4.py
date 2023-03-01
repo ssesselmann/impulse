@@ -79,7 +79,7 @@ def show_tab4():
                 html.Div('working with a wide range of gamma scintillation detectors and geiger counters.'), 
                 html.Br(),
                 html.Div('More information can be found at:'),
-                html.Div(dcc.Link('https://www.gammaspectacular.com', 'https://www.gammaspectacular.com' )),
+                html.Div(html.A('www.gammaspectacular.com', href='https://www.gammaspectacular.com', target='_blank' )),
                 html.Br(),
                 html.Div('This software is Free open source software and everyone is invited to contribute.'), 
                 html.Br(),
