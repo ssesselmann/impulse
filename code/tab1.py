@@ -147,9 +147,10 @@ def show_tab1():
                                     html.P('4) Click the Capture Pulse Shape button to start pulse shape training, then wait for pulse.'),
                                     html.P('5) Click the get Distortion Curve and wait for chart to update'),
                                     html.P('6) Well done, setup is ready, go to tab2 for recording your first spectrum'),
+                                    html.P('7) Found a bug 🐞 or have a suggestion... send me an email.'),
                                     html.P('Steven Sesselmann'),
-                                    html.Div(dcc.Link('steven@gammaspectacular.com', 'mailto:steven@gammaspectacular.com')),
-                                    html.Div(dcc.Link('https://www.gammaspectacular.com', 'https://www.gammaspectacular.com')),
+                                    html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
+                                    html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
                                     html.Hr(),
                                     html.Div(f'Note: {datafolder}', style={'color':'red', 'float':'left'}),
 
