@@ -7,18 +7,23 @@ Python Scripted MCA for gamma spectrometry.
  Installation Method (Windows, Mac or Linux)
  -------------------------------------------
 Step 1)
+-------
 Download and install the latest version of Python from the official site, consider upgrading if you are on an old version ... www.python.org
 
-Step 2) 
+Step 2)
+------- 
 Download Impulse from the Github repository here https://github.com/ssesselmann/impulse
 
 Step 3)
+-------
 Unzip the package to the preferred location on your drive
 
 Step 4)
+-------
 Open your terminal to the command line and navigate to the folder ~/impulse-main
 
-Step 5) 
+Step 5)
+------- 
 Impulse requires some additional python libraries installed, so copy and paste the following into your terminal;
 
 Windows
@@ -34,7 +39,8 @@ Linux
 pip install -r requirements.txt
 ```
 
-Step 6) 
+Step 6)
+------- 
 Now run the program by typing 
 ```
 python code/run.py
