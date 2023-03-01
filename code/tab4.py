@@ -46,7 +46,7 @@ def show_tab4():
                 html.H2('Tab2 - Pulse Height Histogram'),
                 html.H4('Spectrum File Name'),
                 html.P('This is exactly what it says, you can name your spectrum anything you like, it will automatically save in ~/impulse/code/data/myspectrum.json , the JSON file format is NPESv1 and is compatible with  '),
-                html.Div(dcc.Link('https://github.com/OpenGammaProject/NPES-JSON', 'https://github.com/OpenGammaProject/NPES-JSON')),
+                html.Div(html.A('https://github.com/OpenGammaProject/NPES-JSON', href='https://github.com/OpenGammaProject/NPES-JSON', target='_blank')),
                 html.H4('Number of Bins & Bin Size'),
                 html.P('These setting determine the number of bins you want in your histogram and the size of each bin. The default settings are 1000 bins and 30 arbitrary units per bin. These numbers have been chosen because it gives you a spectrum range of 3000 which is convenient for most gamma spectra as we are investigating 0 to 3000 keV.'),
                 html.H4('Stop after n Counts'),
