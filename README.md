@@ -4,47 +4,54 @@ Python Scripted MCA for gamma spectrometry.
 ----------------------------------------
  This program reads a stream of data from the PC sound card and picks out pulses, the pulses are subsequently filtered and written to a JSON file. A live histogram can be viewed in the browser. 
  
- Installation
- ------------
+ Installation Method (Windows, Mac or Linux)
+ -------------------------------------------
 Step 1)
-Download the package from the Github repository here 
+Download and install the latest version of Python from the official site, consider upgrading if you are on an old version ... www.python.org
 
 Step 2) 
-Unzip the package to the preferred location on your computer 
+Download Impulse from the Github repository here https://github.com/ssesselmann/impulse
 
 Step 3)
-If not already installed on your computer, download and install the latest version of Python 3 from the official site, consider upgrading if you are on a very old version ... www.python.org
+Unzip the package to the preferred location on your drive
 
 Step 4)
-Open your terminal to the command line and navigate to the folder impulse-main
+Open your terminal to the command line and navigate to the folder ~/impulse-main
 
 Step 5) 
-It is necessary to install some python libraries required for Impulse, so copy and paste the following into your terminal;
+Impulse requires some additional python libraries installed, so copy and paste the following into your terminal;
+
+Windows
 ```
 pip install -r requirements.txt
 ```
+Mac
+```
+pip3 install -r requirements_mac.txt
+```
+Linux
+```
+pip install -r requirements.txt
+```
+
 Step 6) 
-If you are using macOS or iOS, you also need to install PyObjC. To do this, copy and paste the following into your terminal:
-```
-pip install -r requirements_macos.txt
-```
-Step 7) 
-Navigate up to the code directory \impulse\code\ by typing 
-```
-cd code
-```
-Step 8) 
 Now run the program by typing 
 ```
-python run.py
+python code/run.py
 ```
 mac users may have to type
 ```
-python3 run.py
+python3 code/run.py
 ```
 Fingers crossed your default browser should open up and show tab 1
 
-Step 9) 
+Troubleshooting
+---------------
+Look for any error messages in the terminal. A common problem is a missing library, if so try installing it separatelly.
+```
+pip install ??????
+```
+
 Always exit the program from tab 4 by clicking the exit button (important)
 
 When it's all working you can access the program in your browser at;
