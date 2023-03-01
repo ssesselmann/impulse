@@ -82,6 +82,8 @@ Change log
 24) Added peakfinder function with resolution notation (Bug prevents notation showing in log scale)
 25) Added new function and chart to display distortion curve (useful) 
 26) Added tab3 with counts per second histogram, data saves to json file
+27) Improved layout compatibility with smaller screens.
+28) Added user manual to tab 4
 
 Things to do
 ------------
