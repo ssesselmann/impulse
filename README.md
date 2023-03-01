@@ -1,4 +1,4 @@
-IMPULSE Version 1.1 February 2023
+IMPULSE February 2023
 --------------
 Python Scripted MCA for gamma spectrometry.
 ----------------------------------------
