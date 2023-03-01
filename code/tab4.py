@@ -81,10 +81,10 @@ def show_tab4():
                 html.Div('More information can be found at:'),
                 html.Div(dcc.Link('https://www.gammaspectacular.com', 'https://www.gammaspectacular.com' )),
                 html.Br(),
-                html.Div('This software is Free open source software and everyone is invoted to contribute.'), 
+                html.Div('This software is Free open source software and everyone is invited to contribute.'), 
                 html.Br(),
                 html.Div('Steven Sesselmann'),
-                html.Div(id='add', children=[html.Img(src='https://www.gammaspectacular.com/steven/impulse/gs_pro_v5.png')])
+                html.Div(id='add', children=[html.Img(src='https://www.gammaspectacular.com/steven/impulse/GSB-1515-KIT.png')])
                 ])]
 
             )]),
