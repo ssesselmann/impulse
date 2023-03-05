@@ -68,7 +68,6 @@ def show_tab2():
 
             ]),
 
-        #Stop button
         html.Div(id='t2_setting_div', children=[
             html.Div(id='cps', children=''),
             html.Div(id='elapsed', children= '' ),
@@ -291,6 +290,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     autosize=True,
                     xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
                     yaxis=dict(type=lin_log),
+                    uirevision="Don't change",
                     )
             else:
                 layout = go.Layout(
@@ -314,6 +314,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     yaxis=dict(type=lin_log),
                     annotations=annotations,
                     shapes=lines,
+                    uirevision="Don't change",
                     )
 #-------Comparison spectrum ---------------------------------------------------------------------------
 
@@ -390,7 +391,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 height  =450, 
                 autosize=True,
                 xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
-                yaxis=dict(type=lin_log)
+                yaxis=dict(type=lin_log),
+                uirevision="Don't change",
                 )
         return go.Figure(data=[], layout=layout), 0, 0, 0
 
