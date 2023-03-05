@@ -76,10 +76,8 @@ def distortion_finder():
 		#global plot_data
 		for i in range(len(left_channel) - 51):
 			samples = left_channel[i:i+51]  # Get the first 51 samples
-
 			# Flip inverts all samples if detector pulses are positive
 			samples = [flip * x for x in samples]
-		  
 			if samples[25] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[25] < 32768:
 				# Function normalises sample to zero
 				normalised = fn.normalise_pulse(samples)
@@ -89,12 +87,11 @@ def distortion_finder():
 				distortion = fn.distortion(normalised_int, shape)
 				# Append distortion
 				distortion_list.append(distortion)
-
 				distortion_list.sort()
-
 				n +=1
 
 		if n >= shapecatches:
+			p.terminate()
 			break
 
 	return distortion_list	

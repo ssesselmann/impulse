@@ -167,8 +167,10 @@ def get_device_list():
     try:
         device_count = p.get_device_count()
         input_device_list = [extract_keys(p.get_device_info_by_index(i), ['index', 'name', 'maxInputChannels', 'maxOutputChannels', 'defaultSampleRate']) for i in range(device_count) if p.get_device_info_by_index(i)['maxInputChannels'] >= 1]
+        p.terminate()
         return input_device_list
     except:
+        p.terminate()
         return[99,'no device', 99, 99, 99]     
 
 # Returns maxInputChannels in an unordered list

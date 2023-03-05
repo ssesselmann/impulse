@@ -58,7 +58,8 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         coeff_3         REAL    DEFAULT 0,                  
         comparison      TEXT    DEFAULT '',                 
         flip            INTEGER DEFAULT 1,                  
-        peakfinder      REAL    DEFAULT 0.5                  
+        peakfinder      REAL    DEFAULT 0.5,
+        theme           TEXT    DEFAULT 'fun'                 
         );"""
 
 # This query inserts the first record in settings with defaults
@@ -89,7 +90,7 @@ app.layout = html.Div([
                 label='Count Rate Histogram', 
                 value='tab3'),
             dcc.Tab(
-                label='Important! Exit Here', 
+                label='Exit and Manual', 
                 value='tab4'),
         ]),
     html.Div(id = 'tabs-content'),# Empty Div, where the out of render_tabs is sent to. (The page content)

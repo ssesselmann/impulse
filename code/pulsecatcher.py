@@ -117,6 +117,9 @@ def pulsecatcher():
 							fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
 							fn.write_cps_json(name,cps)
 							cps = 0
+	# close =stream when done
+	p.terminate()
+	return						
 							
 
 

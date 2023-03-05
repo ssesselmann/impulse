@@ -98,25 +98,22 @@ def shapecatcher():
 				flip = fn.detect_pulse_direction(samples)
 				# Flips samples if pulse is positive
 				samples = [flip * x for x in samples]
-
 				# Find pulses based only on the peak height being in the middle 80% of 32000
 				if samples[peak] >= max(samples) and (max(samples)-min(samples)) > 3200 and samples[peak] < 28800:
-					
 					# gather a list of samples 
 					pulse_list.append(samples)
 					# Counter
 					n += 1
 					# Stop[ afer n samples]
 					if n >= (shapecatches-1): # number of pulses to average
+						# close stream
+						p.terminate()
 						# Zip sum all lists
 						pulses_sum = [sum(x)/len(pulse_list) for x in zip(*pulse_list)] 
-
 						# Normalise summed list
 						shape = fn.normalise_pulse(pulses_sum)
-
 						# convert floats to ints
 						shape_int = [int(x) for x in shape]
-
 						# Format and save to csv file
 						df = pd.DataFrame(shape_int)
 						# Save Pulse Direction to database
@@ -126,10 +123,8 @@ def shapecatcher():
 						query = f"UPDATE settings SET flip = {flip} WHERE id=0;"
 						c.execute(query)
 						conn.commit()
-
 						# Write to csv
 						df.to_csv(shapecsv, index='Shape', header=0)
-
 						return shape_int  	
 	except:
 		shape_int = [0] * sample_length

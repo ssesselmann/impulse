@@ -94,6 +94,7 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
                     tickfont=dict(family='Arial', size=14, color='black'),
                     titlefont=dict(family='Arial', size=18, color='black')
                 ),
+                uirevision="Don't change",
                 height=500,
                 margin=dict(l=80, r=50, t=100, b=80),
                 paper_bgcolor='white',
