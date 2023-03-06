@@ -117,6 +117,8 @@ def show_tab2():
             html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1)),
             html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2)),
             html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3)),
+            html.Div('Gaussian corr. (sigma)'),
+            html.Div(dcc.Slider(id='sigma', min=0.1 ,max=3, step=0.01, value= 0, marks=None,)),
             html.Div(id='settings'  , children =''),
             ]),
 
@@ -164,10 +166,11 @@ def update_output(n_clicks):
                 Input('compare_switch'      ,'on'),
                 Input('difference_switch'   ,'on'),
                 Input('peakfinder'          ,'value'),
+                Input('sigma'               ,'value'),
                 Input('tabs', 'value')
                 ])
 
-def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, active_tab):
+def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, active_tab):
     
     if active_tab != 'tab2':  # only update the chart when "tab3" is active
         raise PreventUpdate
@@ -188,10 +191,18 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
             coefficients        = coefficients[::-1] # Revese order
 
+            
+
             mu = 0
-            sigma = 2
+            #sigma = 0.5
             lin_log = 'linear'
             prominence = 0.5
+
+            if sigma == 0:
+                gc = []
+            else:    
+                gc = fn.gaussian_correl(spectrum, sigma)
+            
 
             if elapsed == 0:
                 cps = 0  
@@ -352,10 +363,17 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                         marker={'color': 'red', 'size':1}, 
                         line={'width':2})
 
+                    trace4 = go.Scatter(
+                        x=x, 
+                        y=gc, 
+                        mode='lines+markers',  
+                        marker={'color': 'yellow', 'size':1}, 
+                        line={'width':2})
+
 #----------------------------------------------------------------------------------------------------------------                   
             
             if compare_switch == False:
-                fig = go.Figure(data=[trace1], layout=layout), validPulseCount, elapsed, f'cps {cps}'
+                fig = go.Figure(data=[trace1, trace4], layout=layout), validPulseCount, elapsed, f'cps {cps}'
 
             if compare_switch == True: 
                 fig = go.Figure(data=[trace1, trace2], layout=layout), validPulseCount, elapsed, f'cps {cps}'
