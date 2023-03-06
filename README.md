@@ -97,6 +97,7 @@ Change log
 26) Added tab3 with counts per second histogram, data saves to json file
 27) Improved layout compatibility with smaller screens.
 28) Added user manual to tab 4
+29) Added gaussian correlation trace to spectrum with sadjustable sigma
 
 Things to do
 ------------
