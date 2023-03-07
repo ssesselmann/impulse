@@ -362,12 +362,15 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                         marker={'color': 'red', 'size':1}, 
                         line={'width':2})
 
-                    trace4 = go.Scatter(
-                        x=x, 
-                        y=gc, 
-                        mode='lines+markers',  
-                        marker={'color': 'yellow', 'size':1}, 
-                        line={'width':2})
+                    if sigma == 0:
+                        trace4 = {}
+                    else:    
+                        trace4 = go.Scatter(
+                            x=x, 
+                            y=gc, 
+                            mode='lines+markers',  
+                            marker={'color': 'yellow', 'size':1}, 
+                            line={'width':2})
 
 #----------------------------------------------------------------------------------------------------------------                   
             
