@@ -99,6 +99,7 @@ Change log
 28) Added user manual to tab 4
 29) Added gaussian correlation trace to spectrum with sadjustable sigma
 30) Tidied up appearance and moved the polynomial function, added text for gaussian correlation on tab4
+31) Fixed fatal bug related to gaussian slider and saves slider position to settings
 
 Things to do
 ------------

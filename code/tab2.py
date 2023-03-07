@@ -50,6 +50,7 @@ def show_tab2():
     coeff_3         = settings[20]
     filename2       = settings[21]
     peakfinder      = settings[23]
+    sigma           = settings[25]
 
 
     html_tab2 = html.Div(id='tab2', children=[
@@ -118,7 +119,7 @@ def show_tab2():
             html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2)),
             html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3)),
             html.Div('Gaussian corr. (sigma)'),
-            html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.01, value= 0, marks=None,)),
+            html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.01, value= sigma, marks=None,)),
             
             ]),
 
@@ -168,7 +169,7 @@ def update_output(n_clicks):
                 Input('difference_switch'   ,'on'),
                 Input('peakfinder'          ,'value'),
                 Input('sigma'               ,'value'),
-                Input('tabs', 'value')
+                Input('tabs'                ,'value')
                 ])
 
 def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, active_tab):
@@ -430,10 +431,11 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 Input('calib_e_1'       ,'value'),
                 Input('calib_e_2'       ,'value'),
                 Input('calib_e_3'       ,'value'),
-                Input('peakfinder'      ,'value')
+                Input('peakfinder'      ,'value'),
+                Input('sigma'           ,'value')
                 ])  
 
-def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3, peakfinder):
+def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3, peakfinder, sigma):
     
     database = fn.get_path('data.db')
 
@@ -454,7 +456,8 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
                     calib_e_1={calib_e_1},
                     calib_e_2={calib_e_2},
                     calib_e_3={calib_e_3},
-                    peakfinder={peakfinder}
+                    peakfinder={peakfinder},
+                    sigma={sigma}
                     WHERE id=0;"""
 
     c.execute(query)

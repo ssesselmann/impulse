@@ -59,7 +59,8 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         comparison      TEXT    DEFAULT '',                 
         flip            INTEGER DEFAULT 1,                  
         peakfinder      REAL    DEFAULT 0.5,
-        theme           TEXT    DEFAULT 'fun'                 
+        theme           TEXT    DEFAULT 'fun',
+        sigma           REAL    DEFAULT 0                 
         );"""
 
 # This query inserts the first record in settings with defaults
