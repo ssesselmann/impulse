@@ -98,6 +98,7 @@ Change log
 27) Improved layout compatibility with smaller screens.
 28) Added user manual to tab 4
 29) Added gaussian correlation trace to spectrum with sadjustable sigma
+30) Tidied up appearance and moved the polynomial function, added text for gaussian correlation on tab4
 
 Things to do
 ------------
