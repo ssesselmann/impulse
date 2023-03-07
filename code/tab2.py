@@ -118,16 +118,17 @@ def show_tab2():
             html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2)),
             html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3)),
             html.Div('Gaussian corr. (sigma)'),
-            html.Div(dcc.Slider(id='sigma', min=0.1 ,max=3, step=0.01, value= 0, marks=None,)),
-            html.Div(id='settings'  , children =''),
+            html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.01, value= 0, marks=None,)),
+            
             ]),
 
-        html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.png'),]),
+        html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.png')]),
         
-        
-        html.Div(id='start_text' , children =''),
-        html.Button( 'CLEAR FILE' , id='stop'),
-        
+        html.Div(id='subfooter', children=[
+            html.Div(id='start_text' , children =''),
+            html.Button( 'CLEAR FILE' , id='stop'),
+            html.Div(id='settings'  , children =''),
+            ]),
 
     ]) # End of tab 2 render
 
@@ -191,8 +192,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
             coefficients        = coefficients[::-1] # Revese order
 
-            
-
             mu = 0
             #sigma = 0.5
             lin_log = 'linear'
@@ -218,6 +217,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
             if epb_switch == True:
                 y = [i * count for i, count in enumerate(spectrum)]
+                gc= [i * count for i, count in enumerate(gc)]
 
             if log_switch == True:
                 lin_log = 'log'
@@ -231,8 +231,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 line={'width':1})
 
   #-------------------annotations-----------------------------------------------          
-            
-
             peaks, fwhm = fn.peakfinder(y, prominence, peakfinder)
             num_peaks   = len(peaks)
             annotations = []
@@ -252,19 +250,21 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 if log_switch == True:
                     y_pos = y_pos    
 
-                annotations.append(
-                    dict(
-                        x= x_pos,
-                        y= y_pos + 10,
-                        xref='x',
-                        yref='y',
-                        text=f'cts: {counts}<br>bin: {peak_value:.1f}<br>{resolution:.1f}%',
-                        showarrow=True,
-                        arrowhead=1,
-                        ax=0,
-                        ay=-40
+                if peakfinder != 0:
+                    annotations.append(
+                        dict(
+                            x= x_pos,
+                            y= y_pos + 10,
+                            xref='x',
+                            yref='y',
+                            text=f'cts: {counts}<br>bin: {peak_value:.1f}<br>{resolution:.1f}%',
+                            showarrow=True,
+                            arrowhead=1,
+                            ax=0,
+                            ay=-40
+                        )
                     )
-                )
+
 
                 lines.append(
                     dict(
@@ -337,8 +337,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     numberOfChannels_2    = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
                     elapsed_2             = data_2["resultData"]["energySpectrum"]["measurementTime"]
                     spectrum_2            = data_2["resultData"]["energySpectrum"]["spectrum"]
-
-                    
+ 
                     if elapsed > 0:
                         steps = (elapsed/elapsed_2)
                     else:
@@ -391,7 +390,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
                 fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed, f'cps {cps}'
 
-
             return fig
 
     else:
@@ -431,7 +429,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 Input('calib_e_3'       ,'value'),
                 Input('peakfinder'      ,'value')
                 ])  
-
 
 def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3, peakfinder):
     
@@ -488,4 +485,4 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
     c.execute(query)
     conn.commit()
 
-    return str(polynomial_fn)
+    return f'Polynomial (a + bx + cx^2) = ({polynomial_fn})'

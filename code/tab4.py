@@ -71,6 +71,9 @@ def show_tab4():
                 html.P('The calibration switch turns calibration on or off. Energy calibration is done by a second order polynomial fit. There are six fields where the user may enter three bins with three corresponding energies. By choosing a linear relationship between bins and energies you can achieve a linear spectrum and by choosing non linear relationships you can correct for detectors that are non linear. The typical use case would be to enter the bins and known ebnergies from three widely spread gamma peaks.  '),
                 html.H4('Peakfinder'),
                 html.P('Impulse has a built in function which can find peaks and calculate the resolution. The slider adjusts the tolerance, allowing you to increase or reduce the number of peaks found. There is a limit to how close together it can identify two peaks, this is due to the width of the notation only. '),
+                html.H4('Gaussian Correlation'),
+                html.P('This function identifies peaks which are hard to see with the naked eye, it takes the normalised spectrum and calculates the dot product of the gaussian shape with a standard deviation dependant bin number, the slider adjusts sigma, which determines how many bins to avertage the gaussian function.'),
+
                 html.H2('Tab3 - Count Rate Histogram'),
                 html.P('This is a graphical representation of the count rate over time and is entirely driven by the settings on the previous tab-1 and tab-2. No options or settings on this page yet.'),
                 html.Hr(),
