@@ -39,19 +39,21 @@ def show_tab2():
     max_counts      = settings[9]
     shapestring     = settings[10]
     sample_length   = settings[11]
+
     calib_bin_1     = settings[12]
     calib_bin_2     = settings[13]
     calib_bin_3     = settings[14]
+
     calib_e_1       = settings[15]
     calib_e_2       = settings[16]
     calib_e_3       = settings[17]
+
     coeff_1         = settings[18]
     coeff_2         = settings[19]
     coeff_3         = settings[20]
     filename2       = settings[21]
     peakfinder      = settings[23]
     sigma           = settings[25]
-
 
     html_tab2 = html.Div(id='tab2', children=[
 
@@ -463,24 +465,15 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
     c.execute(query)
     conn.commit()
 
-    calibration_input = [
-        {'bin':-1*calib_bin_3, 'energy':-1*calib_e_3}, 
-        {'bin':-1*calib_bin_2, 'energy':-1*calib_e_2}, 
-        {'bin':-1*calib_bin_1, 'energy':-1*calib_e_1},
-        {'bin':   calib_bin_1, 'energy':   calib_e_1}, 
-        {'bin':   calib_bin_2, 'energy':   calib_e_2}, 
-        {'bin':   calib_bin_3, 'energy':   calib_e_3}
-        ]
+    x_bins        = [calib_bin_1, calib_bin_2, calib_bin_3]
+    x_energies    = [calib_e_1, calib_e_2, calib_e_3]
 
-    x_data = [item['bin'] for item in calibration_input]
-    y_data = [item['energy'] for item in calibration_input]
-
-    coefficients = np.polyfit(x_data, y_data, 2)
-
+    coefficients  = np.polyfit(x_bins, x_energies, 2)
     polynomial_fn = np.poly1d(coefficients)
 
-    conn = sql.connect(database)
-    c = conn.cursor()
+
+    conn  = sql.connect(database)
+    c     = conn.cursor()
 
     query = f"""UPDATE settings SET 
                     coeff_1={float(coefficients[0])},
@@ -491,4 +484,4 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
     c.execute(query)
     conn.commit()
 
-    return f'Polynomial (a + bx + cx^2) = ({polynomial_fn})'
+    return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'

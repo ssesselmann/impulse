@@ -1,11 +1,11 @@
-IMPULSE February 2023
---------------
-Python Scripted MCA for gamma spectrometry.
+IMPULSE
+-------
+Python Script MCA for gamma spectrometry.
 ----------------------------------------
- This program reads a stream of data from the PC sound card and picks out pulses, the pulses are subsequently filtered and written to a JSON file. A live histogram can be viewed in the browser. 
+ This program reads a stream of data from the PC sound card and picks out pulses, the pulses are subsequently filtered and written to a JSON file. A live histogram and counts per second can be viewed in the browser tabs. 
  
- Installation Method (Windows, Mac or Linux)
- -------------------------------------------
+Installation Method (Windows, Mac or Linux)
+-------------------------------------------
 Step 1)
 -------
 Download and install the latest version of Python from the official site, consider upgrading if you are on an old version ... www.python.org
@@ -100,6 +100,7 @@ Change log
 29) Added gaussian correlation trace to spectrum with sadjustable sigma
 30) Tidied up appearance and moved the polynomial function, added text for gaussian correlation on tab4
 31) Fixed fatal bug related to gaussian slider and saves slider position to settings
+32) Fixed problem with calibration (8 March 2023 14:19 AET)
 
 Things to do
 ------------
