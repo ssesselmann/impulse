@@ -101,6 +101,7 @@ Change log
 30) Tidied up appearance and moved the polynomial function, added text for gaussian correlation on tab4
 31) Fixed fatal bug related to gaussian slider and saves slider position to settings
 32) Fixed problem with calibration (8 March 2023 14:19 AET)
+33) Fixed fatal indentation error (9 March 2023 10:38 am)
 
 Things to do
 ------------

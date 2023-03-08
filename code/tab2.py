@@ -330,13 +330,11 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     shapes=lines,
                     uirevision="Don't change",
                     )
-#-------Comparison spectrum ---------------------------------------------------------------------------
+#---------------Histrogram2 ---------------------------------------------------------------------------
 
             if os.path.exists(histogram2):
                 with open(histogram2, "r") as f:
-
                     data_2 = json.load(f)
-
                     numberOfChannels_2    = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
                     elapsed_2             = data_2["resultData"]["energySpectrum"]["measurementTime"]
                     spectrum_2            = data_2["resultData"]["energySpectrum"]["spectrum"]
@@ -365,38 +363,36 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                         marker={'color': 'red', 'size':1}, 
                         line={'width':2})
 
-                    if sigma == 0:
-                        trace4 = {}
-                    else:    
-                        trace4 = go.Scatter(
+        if sigma == 0:
+            trace4 = {}
+        else:    
+            trace4 = go.Scatter(
+                x=x, 
+                y=gc, 
+                mode='lines+markers',  
+                marker={'color': 'yellow', 'size':1}, 
+                line={'width':2})
+    
+        if compare_switch == False:
+            fig = go.Figure(data=[trace1, trace4], layout=layout), validPulseCount, elapsed, f'cps {cps}'
+
+        if compare_switch == True: 
+            fig = go.Figure(data=[trace1, trace2], layout=layout), validPulseCount, elapsed, f'cps {cps}'
+
+        if difference_switch == True:
+            y3 = [a - b for a, b in zip(y, y2)]
+            trace3 = go.Scatter(
                             x=x, 
-                            y=gc, 
-                            mode='lines+markers',  
-                            marker={'color': 'yellow', 'size':1}, 
-                            line={'width':2})
+                            y=y3, 
+                            mode='lines+markers', 
+                            fill='tozeroy',  
+                            marker={'color': 'green', 'size':3}, 
+                            line={'width':1}
+                            )
 
-#----------------------------------------------------------------------------------------------------------------                   
-            
-            if compare_switch == False:
-                fig = go.Figure(data=[trace1, trace4], layout=layout), validPulseCount, elapsed, f'cps {cps}'
+            fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed, f'cps {cps}'
 
-            if compare_switch == True: 
-                fig = go.Figure(data=[trace1, trace2], layout=layout), validPulseCount, elapsed, f'cps {cps}'
-
-            if difference_switch == True:
-                y3 = [a - b for a, b in zip(y, y2)]
-                trace3 = go.Scatter(
-                                x=x, 
-                                y=y3, 
-                                mode='lines+markers', 
-                                fill='tozeroy',  
-                                marker={'color': 'green', 'size':3}, 
-                                line={'width':1}
-                                )
-
-                fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed, f'cps {cps}'
-
-            return fig
+        return fig
 
     else:
         layout = go.Layout(
