@@ -59,7 +59,7 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         comparison      TEXT    DEFAULT '',                 
         flip            INTEGER DEFAULT 1,                  
         peakfinder      REAL    DEFAULT 0.5,
-        theme           TEXT    DEFAULT 'fun',
+        theme           TEXT    DEFAULT 'orange',
         sigma           REAL    DEFAULT 0                 
         );"""
 

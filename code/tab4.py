@@ -2,6 +2,7 @@
 import dash
 import dash_daq as daq
 import sys
+import sqlite3 as sql
 import functions as fn
 from dash import dcc
 from dash import html
@@ -11,11 +12,28 @@ from flask import request
 
 def show_tab4():
 
+    database = fn.get_path('data.db')
+    datafolder = fn.get_path('data')
+    conn = sql.connect(database)
+    c = conn.cursor()
+    query = "SELECT theme FROM settings "
+    c.execute(query) 
+    theme = c.fetchall()[0][0]
+
     html_tab4 = html.Div([ 
         html.Div(id='exit', children=[
-        html.H1(children='Thanks for using impulse, see you back soon!'),
-        html.Button(id='exit-button', children=''),
-        html.Div(children='Always exit the program by clicking the red button, this prevents processes running after browser window is closed.'),
+            html.H1(children='Thanks for using impulse, see you back soon!'),
+            html.Button(id='exit-button', children=''),
+            html.Div(dcc.Dropdown(id="theme",
+                        options=[
+                            {"label": "Boring theme"    , "value": "lightgray"},
+                            {"label": "Fun theme"      , "value": "orange"},
+                        ], 
+                        value=theme,  # pre-selected option
+                        clearable=False,
+                        )),
+            html.Div(id='theme_output', children=''),
+            html.Div(children='Always exit the program by clicking the red button, this prevents processes running after browser window is closed.'),
         ]),
 
         html.Div(id='tab4_text_div', children=[
@@ -105,3 +123,22 @@ def shutdown_server(n_clicks):
         return 'Port Closed'
     else:
         return 'Click to Exit'
+
+
+@app.callback(Output('theme_output'    ,'children'),
+            [Input('theme'       ,'value')])  
+
+def theme_change(value):
+
+    database = fn.get_path('data.db')
+    datafolder = fn.get_path('data')
+    conn = sql.connect(database)
+    c = conn.cursor()
+    query = f"UPDATE settings SET theme='{value}' WHERE id=0;"
+    c.execute(query) 
+    conn.commit()
+
+    return 'Restart to see new theme'
+
+
+

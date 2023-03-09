@@ -34,7 +34,7 @@ def show_tab3():
                 dcc.Interval(id='interval_component', interval= interval) # Refresh rate 1s.
             ]),
 
-        html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.png'),]),
+        html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif'),]),
 
     ])
 

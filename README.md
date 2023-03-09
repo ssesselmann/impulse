@@ -103,12 +103,13 @@ Change log
 32) Fixed problem with calibration (8 March 2023 14:19 AET)
 33) Fixed fatal indentation error (9 March 2023 10:38 AET)
 34) Put back stop button on tab 2 (9 March 2023 19.52 AET)
+35) Added option for switching theme between fun/boring (9 March 2023 23:06 AET)
 
 Things to do
 ------------
 * Build interval histogram with Dead time calculation 
 * Add browse button for isotope comparisons
-* Build option for switching theme between fun/boring theme :)
+
 
 If anyone has requests for additional features please contact me via the "Contact us" link at gammaspectacular.com
 

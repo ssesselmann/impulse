@@ -126,11 +126,10 @@ def show_tab2():
             
             ]),
 
-        html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.png')]),
+        html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
         
         html.Div(id='subfooter', children=[
             html.Div(id='start_text' , children =''),
-            html.Button( 'CLEAR FILE' , id='stop'),
             html.Div(id='settings'  , children =''),
             ]),
 
