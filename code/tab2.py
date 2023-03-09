@@ -4,6 +4,7 @@ import pulsecatcher as pc
 import functions as fn
 import os
 import json
+import time
 import numpy as np
 import sqlite3 as sql
 import dash_daq as daq
@@ -60,7 +61,7 @@ def show_tab2():
         html.Div(id='bar_chart_div', # Histogram Chart
             children=[
                 dcc.Graph(id='bar-chart', figure={},),
-                dcc.Interval(id='interval-component', interval=1*1000, n_intervals=0) # Refresh rate 1s.
+                dcc.Interval(id='interval-component', interval=1000, n_intervals=0) # Refresh rate 1s.
             ]),
 
         #Start button
@@ -71,10 +72,11 @@ def show_tab2():
 
             ]),
 
-        html.Div(id='t2_setting_div', children=[
-            html.Div(id='cps', children=''),
+        html.Div(id='t2_setting_div', children=[            
+            html.Button('STOP', id='stop'),
             html.Div(id='elapsed', children= '' ),
-            html.Div('Seconds'),
+            html.Div(id='cps', children=''),
+            #html.Div('Seconds'),
             html.Div(id='stop_text', children= ''),
             ]),
 
@@ -152,8 +154,42 @@ def update_output(n_clicks):
 @app.callback( Output('stop_text'  ,'children'),
                 [Input('stop'      ,'n_clicks')])
 
+# This function is an ugly botch 
+# To stop the while loop we first get max counts
+# then zeroise max counts
+# then put the original number back again
+
 def update_output(n_clicks):
     if n_clicks != 0:
+
+        database = fn.get_path('data.db')
+        conn     = sql.connect(database)
+
+        query1  = "SELECT max_counts FROM settings "
+        c       = conn.cursor()
+        c.execute(query1)
+        conn.commit()
+        max_counts = c.fetchall()[0][0]
+        
+        print(query1)
+
+        query2 = "UPDATE settings SET max_counts = 0 WHERE ID = 0;"
+        c      = conn.cursor()
+        c.execute(query2)
+        conn.commit()
+
+        print(query2)
+
+        time.sleep(1)
+
+        query3    = f"UPDATE settings SET max_counts = {max_counts} WHERE ID = 0;"
+        c         = conn.cursor()
+        c.execute(query3)
+        conn.commit()
+
+
+        print(query3)
+
         return 
 #----------------------------------------------------------------
 
