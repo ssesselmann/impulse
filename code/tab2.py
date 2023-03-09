@@ -171,14 +171,10 @@ def update_output(n_clicks):
         conn.commit()
         max_counts = c.fetchall()[0][0]
         
-        print(query1)
-
         query2 = "UPDATE settings SET max_counts = 0 WHERE ID = 0;"
         c      = conn.cursor()
         c.execute(query2)
         conn.commit()
-
-        print(query2)
 
         time.sleep(1)
 
@@ -186,9 +182,6 @@ def update_output(n_clicks):
         c         = conn.cursor()
         c.execute(query3)
         conn.commit()
-
-
-        print(query3)
 
         return 
 #----------------------------------------------------------------
