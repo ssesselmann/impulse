@@ -9,6 +9,7 @@ import subprocess
 import math
 import csv
 import json
+import time
 import os
 import platform
 import sqlite3 as sql
@@ -286,3 +287,33 @@ def gaussian_correl(data, sigma):
     correl_values = [value * scaling_factor for value in correl_values]
     # Return the list of correlation values
     return correl_values
+
+def stop_recording():
+
+    # This function is an ugly botch 
+    # To stop the while loop we first get max counts
+    # then zeroise max counts
+    # then put the original number back again
+
+    database = get_path('data.db')
+    conn     = sql.connect(database)
+
+    query1  = "SELECT max_counts FROM settings "
+    c       = conn.cursor()
+    c.execute(query1)
+    conn.commit()
+    max_counts = c.fetchall()[0][0]
+    
+    query2 = "UPDATE settings SET max_counts = 0 WHERE ID = 0;"
+    c      = conn.cursor()
+    c.execute(query2)
+    conn.commit()
+
+    time.sleep(1)
+
+    query3    = f"UPDATE settings SET max_counts = {max_counts} WHERE ID = 0;"
+    c         = conn.cursor()
+    c.execute(query3)
+    conn.commit()
+
+    return    

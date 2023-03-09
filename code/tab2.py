@@ -4,7 +4,6 @@ import pulsecatcher as pc
 import functions as fn
 import os
 import json
-import time
 import numpy as np
 import sqlite3 as sql
 import dash_daq as daq
@@ -154,34 +153,10 @@ def update_output(n_clicks):
 @app.callback( Output('stop_text'  ,'children'),
                 [Input('stop'      ,'n_clicks')])
 
-# This function is an ugly botch 
-# To stop the while loop we first get max counts
-# then zeroise max counts
-# then put the original number back again
-
 def update_output(n_clicks):
     if n_clicks != 0:
 
-        database = fn.get_path('data.db')
-        conn     = sql.connect(database)
-
-        query1  = "SELECT max_counts FROM settings "
-        c       = conn.cursor()
-        c.execute(query1)
-        conn.commit()
-        max_counts = c.fetchall()[0][0]
-        
-        query2 = "UPDATE settings SET max_counts = 0 WHERE ID = 0;"
-        c      = conn.cursor()
-        c.execute(query2)
-        conn.commit()
-
-        time.sleep(1)
-
-        query3    = f"UPDATE settings SET max_counts = {max_counts} WHERE ID = 0;"
-        c         = conn.cursor()
-        c.execute(query3)
-        conn.commit()
+        fn.stop_recording()
 
         return 
 #----------------------------------------------------------------
