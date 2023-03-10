@@ -41,6 +41,8 @@ def pulsecatcher():
 	coeff_3			= settings[20]
 	flip 			= settings[22]
 
+	peak = int((sample_length-1)/2)
+
 	# Create an array of ewmpty bins
 	start = 0
 	stop = bins * bin_size
@@ -84,7 +86,7 @@ def pulsecatcher():
 			samples = left_channel[i:i+sample_length]  # Get the first 51 samples
 			# Flip inverts all samples if detector pulses are positive
 			samples = [flip * x for x in samples]
-			if samples[25] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[25] < 32768:
+			if samples[peak] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[peak] < 32768:
 				# Function normalises sample to zero
 				normalised = fn.normalise_pulse(samples)
 				# Converts normalised to integers

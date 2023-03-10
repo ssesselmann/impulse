@@ -411,8 +411,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 },
                 height  =450, 
                 autosize=True,
-                xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
-                yaxis=dict(type=lin_log),
+                xaxis=dict(dtick=50, tickangle = 90, range =[0, 100]),
+                yaxis=dict(type='linear'),
                 uirevision="Don't change",
                 )
         return go.Figure(data=[], layout=layout), 0, 0, 0
