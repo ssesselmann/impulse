@@ -10,3 +10,4 @@ plotly
 wave
 pyaudio
 scipy
+requests

@@ -5,6 +5,7 @@ import distortionchecker as dcr
 import sqlite3 as sql
 import shapecatcher as sc
 import os
+import requests as req
 from dash import dash_table
 from dash import dcc
 from dash import html
@@ -36,6 +37,9 @@ def show_tab1():
     shapecatches    = settings[10]
     sample_length   = settings[11]
 
+    response = req.get('https://www.gammaspectacular.com/steven/impulse/news.html')
+    news = response.text
+
     filepath = os.path.dirname(__file__)
 
     device_list = [{'index': 99, 'name': 'device name', 'maxInputChannels': 99, 'maxOutputChannels': 99, 'defaultSampleRate': 99}]
@@ -44,11 +48,13 @@ def show_tab1():
 
     tab1 = html.Div(id='tab1', children=[ 
 
-        html.Div(children=[
+        html.Div(id='firstrow', children=[
                 dash_table.DataTable( id='container_device_list_short',
                 columns=[{"name": i, "id": i} for i in device_list[0].keys()],
                 data=device_list),
-            ]),
+                 
+                ]),
+        html.Div(id='news', children=[dcc.Markdown(news) ]),
 
 #  --------------- User defined settings ------------------------------
 
@@ -57,7 +63,7 @@ def show_tab1():
         html.Div(id='tab1_settings', children=[ 
             html.Div(id='input_text', children='Enter Device index'),
             html.Div(dcc.Input(id='device', type='number', value = device,)),
-            html.Div(id='selected_device_text', children='', style={'color': 'red'}),
+            html.Div(id='selected_device_text', children=''),
             ]),
 
         html.Div(id='tab1_settings',children=[
@@ -87,7 +93,7 @@ def show_tab1():
                 value= chunk_size, 
                 clearable=False,
                 )),
-            html.Div(id='output_chunk_text', children='', style={'color': 'red'}),
+            html.Div(id='output_chunk_text', children=''),
             ]),
 
         html.Div(id='tab1_settings', children=[ 
@@ -140,19 +146,19 @@ def show_tab1():
                             
                             html.Div(id='instruction_div', children=[ 
                                 html.Div(id='instructions', children=[
-                                    html.H1('Easy step by step setup and run'),
+                                    html.H2('Easy step by step setup and run'),
                                     html.P('1) Connect the spectrometer before running the program.'),
-                                    html.P('2) Click Get Device Table button, look up device index and update settings above'),
-                                    html.P('3) Select preferred sample rate, buffer size, pulses to sample and sample length '),
-                                    html.P('4) Click the Capture Pulse Shape button to start pulse shape training, then wait for pulse.'),
+                                    html.P('2) Click Get Device Table button, look up device index'),
+                                    html.P('3) Select index, sample rate, buffer size, pulses to sample and sample length'),
+                                    html.P('4) Click Capture Pulse Shape to start pulse shape training'),
                                     html.P('5) Click the get Distortion Curve and wait for chart to update'),
-                                    html.P('6) Well done, setup is ready, go to tab2 for recording your first spectrum'),
-                                    html.P('7) Found a bug 🐞 or have a suggestion... send me an email.'),
+                                    html.P('6) Well done, setup is ready, go to tab2 and your first spectrum'),
+                                    html.P('7) Found a bug 🐞 or have a suggestion, send me an email.'),
                                     html.P('Steven Sesselmann'),
                                     html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
                                     html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
                                     html.Hr(),
-                                    html.Div(f'Note: {datafolder}', style={'color':'red', 'float':'left'}),
+                                    html.Div(id='path_text', children=f'Note: {datafolder}'),
 
                                     ]), 
                                 ]),

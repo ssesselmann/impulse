@@ -17,7 +17,7 @@ device_list 		= fn.get_device_list()
 path 			= None
 plot 			= {}
 
-# Function to catch pulses and output time, pulkse height and distortion
+# Function finds pulses and outputs time, pulse height and distortion
 def pulsecatcher():
 
 	# Start timer
@@ -86,15 +86,16 @@ def pulsecatcher():
 			samples = left_channel[i:i+sample_length]  # Get the first 51 samples
 			# Flip inverts all samples if detector pulses are positive
 			samples = [flip * x for x in samples]
-			if samples[peak] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[peak] < 32768:
+			# Function calculates pulse height
+			height = fn.pulse_height(samples)
+			# Filter noise
+			if samples[peak] == max(samples) and height > threshold and samples[peak] < 32768:
 				# Function normalises sample to zero
 				normalised = fn.normalise_pulse(samples)
 				# Converts normalised to integers
 				normalised_int = [int(x + 0.5) for x in normalised]
 				# Calculates distortion
 				distortion = fn.distortion(normalised_int, shape)
-				# Function calculates pulse height
-				height = fn.pulse_height(normalised_int)
 				# Filter
 				if distortion < tolerance:
 					# Sort pulse into correct bin

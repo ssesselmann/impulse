@@ -55,7 +55,7 @@ def distortion(normalised, shape):
     distortion = int(math.sqrt(sum(product)))
 
     return distortion
-
+    # Function calculates pulse height
 def pulse_height(passed):
     peak = passed[passed.index(max(passed))]
     trough = passed[passed.index(min(passed))]

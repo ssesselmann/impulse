@@ -11,3 +11,4 @@ wave
 pyaudio
 pyobjc
 scipy
+requests

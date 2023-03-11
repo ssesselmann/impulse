@@ -105,6 +105,8 @@ Change log
 34) Put back stop button on tab 2 (9 March 2023 19.52 AET)
 35) Added option for switching theme between fun/boring (9 March 2023 23:06 AET)
 36) Fixed bug in pulsecatcher.py and distortionchecker.py, pulse peak in wrong position (10 March 2023 17:00 AET)
+37) Added news and updates field on tab1
+38) removed duplicate pulse height calculation on pulsecatcher.py (110 March 2023 12:43 AET)
 
 Things to do
 ------------
