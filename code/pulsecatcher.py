@@ -105,21 +105,21 @@ def pulsecatcher():
 						histogram[bin_index] += 1
 						n   += 1	
 						cps += 1
-						if t - timer_start >= 1:
-							timer_start = t
-							settings 		= fn.load_settings()
-							name            = settings[1]
-							max_counts      = settings[9]
-							coeff_1			= settings[18]
-							coeff_2			= settings[19]
-							coeff_3			= settings[20]
-							# Time capture
-							t1 = datetime.datetime.now()
-							te = time.time()
-							elapsed = int(te - tb)
-							fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
-							fn.write_cps_json(name,cps)
-							cps = 0
+		if t - timer_start >= 1:
+			timer_start = t
+			settings 		= fn.load_settings()
+			name            = settings[1]
+			max_counts      = settings[9]
+			coeff_1			= settings[18]
+			coeff_2			= settings[19]
+			coeff_3			= settings[20]
+			# Time capture
+			t1 = datetime.datetime.now()
+			te = time.time()
+			elapsed = int(te - tb)
+			fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
+			fn.write_cps_json(name,cps)
+			cps = 0
 	# close =stream when done
 	p.terminate()
 	return						

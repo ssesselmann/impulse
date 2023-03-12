@@ -108,6 +108,7 @@ Change log
 37) Added news and updates field on tab1
 38) removed duplicate pulse height calculation on pulsecatcher.py (10 March 2023 12:43 AET)
 39) Rearranged settings and added pulse length in time (12 March 2023 14:00)
+40) Fixed bug relating to count rates below 1 second (13 March 2023 10:30 AET)
 
 Things to do
 ------------
