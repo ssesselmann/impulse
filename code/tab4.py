@@ -2,11 +2,14 @@
 import dash
 import dash_daq as daq
 import sys
+import os
+import glob
 import sqlite3 as sql
 import functions as fn
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
+from dash.exceptions import PreventUpdate
 from server import app
 from flask import request
 
@@ -14,6 +17,17 @@ def show_tab4():
 
     database = fn.get_path('data.db')
     datafolder = fn.get_path('data')
+
+    # Get all the filenames in the folder with the extension ".json"
+    files = glob.glob(os.path.join(datafolder, "*.json"))
+    # Filter out filenames ending with "-cps.json"
+    filtered_files = [file for file in files if not file.endswith("-cps.json")]
+
+    options = [{'label': os.path.basename(file), 'value': os.path.basename(file)} for file in filtered_files]
+
+    # Sort the options alphabetically by label
+    options_sorted = sorted(options, key=lambda x: x['label'])
+
     conn = sql.connect(database)
     c = conn.cursor()
     query = "SELECT theme FROM settings "
@@ -25,15 +39,28 @@ def show_tab4():
             html.H1(children='Thanks for using impulse, see you back soon!'),
             html.Button(id='exit-button', children=''),
             html.Div(dcc.Dropdown(id="theme",
-                        options=[
-                            {"label": "Boring theme"    , "value": "lightgray"},
-                            {"label": "Fun theme"      , "value": "orange"},
-                        ], 
-                        value=theme,  # pre-selected option
-                        clearable=False,
-                        )),
-            html.Div(id='theme_output', children=''),
-            html.Div(children='Always exit the program by clicking the red button, this prevents processes running after browser window is closed.'),
+                    options=[
+                        {"label": "Boring theme (lightgray)"    , "value": "lightgray"},
+                        {"label": "Hippie theme (orange)"      , "value": "orange"},
+                        {"label": "Girly theme (pink)"      , "value": "pink"},
+
+                    ], 
+                    value=theme,  # pre-selected option
+                    clearable=False,
+                    )),
+            html.Div(id='theme_output', children=' '),
+            html.Div(dcc.Dropdown(
+                    id='export_histogram',
+                    options=options_sorted,
+                    placeholder='Export spectrum to csv file',
+                    value=None
+
+                    )),
+            html.Div(id='export_histogram_output_div', children=[
+                html.P(id='export_histogram_output', children=''),
+                html.P(),
+                html.P()
+                ])
         ]),
 
         html.Div(id='tab4_text_div', children=[
@@ -124,11 +151,13 @@ def shutdown_server(n_clicks):
     else:
         return 'Click to Exit'
 
-
 @app.callback(Output('theme_output'    ,'children'),
             [Input('theme'       ,'value')])  
 
 def theme_change(value):
+
+    if value is None:
+        raise PreventUpdate
 
     database = fn.get_path('data.db')
     datafolder = fn.get_path('data')
@@ -140,5 +169,15 @@ def theme_change(value):
 
     return 'Restart to see new theme'
 
+@app.callback(Output('export_histogram_output' ,'children'),
+            [Input('export_histogram'  ,'value')]) 
+
+def export_histogram(filename):
+
+    if filename is None:
+        raise PreventUpdate
+    fn.export_csv(filename)
+
+    return f'{filename} exported as csv to ~/Downloads'
 
 

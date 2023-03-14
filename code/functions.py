@@ -290,30 +290,56 @@ def gaussian_correl(data, sigma):
 
 def stop_recording():
 
-    # This function is an ugly botch 
+    # This function is an ugly botch but it works
     # To stop the while loop we first get max counts
     # then zeroise max counts
     # then put the original number back again
 
     database = get_path('data.db')
     conn     = sql.connect(database)
-
     query1  = "SELECT max_counts FROM settings "
     c       = conn.cursor()
     c.execute(query1)
     conn.commit()
     max_counts = c.fetchall()[0][0]
-    
     query2 = "UPDATE settings SET max_counts = 0 WHERE ID = 0;"
     c      = conn.cursor()
     c.execute(query2)
     conn.commit()
-
     time.sleep(1)
-
     query3    = f"UPDATE settings SET max_counts = {max_counts} WHERE ID = 0;"
     c         = conn.cursor()
     c.execute(query3)
     conn.commit()
 
     return    
+
+def export_csv(filename):
+    # Get the path to the user's download folder
+    download_folder = os.path.expanduser("~/Downloads")
+    # Remove the ".json" extension from the filename
+    base_filename = filename.rsplit(".", 1)[0]
+    # Give output file a name
+    output_file = f'{base_filename}.txt'
+    # Load json file
+    with open(f'data/{filename}') as f:
+        data = json.load(f)
+    # Extract data from json file
+    spectrum     = data["resultData"]["energySpectrum"]["spectrum"]
+    coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+    # Make sure coefficient[2] is not negative
+    if coefficients[2] <= 0:
+        coefficients[2] = 0
+    # Open file in Download directory
+    with open(os.path.join(download_folder, output_file), "w", newline="") as f:
+        # Write to file
+        writer = csv.writer(f)
+        # Write heading row
+        writer.writerow(["bin", "counts"])
+        # Write each row
+        for i, value in enumerate(spectrum):
+            # Calculate energies
+            e = round((i**coefficients[2] + i*coefficients[1]+coefficients[0]),2)
+
+            writer.writerow([e, value])   
+    return

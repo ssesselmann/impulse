@@ -110,11 +110,16 @@ Change log
 39) Rearranged settings and added pulse length in time (12 March 2023 14:00)
 40) Fixed bug relating to count rates below 1 second (13 March 2023 10:30 AET)
 41) Changed count rate histogram to line plot with markers and 10 sec rolling average (14 March 2023 17.39 AET)
+42) Added function on tab-4 for exporting histogram file as csv
+43) Added pink theme
+
 
 Things to do
 ------------
 * Build interval histogram with Dead time calculation 
 * Add browse button for isotope comparisons
+
+
 
 
 If anyone has requests for additional features please contact me via the "Contact us" link at gammaspectacular.com

@@ -2,7 +2,6 @@ import dash
 import sqlite3 as sql
 import functions as fn
 
-
 try:
 	database = fn.get_path('data.db')
 	datafolder = fn.get_path('data')
@@ -19,8 +18,10 @@ if theme == 'orange':
 	external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles_orange.css']
 if theme == 'lightgray':
 	external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles_lightgray.css']
+if theme == 'pink':
+	external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles_pink.css']
 else:
-	external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles_orange.css']
+	external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles_lightgray.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 

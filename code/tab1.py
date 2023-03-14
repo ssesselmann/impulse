@@ -10,6 +10,7 @@ from dash import dash_table
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
+from dash.exceptions import PreventUpdate
 from server import app
 
 # ----------- Audio input selection ---------------------------------
@@ -125,7 +126,7 @@ def show_tab1():
         html.Div(id='output_chunk_text', children=''),
         ]),      
    
-    html.Div(id='n_clicks_storage', style={'display': 'none'}),
+    html.Div(id='n_clicks_storage',),
     html.Button('Save Settings', id='submit', n_clicks=0, style={'visibility':'hidden'}),
             
     html.Div(children=[ 
@@ -185,6 +186,7 @@ def show_tab1():
               [Input('get_device_button', 'n_clicks')])
 
 def on_button_click(n_clicks):
+    
     if n_clicks is not None:
         dl = None # This should clear the variable
         dl = fn.get_device_list() # This should connect and get a new device list
@@ -193,8 +195,8 @@ def on_button_click(n_clicks):
 # Callback to save settings ---------------------------
 
 @app.callback(
-    [Output('selected_device_text'   ,'children'),
-    Output('sampling_time_output'    ,'children')],
+    [Output('selected_device_text'  ,'children'),
+    Output('sampling_time_output'   ,'children')],
     [Input('submit'                 ,'n_clicks')],
     [Input('device'                 ,'value'),
     Input('sample_rate'             ,'value'),
@@ -205,14 +207,13 @@ def on_button_click(n_clicks):
 
 def save_settings(n_clicks, value1, value2, value3, value4, value5):
     
-    database = fn.get_path('data.db')
     if n_clicks == 0:
         device      = value1
         sample_rate = value2
         chunk_size  = value3
         catch       = value4
         length      = value5
-
+        database = fn.get_path('data.db')
         conn = sql.connect(database)
         c = conn.cursor()
         query = f"UPDATE settings SET device={device}, sample_rate={sample_rate}, chunk_size={chunk_size}, shapecatches={catch}, sample_length={length} WHERE id=0;"
@@ -221,7 +222,7 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5):
 
         pulse_length = int(1000000 * int(length)/int(sample_rate))
 
-    return f'Device ({device}) selected', f'Sampling time {pulse_length} µs'
+        return f'Device ({device}) selected', f'Sampling time {pulse_length} µs'
 
 #-------- Callback to capture and save mean pulse shape ----------
 

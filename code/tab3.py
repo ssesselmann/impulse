@@ -28,15 +28,12 @@ def show_tab3():
 
         html.Div(dcc.Input(id='filename', type='text', value=settings[1], style={'display': 'none'})),
         
-
         html.Div(id='count_rate_div', # Histogram Chart
             children=[
                 dcc.Graph(id='count_rate_chart', figure= {}),
                 dcc.Interval(id='interval_component', interval= interval) # Refresh rate 1s.
             ]),
-
         html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif'),]),
-
     ])
 
     return html_tab3
@@ -66,13 +63,10 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
             y = list(map(int, countrate))  # convert y values from string to integer
 
             line = go.Scatter(x=x, y=y, mode='markers+lines', marker=dict(size=4, color='black'), line=dict(width=1, color='purple'), name='counts per sec.')
-
             # create pandas series for y data
             y_series = pd.Series(y)
-
             # create rolling average series
             rolling_series = y_series.rolling(window=11, center=True).mean()
-
             # create scatter trace for rolling average line
             rolling_line = go.Scatter(x=x[10:], y=rolling_series[10:], mode='lines', line=dict(width=2, color='green'), name='10 sec rolling ave')
 

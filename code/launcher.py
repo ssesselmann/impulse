@@ -71,7 +71,6 @@ with conn:
     c.execute(query).execute(query2)
     conn.commit()
 
-
 #---Defines the browser tabs------------------------------------------------------------
 
 app.layout = html.Div([
@@ -91,7 +90,7 @@ app.layout = html.Div([
                 label='Count Rate Histogram', 
                 value='tab3'),
             dcc.Tab(
-                label='Exit and Manual', 
+                label='Export, Exit and Manual', 
                 value='tab4'),
         ]),
     html.Div(id = 'tabs-content'),# Empty Div, where the out of render_tabs is sent to. (The page content)
@@ -120,5 +119,3 @@ def render_content(tab):
         html_tab4 = show_tab4()
         return html_tab4   
    
-
-    
