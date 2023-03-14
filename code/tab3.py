@@ -5,6 +5,7 @@ import plotly.graph_objs as go
 import functions as fn
 import dash_daq as daq
 import sqlite3 as sql
+import pandas as pd
 from dash import html
 from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
@@ -60,10 +61,21 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
         with open(cps_file, "r") as f:
             count_data = json.load(f)
             countrate = count_data["cps"]
+            
             x = [str(i) for i in range(len(countrate))]
             y = list(map(int, countrate))  # convert y values from string to integer
 
-            bars = go.Bar(x=x, y=y)
+            line = go.Scatter(x=x, y=y, mode='markers+lines', marker=dict(size=4, color='black'), line=dict(width=1, color='purple'), name='counts per sec.')
+
+            # create pandas series for y data
+            y_series = pd.Series(y)
+
+            # create rolling average series
+            rolling_series = y_series.rolling(window=11, center=True).mean()
+
+            # create scatter trace for rolling average line
+            rolling_line = go.Scatter(x=x[10:], y=rolling_series[10:], mode='lines', line=dict(width=2, color='green'), name='10 sec rolling ave')
+
             layout = go.Layout(
                 title={
                     'text': filename,
@@ -77,7 +89,7 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
                     title='Seconds',
                     dtick=10,
                     tickangle=90,
-                    range=[0,300],
+                    range=[0, 300],
                     tickfont=dict(family='Arial', size=14, color='black'),
                     titlefont=dict(family='Arial', size=18, color='black'),
                     type='linear',
@@ -86,7 +98,7 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
                     linewidth=2,
                     linecolor='black',
                     ticks='outside'
-                    ),
+                ),
 
                 yaxis=dict(
                     title='Counts',
@@ -100,11 +112,14 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
                 paper_bgcolor='white',
                 plot_bgcolor='white'
             )
-            fig = go.Figure(data=[bars], layout=layout)
 
+            fig = go.Figure(data=[line, rolling_line], layout=layout)
     else:
         
-        fig = {'data': [{'type': 'bar', 'x': [], 'y': []}], 'layout': {'title': 'No data available'}}
+        fig = {'data': [{'type': 'scatter', 'mode': 'markers+lines', 'x': [], 'y': []}], 
+                    'layout': {'title': 'No data available', 
+                    'xaxis': {'title': 'X-axis title'}, 
+                    'yaxis': {'title': 'Y-axis title'}}}
 
     return fig
 

@@ -109,6 +109,7 @@ Change log
 38) removed duplicate pulse height calculation on pulsecatcher.py (10 March 2023 12:43 AET)
 39) Rearranged settings and added pulse length in time (12 March 2023 14:00)
 40) Fixed bug relating to count rates below 1 second (13 March 2023 10:30 AET)
+41) Changed count rate histogram to line plot with markers and 10 sec rolling average (14 March 2023 17.39 AET)
 
 Things to do
 ------------
