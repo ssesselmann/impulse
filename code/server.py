@@ -11,17 +11,10 @@ try:
 	c.execute(query) 
 	theme = c.fetchall()[0][0]
 except:
-	theme = 'orange'	
+	theme = 'lightgray'	
 
 # external CSS stylesheets
-if theme == 'orange':
-	external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles_orange.css']
-if theme == 'lightgray':
-	external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles_lightgray.css']
-if theme == 'pink':
-	external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles_pink.css']
-else:
-	external_stylesheets = ['https://www.gammaspectacular.com/steven/impulse/styles_lightgray.css']
+external_stylesheets = [f'https://www.gammaspectacular.com/steven/impulse/styles_{theme}.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
