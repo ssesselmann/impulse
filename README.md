@@ -112,6 +112,8 @@ Change log
 41) Changed count rate histogram to line plot with markers and 10 sec rolling average (14 March 2023 17.39 AET)
 42) Added function on tab-4 for exporting histogram file as csv
 43) Added pink theme
+44) Added drop down menu for comparison spectra and isotope spectra
+45) Added soundbyte button which plays a chord for any spectrum
 
 
 Things to do

@@ -4,9 +4,11 @@ import pulsecatcher as pc
 import functions as fn
 import os
 import json
+import glob
 import numpy as np
 import sqlite3 as sql
 import dash_daq as daq
+import audio_spectrum as asp
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
@@ -19,6 +21,22 @@ global_counts = 0
 global cps_list
 
 def show_tab2():
+
+    datafolder = fn.get_path('data')
+    # Get all filenames in data folder and its subfolders
+    files = [os.path.relpath(file, datafolder).replace("\\", "/")
+             for file in glob.glob(os.path.join(datafolder, "**", "*.json"), recursive=True)]
+    # Add "i/" prefix to subfolder filenames for label and keep the original filename for value
+    options = [{'label': "~ " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json") 
+                else {'label': os.path.basename(file), 'value': file} for file in files]
+    # Filter out filenames ending with "-cps"
+    options = [opt for opt in options if not opt['value'].endswith("-cps.json")]
+    # Sort options alphabetically by label
+    options_sorted = sorted(options, key=lambda x: x['label'])
+
+    for file in options_sorted:
+        file['label'] = file['label'].replace('.json', '')
+        file['value'] = file['value'].replace('.json', '')
 
     database = fn.get_path('data.db')
     conn            = sql.connect(database)
@@ -56,13 +74,14 @@ def show_tab2():
     sigma           = settings[25]
 
     html_tab2 = html.Div(id='tab2', children=[
-
+        html.Div(id='polynomial'),
         html.Div(id='bar_chart_div', # Histogram Chart
             children=[
                 dcc.Graph(id='bar-chart', figure={},),
                 dcc.Interval(id='interval-component', interval=1000, n_intervals=0) # Refresh rate 1s.
             ]),
 
+        html.Div(id='t2_filler_div', children=''),
         #Start button
         html.Div(id='t2_setting_div', children=[
             html.Button('START', id='start'),
@@ -93,19 +112,31 @@ def show_tab2():
             ]),
 
         html.Div(id='t2_setting_div', children=[
+            html.Div('Select Comparison'),
+            html.Div(dcc.Dropdown(
+                    id='filename2',
+                    options=options_sorted,
+                    placeholder='Select acomparison',
+                    value=filename2,
+                    style={'font-family':'Arial', 'height':'32px', 'margin':'0px', 'padding':'0px','border':'None', 'text-align':'left'}
+                    )),
 
-            html.Div(['Overlay or i/..', dcc.Input(id='filename2' ,type='text' ,value=filename2 )]),
             html.Div(['Show Comparison'      , daq.BooleanSwitch(id='compare_switch',on=False, color='purple',)]),
             html.Div(['Subtract Comparison'  , daq.BooleanSwitch(id='difference_switch',on=False, color='purple',)]),
 
             ]),
 
-
         html.Div(id='t2_setting_div'    , children=[
             html.Div(['Energy by bin'  , daq.BooleanSwitch(id='epb_switch',on=False, color='purple',)]),
             html.Div(['Show log(y)'     , daq.BooleanSwitch(id='log_switch',on=False, color='purple',)]),
             html.Div(['Calibration'    , daq.BooleanSwitch(id='cal_switch',on=False, color='purple',)]),
-            ]),   
+            ]), 
+
+        html.Div(id='t2_setting_div'    , children=[
+            html.Button('Soundbyte <))', id='soundbyte'),
+            html.Div(id='audio', children='Audio representartion of comparison sepectrum'),
+            ]), 
+
 
         html.Div(id='t2_setting_div', children=[
             html.Div('Calibration Bins'),
@@ -130,7 +161,6 @@ def show_tab2():
         
         html.Div(id='subfooter', children=[
             html.Div(id='start_text' , children =''),
-            html.Div(id='settings'  , children =''),
             ]),
 
     ]) # End of tab 2 render
@@ -178,7 +208,7 @@ def update_output(n_clicks):
                 ])
 
 def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, active_tab):
-    
+
     if active_tab != 'tab2':  # only update the chart when "tab3" is active
         raise PreventUpdate
 
@@ -418,7 +448,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
         return go.Figure(data=[], layout=layout), 0, 0, 0
 
 #--------UPDATE SETTINGS------------------------------------------------------------------------------------------
-@app.callback( Output('settings'        ,'children'),
+@app.callback( Output('polynomial'        ,'children'),
                 [Input('bins'           ,'value'),
                 Input('bin_size'        ,'value'),
                 Input('max_counts'      ,'value'),
@@ -484,3 +514,25 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
     conn.commit()
 
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
+
+@app.callback( Output('audio'       ,'children'),
+                [Input('soundbyte'  ,'n_clicks'),
+                Input('filename2'   ,'value')])    
+
+
+def play_sound(n_clicks, filename2):
+
+    if n_clicks != None:
+        spectrum_2 = []
+        histogram2 = fn.get_path(f'data/{filename2}.json')
+
+        if os.path.exists(histogram2):
+                with open(histogram2, "r") as f:
+                    data_2     = json.load(f)
+                    spectrum_2 = data_2["resultData"]["energySpectrum"]["spectrum"]
+
+        asp.make_wav_file(filename2, spectrum_2)
+
+        asp.play_wav_file(filename2)
+    
+    return 

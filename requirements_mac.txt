@@ -12,3 +12,4 @@ pyaudio
 pyobjc
 scipy
 requests
+simpleaudio
