@@ -41,6 +41,7 @@ def show_tab4():
                         {"label": "Boring theme (lightgray)"    , "value": "lightgray"},
                         {"label": "Hippie theme (orange)"      , "value": "orange"},
                         {"label": "OMG theme (pink)"      , "value": "pink"},
+                        {"label": "Sunburst(image)"      , "value": "sunburst"}
 
                     ], 
                     value=theme,  # pre-selected option
