@@ -119,9 +119,9 @@ Change log
 
 Things to do
 ------------
+* Build functionality for right channel recording and coincidence counting
 * Build interval histogram with Dead time calculation 
-* Add browse button for isotope comparisons
-
+* Record instruction video
 
 
 
