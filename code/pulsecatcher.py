@@ -17,7 +17,7 @@ device_list 		= fn.get_device_list()
 path 			= None
 plot 			= {}
 
-# Function finds pulses and outputs time, pulse height and distortion
+# Function reads audio stream and finds pulses then outputs time, pulse height and distortion
 def pulsecatcher():
 
 	# Start timer
@@ -35,7 +35,6 @@ def pulsecatcher():
 	bin_size        = settings[8]
 	max_counts      = settings[9]
 	sample_length	= settings[11]
-
 	coeff_1			= settings[18]
 	coeff_2			= settings[19]
 	coeff_3			= settings[20]
@@ -47,7 +46,6 @@ def pulsecatcher():
 	start = 0
 	stop = bins * bin_size
 	histogram = [0] * bins
-
 	audio_format = pyaudio.paInt16
 	device_channels = fn.get_max_input_channels(device_list, device)
 
@@ -56,7 +54,6 @@ def pulsecatcher():
 
 	# Converts string to float
 	shape = [int(x) for x in shapestring]
-
 	samples 	= []
 	pulses 		= []
 	left_data 	= []
@@ -76,35 +73,36 @@ def pulsecatcher():
 
 	while n <= max_counts:
 		t = time.time()
-		# Read the audio data from the stream
+		# Read one chunk of audio data from stream into memory. 
 		data = stream.read(chunk_size, exception_on_overflow=False)
+		# Convert hex values into a list of decimal values
 		values = list(wave.struct.unpack("%dh" % (chunk_size * device_channels), data))
 		# Extract every other element (left channel)
 		left_channel = values[::2]
-		#global plot_data
+		# Read through the list of left channel values and find pulse peaks
 		for i, sample in enumerate(left_channel[:-sample_length]):
-			samples = left_channel[i:i+sample_length]  # Get the first 51 samples
+			# iterate through one sample lenghth at the time in quick succession, ta-ta-ta-ta-ta...
+			samples = left_channel[i:i+sample_length]
 			# Flip inverts all samples if detector pulses are positive
 			samples = [flip * x for x in samples]
-			# Function calculates pulse height
+			# Function calculates pulse height of all samples 
 			height = fn.pulse_height(samples)
-			# Filter noise
+			# Filter out noise
 			if samples[peak] == max(samples) and height > threshold and samples[peak] < 32768:
-				# Function normalises sample to zero
+				# Function normalises sample to zero and converts to integer
 				normalised = fn.normalise_pulse(samples)
-				# Converts normalised to integers
-				normalised_int = [int(x + 0.5) for x in normalised]
-				# Calculates distortion
-				distortion = fn.distortion(normalised_int, shape)
-				# Filter
+				# Compares pulse to sample and calculates distortion number
+				distortion = fn.distortion(normalised, shape)
+				# Filters out distorted pulses
 				if distortion < tolerance:
-					# Sort pulse into correct bin
+					# Sorts pulse into correct bin
 					bin_index = int(height/bin_size)
-					# Add 1 to bin
+					# Adds 1 to the correct bin
 					if bin_index < bins:
 						histogram[bin_index] += 1
 						n   += 1	
 						cps += 1
+		# Saves histogram to json file once every second				
 		if t - timer_start >= 1:
 			timer_start = t
 			settings 		= fn.load_settings()
@@ -120,7 +118,7 @@ def pulsecatcher():
 			fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
 			fn.write_cps_json(name,cps)
 			cps = 0
-	# close =stream when done
+	# closes stream when done
 	p.terminate()
 	return						
 							

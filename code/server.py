@@ -10,6 +10,7 @@ try:
 	query = "SELECT theme FROM settings "
 	c.execute(query) 
 	theme = c.fetchall()[0][0]
+	
 except:
 	theme = 'lightgray'	
 

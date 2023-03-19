@@ -94,7 +94,6 @@ def show_tab4():
                 html.H4('Pulse Shape'),
                 html.P('What you see in the pulse shape graph is a normalised positive pulse shape. The program runs a quick function to check if the pulses are negative or positive and automatically flips the pulses if necessary, therefore we have no setting for negative pulses. '),
 
-
                 html.H2('Tab2 - Pulse Height Histogram'),
                 html.H4('Spectrum File Name'),
                 
@@ -128,8 +127,8 @@ def show_tab4():
                 html.H4('Show Log'),
                 html.P('This switch changes the y axis to log scale, a common way to make the high energy peaks visible.'),
                 
-                html.H4('Soundbyte'),
-                html.P('This button generates a wav file from the selected comparison spectrum and plays a 3 second cocophony where the x axis represents frequency and the y axis represents volume. The result is a unique chord for each spectrum.'),
+                html.H4('Gaussian Soundbyte'),
+                html.P('This button generates a wav file from the gaussian correlation (1 sigma) selected comparison spectrum and plays a 3 second cocophony where the x axis represents frequency and the y axis represents volume. The result is a unique chord for each spectrum.'),
 
                 html.H4('Calibration'),
                 html.P('The calibration switch turns calibration on or off. Energy calibration is done by a second order polynomial fit. There are six fields where the user may enter three bins with three corresponding energies. By choosing a linear relationship between bins and energies you can achieve a linear spectrum and by choosing non linear relationships you can correct for detectors that are non linear. The typical use case would be to enter the bins and known ebnergies from three widely spread gamma peaks.  '),

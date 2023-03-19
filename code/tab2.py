@@ -74,7 +74,7 @@ def show_tab2():
     sigma           = settings[25]
 
     html_tab2 = html.Div(id='tab2', children=[
-        html.Div(id='polynomial'),
+        html.Div(id='polynomial', children=''),
         html.Div(id='bar_chart_div', # Histogram Chart
             children=[
                 dcc.Graph(id='bar-chart', figure={},),
@@ -133,7 +133,7 @@ def show_tab2():
             ]), 
 
         html.Div(id='t2_setting_div'    , children=[
-            html.Button('Soundbyte <))', id='soundbyte'),
+            html.Button('Gaussian Soundbyte <))', id='soundbyte'),
             html.Div(id='audio', children='Audio representartion of comparison sepectrum'),
             ]), 
 
@@ -153,7 +153,7 @@ def show_tab2():
             html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2)),
             html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3)),
             html.Div('Gaussian corr. (sigma)'),
-            html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.01, value= sigma, marks=None,)),
+            html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks=['0','1', '2', '3'],)),
             
             ]),
 
@@ -531,7 +531,9 @@ def play_sound(n_clicks, filename2):
                     data_2     = json.load(f)
                     spectrum_2 = data_2["resultData"]["energySpectrum"]["spectrum"]
 
-        asp.make_wav_file(filename2, spectrum_2)
+        gc = fn.gaussian_correl(spectrum_2, 1)
+
+        asp.make_wav_file(filename2, gc)
 
         asp.play_wav_file(filename2)
     

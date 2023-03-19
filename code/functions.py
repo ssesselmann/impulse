@@ -56,11 +56,8 @@ def distortion(normalised, shape):
 
     return distortion
     # Function calculates pulse height
-def pulse_height(passed):
-    peak = passed[passed.index(max(passed))]
-    trough = passed[passed.index(min(passed))]
-    height = int(peak-trough)
-    return height
+def pulse_height(samples):
+    return max(samples)-min(samples)
 
     # Function to create bin_array 
 def create_bin_array(start, stop, bin_size):
@@ -247,8 +244,6 @@ def get_gps_loc():
     lon = data['loc'].split(',')[1]
     return lat, lon
 
-import math
-
 def gaussian_correl(data, sigma):
     # Initialize an empty list to hold the correlation values
     correl_values = []
@@ -311,7 +306,6 @@ def stop_recording():
     c         = conn.cursor()
     c.execute(query3)
     conn.commit()
-
     return    
 
 def export_csv(filename):
@@ -340,6 +334,5 @@ def export_csv(filename):
         for i, value in enumerate(spectrum):
             # Calculate energies
             e = round((i**coefficients[2] + i*coefficients[1]+coefficients[0]),2)
-
             writer.writerow([e, value])   
     return
