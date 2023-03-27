@@ -233,7 +233,32 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5):
 
 def capture_pulse_shape(n_clicks):
 
-    layout  = {'title':f'Pulse Shape','margin':{'l':'40', 'r':'10', 't':'40', 'b':'40'}, 'height': '350'}
+    layout = {
+                'title': {
+                'text': 'Pulse Shape',
+                'font': {'size': 20},
+                'x': 0.5,
+                'y': 0.9
+            },
+            'margin': {'l': 40, 'r': 10, 't': 40, 'b': 40},
+            'height': 350,
+            'paper_bgcolor': 'white',
+            'plot_bgcolor': 'white',
+            'xaxis': {
+                'showgrid': True,
+                'gridcolor': 'lightgray',
+                'zeroline': True,
+                'zerolinecolor': 'black',
+                'zerolinewidth': 1
+            },
+            'yaxis': {
+                'showgrid': True,
+                'gridcolor': 'lightgray',
+                'zeroline': True,
+                'zerolinecolor': 'black',
+                'zerolinewidth': 1
+            }
+        }
 
     #prevent click on page load
     if n_clicks == 0:
@@ -241,10 +266,24 @@ def capture_pulse_shape(n_clicks):
         feedback = ''
     else:    
         shape = sc.shapecatcher()
-        dots = list(range(len(shape)))
-        marker  = dict(size = 5, color = 'purple')
-        data    = [{'x': dots, 'y': shape, 'type': 'line', 'name': 'SF', 'mode': 'markers+lines', 'marker': marker}]
-        fig = {'data': data, 'layout': layout}
+        dots = list(range(len(shape[0])))
+
+        data = go.Scatter(
+                    x=dots, 
+                    y=shape[0], 
+                    mode='lines+markers',  
+                    marker={'color': 'black', 'size':4}, 
+                    line={'color':'blue', 'width':2},
+                    showlegend=False)
+        threshold = go.Scatter(
+                    x=dots, 
+                    y=shape[1], 
+                    mode='lines',  
+                    line={'color':'red', 'width':1},
+                    showlegend=False)
+
+
+        fig = go.Figure(data=[data, threshold], layout=layout)
 
     return fig, fig
 
@@ -257,13 +296,13 @@ def capture_pulse_shape(n_clicks):
 
 def distortion_curve(n_clicks):
 
-    layout  = {'title': 'Distortion Curve', 'margin':{'l':'40', 'r':'40', 't':'40', 'b':'40'}, 'height': '350'}
+    layout  = {'title': {'text': 'Distortion curve','font': {'size': 20},'x': 0.5,'y': 0.9}, 'margin':{'l':'40', 'r':'40', 't':'40', 'b':'40'}, 'height': '350'}
 
     #prevent click on page load
     if n_clicks == 0: 
         fig = {'data': [{}], 'layout': layout}
     else: 
-        lines  = dict(size = 3, color = 'purple')
+        lines  = dict(size = 2, color = 'blue')
         y = dcr.distortion_finder()
         x = list(range(len(y)))
         data = [{'x': x, 'y': y, 'type': 'line', 'name': 'SF', 'mode': 'lines', 'marker':lines}]

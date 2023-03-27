@@ -63,7 +63,11 @@ def shapecatcher():
 	stop = bins * bin_size
 	bin_array = fn.create_bin_array(start, stop, bin_size)
 	bin_counts = defaultdict(int)
+
+	threshold = 3200
 	
+	threshold_trace = [threshold] * sample_length
+
 	try:
 		# Get audio parameters
 		device_list = fn.get_device_list()
@@ -99,7 +103,7 @@ def shapecatcher():
 				# Flips samples if pulse is positive
 				samples = [flip * x for x in samples]
 				# Find pulses based only on the peak height being in the middle 80% of 32000
-				if samples[peak] >= max(samples) and (max(samples)-min(samples)) > 3200 and samples[peak] < 28800:
+				if samples[peak] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[peak] < 28800:
 					# gather a list of samples 
 					pulse_list.append(samples)
 					# Counter
@@ -125,10 +129,11 @@ def shapecatcher():
 						conn.commit()
 						# Write to csv
 						df.to_csv(shapecsv, index='Shape', header=0)
-						return shape_int  	
+
+						return shape_int, threshold_trace	
 	except:
 		shape_int = [0] * sample_length
-		return shape_int
+		return shape_int, threshold_trace
 
 
 	    

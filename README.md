@@ -115,6 +115,7 @@ Change log
 44) Added drop down menu for comparison spectra and isotope spectra
 45) Added soundbyte button which plays a chord for any spectrum
 46) Changes soundbyte to play gaussian correlation instead of full histogram (cleaner sound)
+47) Added a threshold line to the pulse shape chart 
 
 
 Things to do

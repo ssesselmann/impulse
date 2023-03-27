@@ -92,7 +92,7 @@ def show_tab4():
                 html.P('The distortion curve plot has no other function than to help you to visualise where the distortion in your sampling is occurring. When you click the [Get Distortion Curve] button the computer collects n unfiltered samples, compares each one with the mean and assigns a distortion factor to each pulse. The distortion factors are then ordered by size and plotted on a graph. The shape of this graph will help you determine how tight to set your distortion tolerance when recording your spectrum on tab2. Shape distortion may be caused by pulse overlap or large pulses that exceed the capacity of the electronic circuit.'),
                 
                 html.H4('Pulse Shape'),
-                html.P('What you see in the pulse shape graph is a normalised positive pulse shape. The program runs a quick function to check if the pulses are negative or positive and automatically flips the pulses if necessary, therefore we have no setting for negative pulses. '),
+                html.P('What you see in the pulse shape graph is a normalised positive pulse shape and a horizontal red line representing the fixed height threshold which must be exceeded for a pulse to get sampled (this threshold is hard coded). The program runs a quick function to check if the pulses are negative or positive and automatically flips the pulses if necessary, therefore we have no setting for negative pulses. '),
 
                 html.H2('Tab2 - Pulse Height Histogram'),
                 html.H4('Spectrum File Name'),
