@@ -116,6 +116,7 @@ Change log
 45) Added soundbyte button which plays a chord for any spectrum
 46) Changes soundbyte to play gaussian correlation instead of full histogram (cleaner sound)
 47) Added a threshold line to the pulse shape chart 
+48) Fixed bug with start/stop buttons causing run to stop when switching tabs.
 
 
 Things to do

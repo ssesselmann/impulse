@@ -16,7 +16,7 @@ from server import app
 from dash.exceptions import PreventUpdate
 
 path = None
-n_clicks = 0
+n_clicks = None
 global_counts = 0
 global cps_list
 
@@ -87,6 +87,7 @@ def show_tab2():
             html.Button('START', id='start'),
             html.Div(id='counts', children= ''),
             html.Div('Counts'),
+            html.Div(id='start_text' , children =''),
 
             ]),
 
@@ -160,7 +161,6 @@ def show_tab2():
         html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
         
         html.Div(id='subfooter', children=[
-            html.Div(id='start_text' , children =''),
             ]),
 
     ]) # End of tab 2 render
@@ -173,21 +173,23 @@ def show_tab2():
                 [Input('start'      ,'n_clicks')])
 
 def update_output(n_clicks):
-    if n_clicks != None:
+    if n_clicks is None:
+        raise PreventUpdate
+    else:       
         fn.clear_global_cps_list()
         pc.pulsecatcher()
-        return
+        return " "
 #----STOP------------------------------------------------------------
 
 @app.callback( Output('stop_text'  ,'children'),
                 [Input('stop'      ,'n_clicks')])
 
 def update_output(n_clicks):
-    if n_clicks != 0:
-
+    if n_clicks is None:
+        raise PreventUpdate
+    else:
         fn.stop_recording()
-
-        return 
+        return " "
 #----------------------------------------------------------------
 
 @app.callback([ Output('bar-chart'          ,'figure'), 
@@ -209,7 +211,7 @@ def update_output(n_clicks):
 
 def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, active_tab):
 
-    if active_tab != 'tab2':  # only update the chart when "tab3" is active
+    if active_tab != 'tab2':  # only update the chart when "tab2" is active
         raise PreventUpdate
 
     global global_counts
