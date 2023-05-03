@@ -117,6 +117,7 @@ Change log
 46) Changes soundbyte to play gaussian correlation instead of full histogram (cleaner sound)
 47) Added a threshold line to the pulse shape chart 
 48) Fixed bug with start/stop buttons causing run to stop when switching tabs.
+49) Fixed y axis autorange when running difference spectrum
 
 
 Things to do

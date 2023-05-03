@@ -231,8 +231,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             coefficients        = coefficients[::-1] # Revese order
 
             mu = 0
-            #sigma = 0.5
-            lin_log = 'linear'
             prominence = 0.5
 
             if sigma == 0:
@@ -249,6 +247,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
      
             x = list(range(numberOfChannels))
             y = spectrum
+            max_index = np.argmax(y)
+            max_log_index = np.log10(max_index)+2
 
             if cal_switch == True:
                 x = np.polyval(np.poly1d(coefficients), x)
@@ -256,9 +256,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             if epb_switch == True:
                 y = [i * count for i, count in enumerate(spectrum)]
                 gc= [i * count for i, count in enumerate(gc)]
-
-            if log_switch == True:
-                lin_log = 'log'
 
             trace1 = go.Scatter(
                 x=x, 
@@ -319,52 +316,29 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     )
                 )
 
-            if log_switch == True: # This is a botch due to a bug in plotly
-                layout = go.Layout(
-                    paper_bgcolor = 'white', 
-                    plot_bgcolor = 'white',
-                    title={
-                    'text': filename,
-                    'x': 0.5,
-                    'y': 0.9,
-                    'xanchor': 'center',
-                    'yanchor': 'top',
-                    'font': {'family': 'Arial', 'size': 24, 'color': 'black'},
-                    },
-                    height  =450, 
-                    margin_t=0,
-                    margin_b=0,
-                    margin_l=0,
-                    margin_r=0,
-                    autosize=True,
-                    xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
-                    yaxis=dict(type=lin_log),
-                    uirevision="Don't change",
-                    )
-            else:
-                layout = go.Layout(
-                    paper_bgcolor = 'white', 
-                    plot_bgcolor = 'white',
-                    title={
-                    'text': filename,
-                    'x': 0.5,
-                    'y': 0.9,
-                    'xanchor': 'center',
-                    'yanchor': 'top',
-                    'font': {'family': 'Arial', 'size': 24, 'color': 'black'},
-                    },
-                    height  =450, 
-                    margin_t=0,
-                    margin_b=0,
-                    margin_l=0,
-                    margin_r=0,
-                    autosize=True,
-                    xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
-                    yaxis=dict(type=lin_log),
-                    annotations=annotations,
-                    shapes=lines,
-                    uirevision="Don't change",
-                    )
+            layout = go.Layout(
+                paper_bgcolor = 'white', 
+                plot_bgcolor = 'white',
+                title={
+                'text': filename,
+                'x': 0.5,
+                'y': 0.9,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': {'family': 'Arial', 'size': 24, 'color': 'black'},
+                },
+                height  =450, 
+                margin_t=0,
+                margin_b=0,
+                margin_l=0,
+                margin_r=0,
+                autosize=True,
+                xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
+                yaxis=dict(autorange=True),
+                annotations=annotations,
+                shapes=lines,
+                uirevision="Don't change",
+                )
 #---------------Histrogram2 ---------------------------------------------------------------------------
 
             if os.path.exists(histogram2):
@@ -409,10 +383,10 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 line={'width':2})
     
         if compare_switch == False:
-            fig = go.Figure(data=[trace1, trace4], layout=layout), validPulseCount, elapsed, f'cps {cps}'
+            fig = go.Figure(data=[trace1, trace4], layout=layout)
 
         if compare_switch == True: 
-            fig = go.Figure(data=[trace1, trace2], layout=layout), validPulseCount, elapsed, f'cps {cps}'
+            fig = go.Figure(data=[trace1, trace2], layout=layout) 
 
         if difference_switch == True:
             y3 = [a - b for a, b in zip(y, y2)]
@@ -425,9 +399,17 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                             line={'width':1}
                             )
 
-            fig = go.Figure(data=[trace3], layout=layout), validPulseCount, elapsed, f'cps {cps}'
+            fig = go.Figure(data=[trace3], layout=layout)
 
-        return fig
+            fig.update_layout(yaxis=dict(autorange=False, range=[min(y3),max(y3)]))
+
+        if difference_switch == False:
+            fig.update_layout(yaxis=dict(autorange=True))
+
+        if log_switch == True:
+            fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0, max_log_index]))
+    
+        return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}'
 
     else:
         layout = go.Layout(
@@ -444,7 +426,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 height  =450, 
                 autosize=True,
                 xaxis=dict(dtick=50, tickangle = 90, range =[0, 100]),
-                yaxis=dict(type='linear'),
+                yaxis=dict(autorange=True),
                 uirevision="Don't change",
                 )
         return go.Figure(data=[], layout=layout), 0, 0, 0
