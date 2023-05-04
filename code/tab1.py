@@ -83,6 +83,8 @@ def show_tab1():
         html.Div( children=f'Sample size', style={'text-align':'left'}),
         html.Div(dcc.Dropdown(id='sample_length', 
             options=[
+                {'label':'11 dots', 'value': '11'},
+                {'label':'16 dots', 'value': '16'},
                 {'label':'21 dots', 'value': '21'},
                 {'label':'31 dots', 'value': '31'},
                 {'label':'41 dots', 'value': '41'},
@@ -222,7 +224,12 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5):
 
         pulse_length = int(1000000 * int(length)/int(sample_rate))
 
-        return f'Device ({device}) selected', f'Sampling time {pulse_length} µs'
+        warning = ''
+
+        if pulse_length >= 334:
+            warning = 'WARNING LONG'
+
+        return f'Device ({device}) selected', f'{warning} Dead time ~ {pulse_length} µs'
 
 #-------- Callback to capture and save mean pulse shape ----------
 
