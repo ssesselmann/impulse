@@ -38,7 +38,7 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,  
         name            TEXT    DEFAULT 'my_spectrum',      
         device          INTEGER DEFAULT 1,                           
-        sample_rate     INTEGER DEFAULT 44100,             
+        sample_rate     INTEGER DEFAULT 48000,             
         chunk_size      INTEGER DEFAULT 1024,               
         threshold       INTEGER DEFAULT 100,                
         tolerance       INTEGER DEFAULT 50000,              
@@ -46,7 +46,7 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         bin_size        INTEGER DEFAULT 30,                 
         max_counts      INTEGER DEFAULT 10000,              
         shapecatches    INTEGER DEFAULT 10,                 
-        sample_length   INTEGER DEFAULT 51,                 
+        sample_length   INTEGER DEFAULT 16,                 
         calib_bin_1     INTEGER DEFAULT 0,                  
         calib_bin_2     INTEGER DEFAULT 500,                
         calib_bin_3     INTEGER DEFAULT 1000,               
@@ -58,8 +58,8 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         coeff_3         REAL    DEFAULT 0,                  
         comparison      TEXT    DEFAULT '',                 
         flip            INTEGER DEFAULT 1,                  
-        peakfinder      REAL    DEFAULT 0.5,
-        theme           TEXT    DEFAULT 'orange',
+        peakfinder      REAL    DEFAULT 0,
+        theme           TEXT    DEFAULT 'gray',
         sigma           REAL    DEFAULT 0                 
         );"""
 
