@@ -73,6 +73,7 @@ def show_tab2():
     peakfinder      = settings[23]
     sigma           = settings[25]
 
+
     html_tab2 = html.Div(id='tab2', children=[
         html.Div(id='polynomial', children=''),
         html.Div(id='bar_chart_div', # Histogram Chart
@@ -133,11 +134,12 @@ def show_tab2():
             html.Div(['Calibration'    , daq.BooleanSwitch(id='cal_switch',on=False, color='purple',)]),
             ]), 
 
-        html.Div(id='t2_setting_div'    , children=[
-            html.Button('Gaussian Soundbyte <))', id='soundbyte'),
-            html.Div(id='audio', children='Audio representartion of comparison sepectrum'),
-            ]), 
-
+        html.Div(id='t2_setting_div', children=[
+            html.Button('Gaussian sound <)' , id='soundbyte'),
+            html.Div(id='audio', children=''),
+            html.Button('Update calibration', id='update_calib_button'),
+            html.Div(id='update_calib_message', children='')
+        ]),
 
         html.Div(id='t2_setting_div', children=[
             html.Div('Calibration Bins'),
@@ -247,8 +249,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
      
             x = list(range(numberOfChannels))
             y = spectrum
-            max_index = np.argmax(y)
-            max_log_index = np.log10(max_index)+2
+            max_value = np.max(y)
+            max_log_value = np.log10(max_value)
 
             if cal_switch == True:
                 x = np.polyval(np.poly1d(coefficients), x)
@@ -362,9 +364,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     if epb_switch == True:
                         y2 = [i * n * steps for i, n in enumerate(spectrum_2)]
 
-                    if log_switch == True:
-                        lin_log = 'log'
-
                     trace2 = go.Scatter(
                         x=x2, 
                         y=y2, 
@@ -401,14 +400,14 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
             fig = go.Figure(data=[trace3], layout=layout)
 
-            fig.update_layout(yaxis=dict(autorange=False, range=[min(y3),max(y3)]))
+            fig.update_layout(yaxis=dict(autorange=True, range=[min(y3),max(y3)]))
 
         if difference_switch == False:
             fig.update_layout(yaxis=dict(autorange=True))
 
         if log_switch == True:
-            fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0, max_log_index]))
-    
+            fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0, max_log_value+1])) 
+
         return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}'
 
     else:
@@ -499,6 +498,8 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
 
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
 
+#-------PLAY SOUND ---------------------------------------------
+
 @app.callback( Output('audio'       ,'children'),
                 [Input('soundbyte'  ,'n_clicks'),
                 Input('filename2'   ,'value')])    
@@ -506,7 +507,9 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
 
 def play_sound(n_clicks, filename2):
 
-    if n_clicks != None:
+    if n_clicks is None:
+        raise PreventUpdate
+    else:
         spectrum_2 = []
         histogram2 = fn.get_path(f'data/{filename2}.json')
 
@@ -520,5 +523,26 @@ def play_sound(n_clicks, filename2):
         asp.make_wav_file(filename2, gc)
 
         asp.play_wav_file(filename2)
-    
-    return 
+    return
+
+#------UPDATE CALIBRATION OF EXISTING SPECTRUM-------------------
+
+@app.callback(
+    Output('update_calib_message','children'),
+    [Input('update_calib_button' ,'n_clicks'),
+    Input('filename'         ,'value')
+    ])
+
+def update_current_calibration(n_clicks, filename):
+    if n_clicks is None:
+        raise PreventUpdate
+    else:
+        settings        = fn.load_settings()
+        coeff_1         = round(settings[18],6)
+        coeff_2         = round(settings[19],6)
+        coeff_3         = round(settings[20],6)
+
+        # Update the calibration coefficients using the specified values
+        fn.update_coeff(filename, coeff_1, coeff_2, coeff_3)
+        # Return a message indicating that the update was successful
+        return f"Update {n_clicks}"

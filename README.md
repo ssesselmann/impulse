@@ -119,6 +119,7 @@ Change log
 48) Fixed bug with start/stop buttons causing run to stop when switching tabs.
 49) Fixed y axis autorange when running difference spectrum
 50) Added warning for long dead time and options for shorter pulse length
+51) Added function to update calibration on prerecorded spectrum
 
 
 Things to do

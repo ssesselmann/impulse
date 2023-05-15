@@ -336,3 +336,22 @@ def export_csv(filename):
             e = round((i**coefficients[2] + i*coefficients[1]+coefficients[0]),2)
             writer.writerow([e, value])   
     return
+
+def update_coeff(filename, coeff_1, coeff_2, coeff_3):
+    with open(f'data/{filename}.json') as f:
+        data = json.load(f)
+
+    coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+    coefficients[0] = coeff_3
+    coefficients[1] = coeff_2
+    coefficients[2] = coeff_1
+
+    with open(f'data/{filename}.json', 'w') as f:
+        json.dump(data, f, indent=4)
+
+    return
+  
+
+
+
+
