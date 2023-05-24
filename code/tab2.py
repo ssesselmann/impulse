@@ -18,9 +18,15 @@ from dash.exceptions import PreventUpdate
 path = None
 n_clicks = None
 global_counts = 0
-global cps_list
+global_cps = 0
 
 def show_tab2():
+
+    global global_counts
+
+    global global_cps
+
+    global cps_list
 
     datafolder = fn.get_path('data')
     # Get all filenames in data folder and its subfolders
@@ -72,7 +78,17 @@ def show_tab2():
     filename2       = settings[21]
     peakfinder      = settings[23]
     sigma           = settings[25]
+    max_seconds     = settings[26]
 
+    if max_counts == 0:
+        counts_warning = 'red'
+    else: 
+        counts_warning = 'white'    
+
+    if max_seconds == 0:
+        seconds_warning = 'red'
+    else: 
+        seconds_warning = 'white' 
 
     html_tab2 = html.Div(id='tab2', children=[
         html.Div(id='polynomial', children=''),
@@ -84,36 +100,35 @@ def show_tab2():
 
         html.Div(id='t2_filler_div', children=''),
         #Start button
-        html.Div(id='t2_setting_div', children=[
+        html.Div(id='t2_setting_div1', children=[
             html.Button('START', id='start'),
+            html.Div(id='start_text', children=''),
             html.Div(id='counts', children= ''),
-            html.Div('Counts'),
-            html.Div(id='start_text' , children =''),
-
+            html.Div(''),
+            html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1000,  readOnly=False, value=max_counts, style={'background-color': counts_warning} )]),
             ]),
 
-        html.Div(id='t2_setting_div', children=[            
-            html.Button('STOP', id='stop'),
+        html.Div(id='t2_setting_div2', children=[            
+            html.Button('STOP', id='stop'), 
+            html.Div(id='stop_text', children=''),
             html.Div(id='elapsed', children= '' ),
+            html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=60,  readOnly=False, value=max_seconds, style={'background-color': seconds_warning} )]),
             html.Div(id='cps', children=''),
-            #html.Div('Seconds'),
-            html.Div(id='stop_text', children= ''),
             ]),
 
-        html.Div(id='t2_setting_div', children=[
+        html.Div(id='t2_setting_div3', children=[
             html.Div(['File name:', dcc.Input(id='filename' ,type='text' ,value=filename )]),
             html.Div(['Number of bins:', dcc.Input(id='bins'        ,type='number'  ,value=bins )]),
             html.Div(['bin size      :', dcc.Input(id='bin_size'    ,type='number'  ,value=bin_size )]),
             ]), 
 
 
-        html.Div(id='t2_setting_div', children=[
-            html.Div(['Stop at n counts', dcc.Input(id='max_counts', type='number', value=max_counts )]),
+        html.Div(id='t2_setting_div4', children=[
             html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold )]),
             html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance )]),
             ]),
 
-        html.Div(id='t2_setting_div', children=[
+        html.Div(id='t2_setting_div5', children=[
             html.Div('Select Comparison'),
             html.Div(dcc.Dropdown(
                     id='filename2',
@@ -128,35 +143,35 @@ def show_tab2():
 
             ]),
 
-        html.Div(id='t2_setting_div'    , children=[
+        html.Div(id='t2_setting_div6'    , children=[
             html.Div(['Energy by bin'  , daq.BooleanSwitch(id='epb_switch',on=False, color='purple',)]),
             html.Div(['Show log(y)'     , daq.BooleanSwitch(id='log_switch',on=False, color='purple',)]),
             html.Div(['Calibration'    , daq.BooleanSwitch(id='cal_switch',on=False, color='purple',)]),
             ]), 
 
-        html.Div(id='t2_setting_div', children=[
+        html.Div(id='t2_setting_div7', children=[
             html.Button('Gaussian sound <)' , id='soundbyte'),
             html.Div(id='audio', children=''),
             html.Button('Update calibration', id='update_calib_button'),
             html.Div(id='update_calib_message', children='')
         ]),
 
-        html.Div(id='t2_setting_div', children=[
+        html.Div(id='t2_setting_div8', children=[
             html.Div('Calibration Bins'),
             html.Div(dcc.Input(id='calib_bin_1', type='number', value=calib_bin_1)),
             html.Div(dcc.Input(id='calib_bin_2', type='number', value=calib_bin_2)),
             html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3)),
             html.Div('peakfinder'),
-            html.Div(dcc.Slider(id='peakfinder', min=0 ,max=1, step=0.1, value= peakfinder, marks=['0','1'])),
+            html.Div(dcc.Slider(id='peakfinder', min=0 ,max=1, step=0.1, value= peakfinder, marks={0:'0', 1:'1'})),
             ]),
 
-        html.Div(id='t2_setting_div', children=[
+        html.Div(id='t2_setting_div9', children=[
             html.Div('Energies'),
             html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1)),
             html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2)),
             html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3)),
             html.Div('Gaussian corr. (sigma)'),
-            html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks=['0','1', '2', '3'])),
+            html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
             
             ]),
 
@@ -177,10 +192,11 @@ def show_tab2():
 def update_output(n_clicks):
     if n_clicks is None:
         raise PreventUpdate
-    else:       
+    else:
+        mode = 2      
         fn.clear_global_cps_list()
-        pc.pulsecatcher()
-        return " "
+        pc.pulsecatcher(mode)
+        return ''
 #----STOP------------------------------------------------------------
 
 @app.callback( Output('stop_text'  ,'children'),
@@ -431,10 +447,11 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
         return go.Figure(data=[], layout=layout), 0, 0, 0
 
 #--------UPDATE SETTINGS------------------------------------------------------------------------------------------
-@app.callback( Output('polynomial'        ,'children'),
+@app.callback( Output('polynomial'      ,'children'),
                 [Input('bins'           ,'value'),
                 Input('bin_size'        ,'value'),
                 Input('max_counts'      ,'value'),
+                Input('max_seconds'     ,'value'),
                 Input('filename'        ,'value'),
                 Input('filename2'       ,'value'),
                 Input('threshold'       ,'value'),
@@ -449,7 +466,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 Input('sigma'           ,'value')
                 ])  
 
-def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3, peakfinder, sigma):
+def save_settings(bins, bin_size, max_counts, max_seconds, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3, peakfinder, sigma):
     
     database = fn.get_path('data.db')
 
@@ -471,7 +488,8 @@ def save_settings(bins, bin_size, max_counts, filename, filename2, threshold, to
                     calib_e_2={calib_e_2},
                     calib_e_3={calib_e_3},
                     peakfinder={peakfinder},
-                    sigma={sigma}
+                    sigma={sigma},
+                    max_seconds={max_seconds}
                     WHERE id=0;"""
 
     c.execute(query)
