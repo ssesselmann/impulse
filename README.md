@@ -120,6 +120,8 @@ Change log
 49) Fixed y axis autorange when running difference spectrum
 50) Added warning for long dead time and options for shorter pulse length
 51) Added function to update calibration on prerecorded spectrum
+52) Added option to stop after n seconds
+53) Added tab4 with 3D Histogram
 
 
 Things to do
@@ -127,6 +129,7 @@ Things to do
 * Build functionality for right channel recording and coincidence counting
 * Build interval histogram with Dead time calculation 
 * Record instruction video
+* Show Subtraction in spectrum name
 
 
 
