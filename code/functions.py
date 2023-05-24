@@ -79,8 +79,9 @@ def update_bin(n, bins, bin_counts):
     bin_counts[bin_num] += 1
     return bin_counts
 
-# This function writes histogram to JSON file according to NPESv1 schema.
-def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
+# This function writes a 2D histogram to JSON file according to NPESv1 schema.
+def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
+    
     jsonfile = get_path(f'data/{name}.json')
     data =  {"schemaVersion":"NPESv1",
                 "resultData":{
@@ -92,7 +93,7 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coe
                             "polynomialOrder":2,
                             "coefficients":[coeff_3,coeff_2,coeff_1]
                             },
-                        "validPulseCount":n,
+                        "validPulseCount":counts,
                         "measurementTime": elapsed,
                         "spectrum": histogram
                         }
@@ -100,6 +101,41 @@ def write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coe
                 }
 
     with open(jsonfile, "w+") as f:
+        json.dump(data, f)
+
+# This function writes 3D intervals to JSON file according to NPESv1 schema.
+def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_number, coeff_1, coeff_2, coeff_3):
+
+    jsonfile = get_path(f'data/{filename}_3d.json')
+    
+    if not os.path.isfile(jsonfile):
+        data = {
+            "schemaVersion": "NPESv1",
+            "resultData": {
+                "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                "energySpectrum": {
+                    "numberOfChannels": bins,
+                    "energyCalibration": {
+                        "polynomialOrder": 2,
+                        "coefficients": [coeff_3, coeff_2, coeff_1]
+                    },
+                    "validPulseCount": 0,
+                    "measurementTime": 0,
+                    "spectrum":[]
+                }
+            }
+        }
+    else:
+        with open(jsonfile, "r") as f:
+            data = json.load(f)
+
+    # Update the existing values
+    data["resultData"]["energySpectrum"]["validPulseCount"] = counts
+    data["resultData"]["energySpectrum"]["measurementTime"] = elapsed
+    data["resultData"]["energySpectrum"]["spectrum"].extend([interval_number])  # Wrap intervals in a list
+
+    with open(jsonfile, "w") as f:
         json.dump(data, f)
 
 def write_cps_json(name, cps):
@@ -301,7 +337,8 @@ def stop_recording():
     c      = conn.cursor()
     c.execute(query2)
     conn.commit()
-    time.sleep(1)
+    time.sleep(3)
+    # Wait three seconds and set max_counts back to what it was
     query3    = f"UPDATE settings SET max_counts = {max_counts} WHERE ID = 0;"
     c         = conn.cursor()
     c.execute(query3)
