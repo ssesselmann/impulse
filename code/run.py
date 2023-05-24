@@ -7,6 +7,10 @@ import logging
 from threading import Timer
 import launcher
 from server import app
+import warnings
+
+warnings.filterwarnings('ignore')
+
 
 # The following three lines limit output to errors
 log = logging.getLogger('werkzeug')
