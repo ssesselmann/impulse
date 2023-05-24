@@ -11,6 +11,7 @@ from tab1 import show_tab1
 from tab2 import show_tab2
 from tab3 import show_tab3
 from tab4 import show_tab4
+from tab5 import show_tab5
 from server import app
 
 data_directory = fn.get_path('data')
@@ -60,7 +61,9 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         flip            INTEGER DEFAULT 1,                  
         peakfinder      REAL    DEFAULT 0,
         theme           TEXT    DEFAULT 'lightgray',
-        sigma           REAL    DEFAULT 0                 
+        sigma           REAL    DEFAULT 0,
+        max_seconds     INTEGER DEFAULT 3600,
+        t_interval     INTEGER DEFAULT 3              
         );"""
 
 # This query inserts the first record in settings with defaults
@@ -84,14 +87,17 @@ app.layout = html.Div([
                 label= 'Settings & Control', 
                 value= 'tab1'),
             dcc.Tab(
-                label='Pulse Height Histogram', 
-                value='tab2'),   
+                label='2D Pulse Height Histogram', 
+                value='tab2'), 
+            dcc.Tab(
+                label='3D Pulse Height Histogram', 
+                value='tab3'),      
             dcc.Tab(
                 label='Count Rate Histogram', 
-                value='tab3'),
+                value='tab4'),
             dcc.Tab(
                 label='Export, Exit and Manual', 
-                value='tab4'),
+                value='tab5'),
         ]),
     html.Div(id = 'tabs-content'),# Empty Div, where the out of render_tabs is sent to. (The page content)
     ],className='app-styles')
@@ -118,4 +124,8 @@ def render_content(tab):
     elif tab == 'tab4':
         html_tab4 = show_tab4()
         return html_tab4   
+
+    elif tab == 'tab5':
+        html_tab5 = show_tab5()
+        return html_tab5      
    
