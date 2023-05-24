@@ -13,19 +13,24 @@ import csv
 
 data 			= None
 left_channel 	= None
-device_list 		= fn.get_device_list()
 path 			= None
+device_list 	= fn.get_device_list()
 plot 			= {}
 
+global_cps      = 0
+global_counts	= 0
+
 # Function reads audio stream and finds pulses then outputs time, pulse height and distortion
-def pulsecatcher():
+def pulsecatcher(mode):
 
 	# Start timer
-	timer_start		= time.time()
 	t0				= datetime.datetime.now()
-	tb				= time.time()
+	tb				= time.time()	#time beginning
+	tla = 0
+
+	# Get the following from settings
 	settings 		= fn.load_settings()
-	name            = settings[1]
+	filename        = settings[1]
 	device          = settings[2]             
 	sample_rate     = settings[3]
 	chunk_size      = settings[4]                        
@@ -39,14 +44,22 @@ def pulsecatcher():
 	coeff_2			= settings[19]
 	coeff_3			= settings[20]
 	flip 			= settings[22]
+	max_seconds     = settings[26]
+	t_interval      = settings[27]
 
-	peak = int((sample_length-1)/2)
+	if mode == 2:
+		t_interval = 1 #Regular histogram updates once per second
 
-	# Create an array of ewmpty bins
-	start = 0
-	stop = bins * bin_size
-	histogram = [0] * bins
-	audio_format = pyaudio.paInt16
+	peak 		= int((sample_length-1)/2)
+
+	condition = True
+
+	# Create an array of empty bins
+	start 			= 0
+	stop 			= bins * bin_size
+	histogram 		= [0] * bins
+	histogram_3d 	= [0] * bins
+	audio_format 	= pyaudio.paInt16
 	device_channels = fn.get_max_input_channels(device_list, device)
 
 	# Loads pulse shape from csv
@@ -57,9 +70,18 @@ def pulsecatcher():
 	samples 	= []
 	pulses 		= []
 	left_data 	= []
+
 	p = pyaudio.PyAudio()
-	n = 0
-	cps = 0
+
+	global global_cps 
+
+	global_cps = 0
+
+	global global_counts 
+
+	global_counts = 0
+
+	elapsed = 0
 
 	# Open the selected audio input device
 	stream = p.open(
@@ -71,8 +93,7 @@ def pulsecatcher():
 		input_device_index=device,
 		frames_per_buffer=chunk_size)
 
-	while n <= max_counts:
-		t = time.time()
+	while condition and (global_counts < max_counts and elapsed <= max_seconds):
 		# Read one chunk of audio data from stream into memory. 
 		data = stream.read(chunk_size, exception_on_overflow=False)
 		# Convert hex values into a list of decimal values
@@ -99,27 +120,40 @@ def pulsecatcher():
 					bin_index = int(height/bin_size)
 					# Adds 1 to the correct bin
 					if bin_index < bins:
-						histogram[bin_index] += 1
-						n   += 1	
-						cps += 1
-		# Saves histogram to json file once every second				
-		if t - timer_start >= 1:
-			timer_start = t
+						histogram[bin_index] 	+= 1
+						histogram_3d[bin_index] += 1 
+						global_counts  			+= 1	
+						global_cps 				+= 1
+
+		t1 = datetime.datetime.now() # Time capture
+		te = time.time()
+		elapsed = te - tb
+
+		# Saves histogram to json file at interval
+		if te - tla >= t_interval:
 			settings 		= fn.load_settings()
-			name            = settings[1]
+			filename        = settings[1]
 			max_counts      = settings[9]
+			max_seconds		= settings[26]
 			coeff_1			= settings[18]
 			coeff_2			= settings[19]
 			coeff_3			= settings[20]
-			# Time capture
-			t1 = datetime.datetime.now()
-			te = time.time()
-			elapsed = int(te - tb)
-			fn.write_histogram_json(t0, t1, bins, n, elapsed, name, histogram, coeff_1, coeff_2, coeff_3)
-			fn.write_cps_json(name,cps)
-			cps = 0
-	# closes stream when done
-	p.terminate()
+
+			global_cps = int(global_cps/t_interval)
+			
+			if mode == 2:
+				fn.write_histogram_json(t0, t1, bins, global_counts, int(elapsed), filename, histogram, coeff_1, coeff_2, coeff_3)
+				tla = time.time()
+
+			if mode == 3:
+				fn.write_3D_intervals_json(t0, t1, bins, global_counts, int(elapsed), filename, histogram_3d, coeff_1, coeff_2, coeff_3)
+				histogram_3d = [0] * bins
+				tla = time.time()
+
+			fn.write_cps_json(filename, global_cps)
+			global_cps = 0
+	
+	p.terminate() # closes stream when done
 	return						
 							
 
