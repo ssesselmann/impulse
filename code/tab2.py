@@ -37,6 +37,8 @@ def show_tab2():
                 else {'label': os.path.basename(file), 'value': file} for file in files]
     # Filter out filenames ending with "-cps"
     options = [opt for opt in options if not opt['value'].endswith("-cps.json")]
+    # Filter out filenames ending with "-3d"
+    options = [opt for opt in options if not opt['value'].endswith("_3d.json")]
     # Sort options alphabetically by label
     options_sorted = sorted(options, key=lambda x: x['label'])
 
