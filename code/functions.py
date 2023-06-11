@@ -17,7 +17,6 @@ import pandas as pd
 from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
 from datetime import datetime
-# import urlopen from urllib.request
 from urllib.request import urlopen
 
 cps_list = []
@@ -235,13 +234,12 @@ def detect_pulse_direction(samples):
         return 0
 
 def get_path(filename):
-    name = os.path.splitext(filename)[0]
-    ext = os.path.splitext(filename)[1]
+    name, ext = os.path.splitext(filename)
 
     if platform.system() == "Darwin":
-        from AppKit import NSBundle
-        file = NSBundle.mainBundle().pathForResource_ofType_(name, ext)
-        return file or os.path.realpath(filename)
+        bundle_dir = os.path.dirname(os.path.abspath(__file__))
+        file = os.path.join(bundle_dir, f"{name}{ext}")
+        return file if os.path.exists(file) else os.path.realpath(filename)
     else:
         return os.path.realpath(filename)
 
@@ -387,8 +385,3 @@ def update_coeff(filename, coeff_1, coeff_2, coeff_3):
         json.dump(data, f, indent=4)
 
     return
-  
-
-
-
-

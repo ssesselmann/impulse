@@ -16,10 +16,13 @@ from dash import html
 from dash.dependencies import Input, Output
 from server import app
 from dash.exceptions import PreventUpdate
+from datetime import datetime
 
 path = None
 n_clicks = None
 global_counts = 0
+
+
 
 global cps_list
 
@@ -207,6 +210,11 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, active_tab, t_
     
     histogram3 = fn.get_path(f'data/{filename}_3d.json')
 
+    now = datetime.now()
+    time = now.strftime("%A %d %B %Y")
+
+    title_text = "<b>{}</b><br><span style='font-size: 12px'>{}</span>".format(filename, time)
+
     layout = go.Layout(
             uirevision='nochange',
             height=550,
@@ -217,8 +225,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, active_tab, t_
                 zaxis=dict(title='Counts(z)', type= axis_type),
             ),
             title={
-                'text': filename,
-                'x': 0.5,
+                'text': title_text,
+                'x': 0.9,
                 'y': 0.9,
                 'xanchor': 'center',
                 'yanchor': 'top',

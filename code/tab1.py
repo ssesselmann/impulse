@@ -243,7 +243,7 @@ def capture_pulse_shape(n_clicks):
     layout = {
                 'title': {
                 'text': 'Pulse Shape',
-                'font': {'size': 20},
+                'font': {'size': 16},
                 'x': 0.5,
                 'y': 0.9
             },
@@ -303,7 +303,7 @@ def capture_pulse_shape(n_clicks):
 
 def distortion_curve(n_clicks):
 
-    layout  = {'title': {'text': 'Distortion curve','font': {'size': 20},'x': 0.5,'y': 0.9}, 'margin':{'l':'40', 'r':'40', 't':'40', 'b':'40'}, 'height': '350'}
+    layout  = {'title': {'text': 'Distortion curve','font': {'size': 16},'x': 0.5,'y': 0.9}, 'margin':{'l':'40', 'r':'40', 't':'40', 'b':'40'}, 'height': '350'}
 
     #prevent click on page load
     if n_clicks == 0: 

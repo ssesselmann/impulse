@@ -14,6 +14,7 @@ from dash import html
 from dash.dependencies import Input, Output
 from server import app
 from dash.exceptions import PreventUpdate
+from datetime import datetime
 
 path = None
 n_clicks = None
@@ -210,7 +211,7 @@ def update_output(n_clicks):
     else:
         fn.stop_recording()
         return " "
-#----------------------------------------------------------------
+#-------UPDATE GRAPH---------------------------------------------------------
 
 @app.callback([ Output('bar-chart'          ,'figure'), 
                 Output('counts'             ,'children'),
@@ -249,6 +250,9 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             coefficients        = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
             spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
             coefficients        = coefficients[::-1] # Revese order
+
+            now = datetime.now()
+            time = now.strftime("%A %d %B %Y")
 
             mu = 0
             prominence = 0.5
@@ -336,12 +340,14 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     )
                 )
 
+            title_text = "<b>{}</b><br><span style='font-size: 12px'>{}</span>".format(filename, time)
+
             layout = go.Layout(
                 paper_bgcolor = 'white', 
                 plot_bgcolor = 'white',
                 title={
-                'text': filename,
-                'x': 0.5,
+                'text': title_text,
+                'x': 0.9,
                 'y': 0.9,
                 'xanchor': 'center',
                 'yanchor': 'top',
@@ -434,7 +440,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 plot_bgcolor = 'white',
                 title={
                 'text': filename,
-                'x': 0.5,
+                'x': 0.9,
                 'y': 0.9,
                 'xanchor': 'center',
                 'yanchor': 'top',
