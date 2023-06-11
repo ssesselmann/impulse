@@ -122,6 +122,7 @@ Change log
 51) Added function to update calibration on prerecorded spectrum
 52) Added option to stop after n seconds
 53) Added tab4 with 3D Histogram
+54) Minor changes to layout + remove one dependancy
 
 
 Things to do
