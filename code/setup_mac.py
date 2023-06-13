@@ -6,20 +6,13 @@ Usage:
 """
 
 from setuptools import setup
-import functions as fn
-import os
-
-datafolder = fn.get_path('data')
-
-isotopes = fn.get_path('isotopes')
-
-print('data directory: ', datafolder)
 
 setup(
     name='impulse',
     version='1.0',
     py_modules=[
         'distortionchecker',
+        'audio_spectrum.py'
         'functions', 
         'launcher', 
         'pulsecatcher', 
@@ -29,13 +22,35 @@ setup(
         'tab1', 
         'tab2', 
         'tab3', 
-        'tab4'
-        ],
+        'tab4',
+        'tab5'
+    ],
     app=['run.py'],
-    options={'py2app': {'argv_emulation': True, 'iconfile': 'favicon',}},
-    data_files=[datafolder],
+    options={
+        'py2app': {
+            'argv_emulation': True,
+            'iconfile': 'favicon',
+            'includes': [
+                'dash',
+                'dash_daq',
+                'datetime',
+                'flask',
+                'jason',
+                'numpy',
+                'pandas',
+                'pathlib',
+                'plotly',
+                'wave',
+                'pyaudio',
+                'scipy',
+                'requests',
+                'simpleaudio'
+                ],  # Add 'numpy' as an included module
+        }
+    },
     setup_requires=['py2app'],
 )
+
 
 
 

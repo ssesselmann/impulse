@@ -4,8 +4,8 @@ __pycache__/
 /code/data.db
 /code/run.spec
 /code/build/
-/code/dist/
 /code/assets/
 /code/data/*
-
+/code/myenv/*
+/code/.*
 

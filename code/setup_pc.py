@@ -1,33 +1,43 @@
-#setup script for py2exe
+from setuptools import setup
 
-
-from distutils.core import setup
-import py2exe
-   
-setup(console=['run.py'])
-
-
-
-a = Analysis(['run.py'],
-             pathex=['C:\\Users\\User\\Desktop\\impulse'],
-             binaries=[],
-             datas=[
-                ('C:\Python39\Lib\site-packages\dash', 'dash'),
-                ('C:\Python39\Lib\site-packages\dash_bootstrap_components', 'dash_bootstrap_components'),
-                ('C:\Python39\Lib\site-packages\dash_core_components', 'dash_core_components'),
-                ('C:\Python39\Lib\site-packages\dash_html_components', 'dash_html_components'),
-                ('C:\Python39\Lib\site-packages\dash_table', 'dash_table')
+setup(
+    name='impulse',
+    version='1.0',
+    py_modules=[
+        'distortionchecker',
+        'audio_spectrum.py',
+        'functions', 
+        'launcher', 
+        'pulsecatcher', 
+        'run',
+        'server', 
+        'shapecatcher', 
+        'tab1', 
+        'tab2', 
+        'tab3', 
+        'tab4',
+        'tab5'
+    ],
+    windows=['run.py'],  # Use 'windows' instead of 'app' for py2exe
+    options={
+        'py2exe': {
+            'includes': [
+                'dash',
+                'dash_daq',
+                'datetime',
+                'flask',
+                'jason',
+                'numpy',
+                'pandas',
+                'pathlib',
+                'plotly',
+                'wave',
+                'pyaudio',
+                'scipy',
+                'requests',
+                'simpleaudio'
             ],
-             hiddenimports=[],
-             hookspath=[],
-             hooksconfig={},
-             runtime_hooks=[],
-             excludes=[],
-             win_no_prefer_redirects=False,
-             win_private_assemblies=False,
-             cipher=block_cipher,
-             noarchive=False)
-
-pyz = PYZ(a.pure, a.zipped_data,
-             cipher=block_cipher)
-
+        }
+    },
+    setup_requires=['py2exe'],
+)
