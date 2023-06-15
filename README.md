@@ -43,11 +43,11 @@ Step 6)
 ------- 
 Now run the program by typing 
 ```
-python code/run.py
+python code/impulse.py
 ```
 mac users may have to type
 ```
-python3 code/run.py
+python3 code/impulse.py
 ```
 Fingers crossed your default browser should open up and show tab 1
 

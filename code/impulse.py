@@ -11,7 +11,6 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-
 # The following three lines limit output to errors
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
@@ -22,6 +21,3 @@ port = 8050
 if __name__ == '__main__':
     Timer(1, fn.open_browser(port)).start();
     app.run_server(debug=False, threaded=True, port=port)
-
-
-
