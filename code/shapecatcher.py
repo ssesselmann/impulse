@@ -21,12 +21,13 @@ t0 				= time.perf_counter()
 data 			= None
 left_channel 	= []
 sample_list 	= []
+data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 # Function to catch pulses and output time, pulkse height and distortion
 def shapecatcher():
 
-	database = fn.get_path('data.db')
-	shapecsv = fn.get_path('data/shape.csv')
+	database = fn.get_path(f'{data_directory}/.data.db')
+	shapecsv = fn.get_path(f'{data_directory}/shape.csv')
 	n 				= 0
 	shape 			= None
 	samples_sum 	= None
@@ -121,7 +122,7 @@ def shapecatcher():
 						# Format and save to csv file
 						df = pd.DataFrame(shape_int)
 						# Save Pulse Direction to database
-						database = fn.get_path('data.db')
+						database = fn.get_path(f'{data_directory}/.data.db')
 						conn = sql.connect(database)
 						c = conn.cursor()
 						query = f"UPDATE settings SET flip = {flip} WHERE id=0;"

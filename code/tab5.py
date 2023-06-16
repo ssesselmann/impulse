@@ -13,11 +13,12 @@ from dash.exceptions import PreventUpdate
 from server import app
 from flask import request
 
+data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
+
 def show_tab5():
 
-    datafolder = fn.get_path('data')
     # Get all the filenames in the folder with the extension ".json"
-    files = glob.glob(os.path.join(datafolder, "*.json"))
+    files = glob.glob(os.path.join(data_directory, "*.json"))
     # Filter out filenames ending with "-cps.json"
     filtered_files = [file for file in files if not file.endswith("-cps.json")]
     # format options
@@ -25,7 +26,7 @@ def show_tab5():
     # Sort the options alphabetically by label
     options_sorted = sorted(options, key=lambda x: x['label'])
 
-    database = fn.get_path('data.db')
+    database = fn.get_path(f'{data_directory}/.data.db')
     conn = sql.connect(database)
     c = conn.cursor()
     query = "SELECT theme FROM settings "
@@ -86,7 +87,8 @@ def show_tab5():
                 
                 html.H4('Sample Length'),
                 html.P('This setting sets the length of the sample in sample points. Sample length in combination with the sample rate determines how much time it takes to sample a pulse and consequently affects the dead time. Dead time is the amount of time the computer can not process pulses, simply put you cant measure more than one pulse within (1 second/ sample rate) * (number of samples), lets take the example (1s/384,000 Hz)*51 samples = 132 µs, now as our pulses are randomly spaced we have to allow more time between pulses, typically three times as much time. We can calculate the maximum count rate as follows: 1s / 132µs / 3 = 2525 cps '),
-                
+                html.P('WARNING: Setting both sample length and sample rate to maximum may cause loss of counts as the computer may not be able to keep up.'),
+
                 html.H4('Distortion Curve'),
                 html.P('The distortion curve plot has no other function than to help you to visualise where the distortion in your sampling is occurring. When you click the [Get Distortion Curve] button the computer collects n unfiltered samples, compares each one with the mean and assigns a distortion factor to each pulse. The distortion factors are then ordered by size and plotted on a graph. The shape of this graph will help you determine how tight to set your distortion tolerance when recording your spectrum on tab2. Shape distortion may be caused by pulse overlap or large pulses that exceed the capacity of the electronic circuit.'),
                 
@@ -96,7 +98,7 @@ def show_tab5():
                 html.H2('Tab2 - Pulse Height Histogram'),
                 html.H4('Spectrum File Name'),
                 
-                html.P('This is exactly what it says, you can name your spectrum anything you like, it will automatically save in ~/impulse/code/data/myspectrum.json , the JSON file format is NPESv1 and is compatible with  '),
+                html.P('This is exactly what it says, you can name your spectrum anything you like, it will automatically save in the user home directory ~/impulse_data/myspectrum.json , the JSON file format is NPESv1 and is compatible with  '),
                 html.Div(html.A('https://github.com/OpenGammaProject/NPES-JSON', href='https://github.com/OpenGammaProject/NPES-JSON', target='_blank')),
                 
                 html.H4('Number of Bins & Bin Size'),
@@ -112,7 +114,7 @@ def show_tab5():
                 html.P('This setting is related to the mean shape sample and distortion curve on tab1, so run the distortion check first and determine what level of distortion you are prepared to accept. Note, the tighter your tolerance for distortion, the more pulses will be dropped as a result and your count rate will not be accurate. '),
                 
                 html.H4('Comparison spectrum'),
-                html.P('This is an automatically generated pulldown  menu which gets the contents of your data folder and the subfolder [data/i] containing all the isotope spectra. Select any spectrum to compare'),
+                html.P('This is an automatically generated pulldown  menu which gets the contents of your impulse_data folder and the subfolder [impulse_data/i] containing all the isotope spectra. Select any spectrum to compare'),
                 
                 html.H4('Show Comparison spectrum'),
                 html.P('This switch simpy hides and shows the comparison spectrum'),
@@ -197,8 +199,7 @@ def theme_change(value):
     if value is None:
         raise PreventUpdate
 
-    database = fn.get_path('data.db')
-    datafolder = fn.get_path('data')
+    database = fn.get_path(f'{data_directory}/.data.db')
     conn = sql.connect(database)
     c = conn.cursor()
     query = f"UPDATE settings SET theme='{value}' WHERE id=0;"

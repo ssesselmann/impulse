@@ -22,16 +22,15 @@ path = None
 n_clicks = None
 global_counts = 0
 
-
+data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 global cps_list
 
 def show_tab3():
 
-    datafolder = fn.get_path('data')
     # Get all filenames in data folder and its subfolders
-    files = [os.path.relpath(file, datafolder).replace("\\", "/")
-             for file in glob.glob(os.path.join(datafolder, "**", "*.json"), recursive=True)]
+    files = [os.path.relpath(file, data_directory).replace("\\", "/")
+             for file in glob.glob(os.path.join(data_directory, "**", "*.json"), recursive=True)]
     # Add "i/" prefix to subfolder filenames for label and keep the original filename for value
     options = [{'label': "~ " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json") 
                 else {'label': os.path.basename(file), 'value': file} for file in files]
@@ -44,7 +43,7 @@ def show_tab3():
         file['label'] = file['label'].replace('.json', '')
         file['value'] = file['value'].replace('.json', '')
 
-    database = fn.get_path('data.db')
+    database = fn.get_path(f'{data_directory}/.data.db')
     conn            = sql.connect(database)
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
@@ -208,7 +207,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, active_tab, t_
     
     global global_counts
     
-    histogram3 = fn.get_path(f'data/{filename}_3d.json')
+    histogram3 = fn.get_path(f'{data_directory}/{filename}_3d.json')
 
     now = datetime.now()
     time = now.strftime("%A %d %B %Y")
@@ -330,7 +329,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, active_tab, t_
 
 def save_settings(bins, bin_size, max_counts, max_seconds, t_interval, filename, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
     
-    database = fn.get_path('data.db')
+    database = fn.get_path(f'{data_directory}/.data.db')
 
     conn = sql.connect(database)
     c = conn.cursor()

@@ -12,9 +12,11 @@ from dash.exceptions import PreventUpdate
 from server import app
 from dash import dcc
 
+data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
+
 def show_tab4():
     # Get some settings from database----------
-    database = fn.get_path('data.db')
+    database = fn.get_path(f'{data_directory}/.data.db')
     conn            = sql.connect(database)
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
@@ -52,7 +54,7 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
     if active_tab != 'tab4':  # only update the chart when "tab4" is active
         raise PreventUpdate
 
-    cps_file = fn.get_path(f'data/{filename}-cps.json')
+    cps_file = fn.get_path(f'{data_directory}/{filename}-cps.json')
 
     if os.path.exists(cps_file):
         with open(cps_file, "r") as f:

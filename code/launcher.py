@@ -1,6 +1,7 @@
 import dash
 import time
 import os
+import shutil
 import functions as fn
 import sqlite3 as sql
 from dash import dcc
@@ -14,9 +15,9 @@ from tab4 import show_tab4
 from tab5 import show_tab5
 from server import app
 
-data_directory = fn.get_path('data')
-database = fn.get_path('data.db')
-shapecsv = fn.get_path('data/shape.csv')
+data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
+database = fn.get_path(f'{data_directory}/.data.db')
+shapecsv = fn.get_path(f'{data_directory}/shape.csv')
 
 try:
     if not os.path.exists(data_directory):
@@ -73,6 +74,16 @@ query2  =  f'INSERT INTO settings (id, name) SELECT 0, "myspectrum" WHERE NOT EX
 with conn:
     c.execute(query).execute(query2)
     conn.commit()
+
+# This script places the isotope sample spectra into the data directory when the program is run the first time
+isotopes = "i"
+data_directory_path = os.path.join(data_directory, isotopes)
+
+if not os.path.exists(data_directory_path):
+    isotope_folder_path = os.path.join(os.getcwd(), isotopes)
+    if os.path.exists(isotope_folder_path):
+        shutil.copytree(isotope_folder_path, data_directory_path)
+
 
 #---Defines the browser tabs------------------------------------------------------------
 

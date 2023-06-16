@@ -13,12 +13,13 @@ from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
 from server import app
 
+data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
+
 # ----------- Audio input selection ---------------------------------
 
 def show_tab1():
-
-    database = fn.get_path('data.db')
-    datafolder = fn.get_path('data')
+    
+    database = fn.get_path(f'{data_directory}/.data.db')
 
     conn = sql.connect(database)
     c = conn.cursor()
@@ -157,7 +158,7 @@ def show_tab1():
             html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
             html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
             html.Hr(),
-            html.Div(id='path_text', children=f'Note: {datafolder}'),
+            html.Div(id='path_text', children=f'Note: {data_directory}'),
             ]), 
         ]),
 
@@ -215,7 +216,7 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5):
         chunk_size  = value3
         catch       = value4
         length      = value5
-        database = fn.get_path('data.db')
+        database = fn.get_path(f'{data_directory}/.data.db')
         conn = sql.connect(database)
         c = conn.cursor()
         query = f"UPDATE settings SET device={device}, sample_rate={sample_rate}, chunk_size={chunk_size}, shapecatches={catch}, sample_length={length} WHERE id=0;"

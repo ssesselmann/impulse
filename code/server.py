@@ -1,10 +1,12 @@
 import dash
+import os
 import sqlite3 as sql
 import functions as fn
 
+data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
+
 try:
-	database = fn.get_path('data.db')
-	datafolder = fn.get_path('data')
+	database = fn.get_path(f'{data_directory}/.data.db')
 	conn = sql.connect(database)
 	c = conn.cursor()
 	query = "SELECT theme FROM settings "

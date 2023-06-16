@@ -1,6 +1,9 @@
+import os
 import numpy as np
 import simpleaudio as sa
 import scipy.io.wavfile as wavfile
+
+data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 def make_wav_file(filename, numbers):
     # Normalize the list of numbers to be between 0 and 1
@@ -27,13 +30,13 @@ def make_wav_file(filename, numbers):
     scaled_signal = np.int16(combined_signal / np.max(np.abs(combined_signal)) * 32767)
     
     # Save the audio file
-    wavfile.write(f"data/{filename}.wav", sampling_rate, scaled_signal)
+    wavfile.write(f'{data_directory}/{filename}.wav', sampling_rate, scaled_signal)
 
     return
 
 def play_wav_file(filename):
 
-    filename = f'data/{filename}.wav'
+    filename = f'{data_directory}/{filename}.wav'
 
     # Load the WAV file
     wave_obj = sa.WaveObject.from_wave_file(filename)

@@ -12,15 +12,15 @@ setup(
     py_modules=[
         'distortionchecker',
         'audio_spectrum.py',
-        'functions', 
-        'launcher', 
-        'pulsecatcher', 
+        'functions',
+        'launcher',
+        'pulsecatcher',
         'run',
-        'server', 
-        'shapecatcher', 
-        'tab1', 
-        'tab2', 
-        'tab3', 
+        'server',
+        'shapecatcher',
+        'tab1',
+        'tab2',
+        'tab3',
         'tab4',
         'tab5'
     ],
@@ -49,6 +49,9 @@ setup(
                 'scipy',
                 'requests',
                 'simpleaudio'
+            ],
+            'resources': [
+                ('i', 'i')  # Include the 'i' folder and its contents
             ]
         }
     },
