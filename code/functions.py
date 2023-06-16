@@ -21,6 +21,8 @@ from urllib.request import urlopen
 
 cps_list = []
 
+data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
+
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
     samples =[]
@@ -81,7 +83,7 @@ def update_bin(n, bins, bin_counts):
 # This function writes a 2D histogram to JSON file according to NPESv1 schema.
 def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
     
-    jsonfile = get_path(f'data/{name}.json')
+    jsonfile = get_path(f'{data_directory}/{name}.json')
     data =  {"schemaVersion":"NPESv1",
                 "resultData":{
                     "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
@@ -105,7 +107,7 @@ def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1
 # This function writes 3D intervals to JSON file according to NPESv1 schema.
 def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_number, coeff_1, coeff_2, coeff_3):
 
-    jsonfile = get_path(f'data/{filename}_3d.json')
+    jsonfile = get_path(f'{data_directory}/{filename}_3d.json')
     
     if not os.path.isfile(jsonfile):
         data = {
@@ -139,7 +141,7 @@ def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_nu
 
 def write_cps_json(name, cps):
     global cps_list
-    jsonfile = get_path(f'data/{name}-cps.json')
+    jsonfile = get_path(f'{data_directory}/{name}-cps.json')
     cps_list.append(cps)
     data     = {'cps': cps_list }
     with open(jsonfile, "w+") as f:
@@ -152,7 +154,7 @@ def clear_global_cps_list():
 # This function loads settings from sqli database
 def load_settings():
 
-    database = get_path('data.db')
+    database = get_path(f'{data_directory}/.data.db')
     settings        = []
     conn            = sql.connect(database)
     c               = conn.cursor()
@@ -164,7 +166,7 @@ def load_settings():
 # This function opens the csv and loads the pulse shape  
 def load_shape():
 
-    shapecsv = get_path('data/shape.csv')
+    shapecsv = get_path(f'{data_directory}/shape.csv')
    
     data = []
     if os.path.exists(shapecsv):
@@ -324,7 +326,7 @@ def stop_recording():
     # then zeroise max counts
     # then put the original number back again
 
-    database = get_path('data.db')
+    database = get_path(f'{data_directory}/.data.db')
     conn     = sql.connect(database)
     query1  = "SELECT max_counts FROM settings "
     c       = conn.cursor()
@@ -351,7 +353,7 @@ def export_csv(filename):
     # Give output file a name
     output_file = f'{base_filename}.txt'
     # Load json file
-    with open(f'data/{filename}') as f:
+    with open(f'{data_directory}/{filename}') as f:
         data = json.load(f)
     # Extract data from json file
     spectrum     = data["resultData"]["energySpectrum"]["spectrum"]
@@ -373,7 +375,7 @@ def export_csv(filename):
     return
 
 def update_coeff(filename, coeff_1, coeff_2, coeff_3):
-    with open(f'data/{filename}.json') as f:
+    with open(f'{data_directory}/{filename}.json') as f:
         data = json.load(f)
 
     coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
@@ -381,7 +383,7 @@ def update_coeff(filename, coeff_1, coeff_2, coeff_3):
     coefficients[1] = coeff_2
     coefficients[2] = coeff_1
 
-    with open(f'data/{filename}.json', 'w') as f:
+    with open(f'{data_directory}/{filename}.json', 'w') as f:
         json.dump(data, f, indent=4)
 
     return
