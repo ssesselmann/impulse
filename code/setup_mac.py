@@ -47,8 +47,7 @@ setup(
                 'wave',
                 'pyaudio',
                 'scipy',
-                'requests',
-                'simpleaudio'
+                'requests'
             ],
             'resources': [
                 ('i', 'i')  # Include the 'i' folder and its contents

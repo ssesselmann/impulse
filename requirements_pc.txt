@@ -11,5 +11,4 @@ wave
 pyaudio
 scipy
 requests
-simpleaudio
 

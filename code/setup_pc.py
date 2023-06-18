@@ -20,8 +20,7 @@ setup(
                 'wave',
                 'pyaudio',
                 'scipy',
-                'requests',
-                'simpleaudio'
+                'requests'
             ],
             'bundle_files': 3,  # Modify this option based on your needs
             'compressed': True,
