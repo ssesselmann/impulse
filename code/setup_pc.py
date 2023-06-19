@@ -29,6 +29,6 @@ setup(
     },
     data_files=[
         ('', ['favicon.ico']),  # Include any additional files you need
-        ('i', 'i')  # Include the 'i' folder and its contents
+        ('i', glob.glob('i/*'))  # Include the 'i' folder and its contents
     ],
 )
