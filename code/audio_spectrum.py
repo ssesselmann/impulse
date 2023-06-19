@@ -62,8 +62,4 @@ def play_wav_file(filename):
     stream.stop_stream()
     stream.close()
     p.terminate()
-
-
-# Test your functions
-make_wav_file('test', [0.1, 0.2, 0.3, 0.4])
-play_wav_file('test')
+)
