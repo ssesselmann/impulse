@@ -1,5 +1,6 @@
 from setuptools import setup
 import py2exe
+import glob
 
 setup(
     name='impulse',
