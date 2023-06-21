@@ -43,37 +43,42 @@ def show_tab1():
     news            = response.text
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
-    device_list     = [{'index': 99, 'name': 'device name', 'maxInputChannels': 99, 'maxOutputChannels': 99, 'defaultSampleRate': 99}]
     shape           = fn.load_shape()
-    tab1            = html.Div(id='tab1', children=[ 
 
-    html.Div(id='firstrow', children=[
-            dash_table.DataTable( id='container_device_list_short',
-            columns=[{"name": i, "id": i} for i in device_list[0].keys()],
-            data=device_list),
-             
-            ]),
+    dl = fn.get_device_list() # This should connect and get a new device list
+
+    options = [{'label': name, 'value': index} for name, index in dl]
+
+    options = [{k: str(v) for k, v in option.items()} for option in options]
+
+    tab1 = html.Div(id='tab1', children=[ 
+
+    html.Div(id='firstrow'),
+
     html.Div(id='news', children=[dcc.Markdown(news) ]),
 
 #  --------------- User defined settings ------------------------------
 
     html.Div(id='heading', children=[html.H1('Pulse Shape Capture and Settings')]),
-    
-    html.Div(id='tab1_settings', children=[ 
-        html.Div(id='input_text', children='Enter Device index'),
-        html.Div(dcc.Input(id='device', type='number', value = device,)),
+
+    html.Div(id='tab1_settings2',children=[
         html.Div(id='selected_device_text', children=''),
+        dcc.Dropdown(id='device_dropdown',
+            options=options, 
+            value=device,  # pre-selected option
+            clearable=False,
+            ),
         ]),
 
     html.Div(id='tab1_settings2',children=[
         html.Div( children='Sample rate'),
-        dcc.Dropdown(id="sample_rate",
+        dcc.Dropdown(id='sample_rate',
             options=[
-                {"label": "44.1 kHz"    , "value": "44100"},
-                {"label": "48 kHz"      , "value": "48000"},
-                {"label": "96 kHz"      , "value": "96000"},
-                {"label": "192 kHz"     , "value": "192000"},
-                {"label": "384 kHz"     , "value": "384000"}
+                {'label': '44.1 kHz'    , 'value': '44100'},
+                {'label': '48 kHz'      , 'value': '48000'},
+                {'label': '96 kHz'      , 'value': '96000'},
+                {'label': '192 kHz'     , 'value': '192000'},
+                {'label': '384 kHz'     , 'value': '384000'}
             ], 
             value=sample_rate,  # pre-selected option
             clearable=False,
@@ -135,12 +140,6 @@ def show_tab1():
     html.Div(children=[ 
         html.Div(id='button', children=[ 
         html.Div(id='output_div'),
-#------------------------------------------------------------------------------------------------------------
-    html.Div(id='ps_button_box', children=[
-            html.Button('Get Device Table ', id='get_device_button'),
-            html.Button('Capture Pulse Shape',  id='get_shape_button', n_clicks=0), 
-            html.Button('Get Distortion Curve',  id='get_curve_button', n_clicks=0), 
-            ]),
                 
 #-----------------------------------------------------------------------------------------------------------
                         
@@ -148,12 +147,12 @@ def show_tab1():
         html.Div(id='instructions', children=[
             html.H2('Easy step by step setup and run'),
             html.P('1) Connect the spectrometer before running the program.'),
-            html.P('2) Click Get Device Table button, look up device index'),
-            html.P('3) Select index, sample rate, buffer size, pulses to sample and sample length'),
+            html.P('2) Select your input device'),
+            html.P('3) Select sample rate, sample size, pulses to sample and buffer size'),
             html.P('4) Click Capture Pulse Shape to start pulse shape training'),
-            html.P('5) Click the get Distortion Curve and wait for chart to update'),
-            html.P('6) Well done, setup is ready, go to tab2 and your first spectrum'),
-            html.P('7) Found a bug 🐞 or have a suggestion, send me an email.'),
+            html.P('5) Click get Distortion Curve and wait for chart to update'),
+            html.P('6) Well done, go to tab2 and your first spectrum'),
+            html.P('7) Found a bug 🐞 or have a suggestion, email me below'),
             html.P('Steven Sesselmann'),
             html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
             html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
@@ -165,15 +164,17 @@ def show_tab1():
     html.Div(id='pulse_shape_div', children=[
         html.Div(id='showplot', children=[
             dcc.Graph(id='plot', figure={'data': [{}], 'layout': {}})]),
-
+            html.Button('Capture Pulse Shape',  id='get_shape_btn', n_clicks=0), 
         ]),
 
     html.Div(id='distortion_div', children=[
             html.Div(id='showcurve', children=[
-                dcc.Graph(id='curve', figure={'data': [{}], 'layout': {}})
+            dcc.Graph(id='curve', figure={'data': [{}], 'layout': {}}),
+            html.Button('Get Distortion Curve',  id='get_curve_btn', n_clicks=0), 
             ]),
         ]),
-            ]),
+            
+    ]),
 
     html.Div(id='footer', children=[
         html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif'),
@@ -183,25 +184,13 @@ def show_tab1():
 
     return tab1
 
-# Callback for getting device index -----------------------
-
-@app.callback(Output('container_device_list_short', 'data'),
-              [Input('get_device_button', 'n_clicks')])
-
-def on_button_click(n_clicks):
-    
-    if n_clicks is not None:
-        dl = None # This should clear the variable
-        dl = fn.get_device_list() # This should connect and get a new device list
-        return dl # dl is the variable for the device list
-
 # Callback to save settings ---------------------------
 
 @app.callback(
     [Output('selected_device_text'  ,'children'),
     Output('sampling_time_output'   ,'children')],
     [Input('submit'                 ,'n_clicks')],
-    [Input('device'                 ,'value'),
+    [Input('device_dropdown'        ,'value'),
     Input('sample_rate'             ,'value'),
     Input('chunk_size'              ,'value'),
     Input('catch'                   ,'value'),
@@ -237,7 +226,7 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5):
 @app.callback(
     [Output('plot'              ,'figure'),
     Output('showplot'           ,'figure')],
-    [Input('get_shape_button'   ,'n_clicks')])
+    [Input('get_shape_btn'   ,'n_clicks')])
 
 def capture_pulse_shape(n_clicks):
 
@@ -300,7 +289,7 @@ def capture_pulse_shape(n_clicks):
 @app.callback(
             [Output('curve'      ,'figure'),
             Output('showcurve'   ,'figure')],
-            [Input('get_curve_button'   ,'n_clicks')])
+            [Input('get_curve_btn'   ,'n_clicks')])
 
 def distortion_curve(n_clicks):
 

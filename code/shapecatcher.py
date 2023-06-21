@@ -55,9 +55,7 @@ def shapecatcher():
 	max_counts      = settings[9]
 	shapecatches 	= settings[10]
 	sample_length	= settings[11]
-
 	peak 			= int((sample_length-1)/2)
-
 
 	# Create an array of empty bins
 	start = 0
@@ -72,7 +70,7 @@ def shapecatcher():
 	try:
 		# Get audio parameters
 		device_list = fn.get_device_list()
-		device_channels = fn.get_max_input_channels(device_list, device)
+		device_channels = fn.get_max_input_channels(device)
 		p = pyaudio.PyAudio()
 		audio_format = pyaudio.paInt16
 		

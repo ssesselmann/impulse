@@ -197,23 +197,26 @@ def refresh_audio_device_list():
 # This function gets a list of audio device_list connected to the computer           
 def get_device_list():
     refresh_audio_device_list()
-    input_device_list = [{'index': 99, 'name': 'device name', 'maxInputChannels': 99, 'maxOutputChannels': 99, 'defaultSampleRate': 99}]
     p = pyaudio.PyAudio()
     try:
         device_count = p.get_device_count()
-        input_device_list = [extract_keys(p.get_device_info_by_index(i), ['index', 'name', 'maxInputChannels', 'maxOutputChannels', 'defaultSampleRate']) for i in range(device_count) if p.get_device_info_by_index(i)['maxInputChannels'] >= 1]
+        input_device_list = [
+            (p.get_device_info_by_index(i)['name'], p.get_device_info_by_index(i)['index'])
+            for i in range(device_count)
+            if p.get_device_info_by_index(i)['maxInputChannels'] >= 1
+        ]
         p.terminate()
         return input_device_list
     except:
         p.terminate()
-        return[99,'no device', 99, 99, 99]     
+        return [('no device', 99)]
+     
 
 # Returns maxInputChannels in an unordered list
-def get_max_input_channels(devices, device_index):
-    for device in devices:
-        if device['index'] == device_index:
-            return device['maxInputChannels']
-    return None
+def get_max_input_channels(device):
+    p = pyaudio.PyAudio()
+    channels = p.get_device_info_by_index(device)['maxInputChannels']
+    return channels
 
 # Function to open browser on localhost
 def open_browser(port):

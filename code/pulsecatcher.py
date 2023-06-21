@@ -60,7 +60,7 @@ def pulsecatcher(mode):
 	histogram 		= [0] * bins
 	histogram_3d 	= [0] * bins
 	audio_format 	= pyaudio.paInt16
-	device_channels = fn.get_max_input_channels(device_list, device)
+	device_channels = fn.get_max_input_channels(device)
 
 	# Loads pulse shape from csv
 	shapestring = fn.load_shape()
@@ -155,7 +155,4 @@ def pulsecatcher(mode):
 	
 	p.terminate() # closes stream when done
 	return						
-							
-
-
-					
+											

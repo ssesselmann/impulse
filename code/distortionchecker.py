@@ -45,7 +45,7 @@ def distortion_finder():
 	peak = int((sample_length-1)/2)
 
 	audio_format = pyaudio.paInt16
-	device_channels = fn.get_max_input_channels(device_list, device)
+	device_channels = fn.get_max_input_channels(device)
 
 	# Loads pulse shape from csv
 	shapestring = fn.load_shape()
