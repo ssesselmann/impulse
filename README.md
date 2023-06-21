@@ -2,7 +2,7 @@ IMPULSE
 -------
 Python Script MCA for gamma spectrometry.
 ----------------------------------------
- This program reads a stream of data from the PC sound card and picks out pulses, the pulses are subsequently filtered and written to a JSON file. A live histogram and counts per second can be viewed in the browser tabs. 
+ This program reads a stream of data from the PC sound card and picks out pulses, the pulses are subsequently filtered and written to a JSON file in a special format called [NPES-JSON](https://github.com/OpenGammaProject/NPES-JSON). A live histogram and counts per second can be viewed in the browser tabs. 
  
 Installation Method (Windows, Mac or Linux)
 -------------------------------------------
