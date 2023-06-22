@@ -46,7 +46,7 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         tolerance       INTEGER DEFAULT 50000,              
         bins            INTEGER DEFAULT 1000,               
         bin_size        INTEGER DEFAULT 30,                 
-        max_counts      INTEGER DEFAULT 10000,              
+        max_counts      INTEGER DEFAULT 1000000,              
         shapecatches    INTEGER DEFAULT 10,                 
         sample_length   INTEGER DEFAULT 16,                 
         calib_bin_1     INTEGER DEFAULT 0,                  
@@ -64,7 +64,7 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         theme           TEXT    DEFAULT 'lightgray',
         sigma           REAL    DEFAULT 0,
         max_seconds     INTEGER DEFAULT 3600,
-        t_interval     INTEGER DEFAULT 3              
+        t_interval      INTEGER DEFAULT 1              
         );"""
 
 # This query inserts the first record in settings with defaults
