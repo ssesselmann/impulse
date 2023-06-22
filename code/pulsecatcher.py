@@ -47,12 +47,8 @@ def pulsecatcher(mode):
 	max_seconds     = settings[26]
 	t_interval      = settings[27]
 
-	if mode == 2:
-		t_interval = 1 #Regular histogram updates once per second
-
-	peak 		= int((sample_length-1)/2)
-
-	condition = True
+	peak 		    = int((sample_length-1)/2)
+	condition       = True
 
 	# Create an array of empty bins
 	start 			= 0

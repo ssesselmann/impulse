@@ -14,17 +14,20 @@ from dash import dcc
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
+t_interval = 1
+
 def show_tab4():
+
     # Get some settings from database----------
     database = fn.get_path(f'{data_directory}/.data.db')
     conn            = sql.connect(database)
     c               = conn.cursor()
-    query           = "SELECT * FROM settings "
-    c.execute(query) 
+    c.execute("SELECT * FROM settings ") 
     settings        = c.fetchall()[0]
     filename        = settings[1]
+    t_interval      = settings[27]
+    t_interval      = int(t_interval)
     interval        = 1000
-    #------------------------------------------
 
     html_tab4 = html.Div(id='tab4', children=[
 
@@ -33,7 +36,9 @@ def show_tab4():
         html.Div(id='count_rate_div', # Histogram Chart
             children=[
                 dcc.Graph(id='count_rate_chart', figure= {}),
-                dcc.Interval(id='interval_component', interval= interval) # Refresh rate 1s.
+                dcc.Interval(id='interval_component', interval= interval), # Refresh rate 1s.
+                html.Div(['Update Interval (s)', dcc.Input(id='t_interval', type='number', step=1,  readOnly=False, value=t_interval )], style={'display':'none'}),
+                
             ]),
         html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif'),]),
     ])
@@ -42,13 +47,14 @@ def show_tab4():
 
 #-----------------END of Page---------------------------------------------------
 
-@app.callback(Output('count_rate_chart', 'figure'),
+@app.callback(Output('count_rate_chart'  , 'figure'),
               [Input('interval_component', 'n_intervals'),
-               Input('filename', 'value'),
-               Input('tabs', 'value')])  # pass the current figure as a state
+               Input('filename'          , 'value'),
+               Input('tabs'              , 'value'),
+               Input('t_interval'        , 'value')
+               ]) 
 
-
-def update_count_rate_chart(n_intervals, filename, active_tab):
+def update_count_rate_chart(n_intervals, filename, active_tab, t_interval):
 
 
     if active_tab != 'tab4':  # only update the chart when "tab4" is active
@@ -61,7 +67,8 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
             count_data = json.load(f)
             countrate = count_data["cps"]
             
-            x = [str(i) for i in range(len(countrate))]
+            x = [str(i * t_interval) for i in range(len(countrate))]
+
             y = list(map(int, countrate))  # convert y values from string to integer
 
             line = go.Scatter(x=x, y=y, mode='markers+lines', marker=dict(size=4, color='black'), line=dict(width=1, color='purple'), name='counts per sec.')
@@ -119,6 +126,5 @@ def update_count_rate_chart(n_intervals, filename, active_tab):
 
     return fig
 
-
-
+#-----------------------The End --------------------
 

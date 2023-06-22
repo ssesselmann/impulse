@@ -81,6 +81,7 @@ def show_tab2():
     peakfinder      = settings[23]
     sigma           = settings[25]
     max_seconds     = settings[26]
+    t_interval      = settings[27]
 
     if max_counts == 0:
         counts_warning = 'red'
@@ -128,6 +129,7 @@ def show_tab2():
         html.Div(id='t2_setting_div4', children=[
             html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold )]),
             html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance )]),
+            html.Div(['Update Interval(s)', dcc.Input(id='t_interval', type='number', step=1,  readOnly=False, value=t_interval )]),
             ]),
 
         html.Div(id='t2_setting_div5', children=[
@@ -470,10 +472,11 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 Input('calib_e_2'       ,'value'),
                 Input('calib_e_3'       ,'value'),
                 Input('peakfinder'      ,'value'),
-                Input('sigma'           ,'value')
+                Input('sigma'           ,'value'),
+                Input('t_interval'      ,'value')
                 ])  
 
-def save_settings(bins, bin_size, max_counts, max_seconds, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3, peakfinder, sigma):
+def save_settings(bins, bin_size, max_counts, max_seconds, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3, peakfinder, sigma, t_interval):
     
     database = fn.get_path(f'{data_directory}/.data.db')
 
@@ -496,6 +499,7 @@ def save_settings(bins, bin_size, max_counts, max_seconds, filename, filename2, 
                     calib_e_3={calib_e_3},
                     peakfinder={peakfinder},
                     sigma={sigma},
+                    t_interval={t_interval},
                     max_seconds={max_seconds}
                     WHERE id=0;"""
 
