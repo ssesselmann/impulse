@@ -11,4 +11,5 @@ __pycache__/
 /code/myenv/*
 /code/.*
 /Impulse.dmg
+codesign.txt
 
