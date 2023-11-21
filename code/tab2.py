@@ -301,20 +301,25 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 counts      = y[peaks[i]]
                 x_pos       = peaks[i]
                 y_pos       = y[peaks[i]]
+                y_pos_ann   = y_pos + 10
                 resolution  = (fwhm[i]/peaks[i])*100
+
+                if y_pos_ann > (max_value * 0.9):
+                    y_pos_ann = int(y_pos_ann - max_value * 0.03)
 
                 if cal_switch == True:
                     peak_value  = np.polyval(np.poly1d(coefficients), peak_value)
                     x_pos       = peak_value
 
                 if log_switch == True:
-                    y_pos = y_pos    
+                    y_pos = np.log10(y_pos)
+                    y_pos_ann = y_pos + 0.02
 
                 if peakfinder != 0:
                     annotations.append(
                         dict(
                             x= x_pos,
-                            y= y_pos + 10,
+                            y= y_pos_ann,
                             xref='x',
                             yref='y',
                             text=f'cts: {counts}<br>bin: {peak_value:.1f}<br>{resolution:.1f}%',
@@ -355,7 +360,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 'font': {'family': 'Arial', 'size': 24, 'color': 'black'},
                 },
                 height  =450, 
-                margin_t=0,
+                margin_t=40,
                 margin_b=0,
                 margin_l=0,
                 margin_r=0,
@@ -431,7 +436,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             fig.update_layout(yaxis=dict(autorange=True))
 
         if log_switch == True:
-            fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0, max_log_value+1])) 
+            fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0, max_log_value+0.3])) 
 
         return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}'
 
