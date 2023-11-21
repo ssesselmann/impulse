@@ -360,7 +360,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 'font': {'family': 'Arial', 'size': 24, 'color': 'black'},
                 },
                 height  =450, 
-                margin_t=0,
+                margin_t=40,
                 margin_b=0,
                 margin_l=0,
                 margin_r=0,
