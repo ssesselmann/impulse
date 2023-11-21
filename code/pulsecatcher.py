@@ -96,12 +96,13 @@ def pulsecatcher(mode):
 		values = list(wave.struct.unpack("%dh" % (chunk_size * device_channels), data))
 		# Extract every other element (left channel)
 		left_channel = values[::2]
+		# Flip inverts all samples if detector pulses are positive
+		if flip != 1:
+			left_channel = [flip * x for x in left_channel]
 		# Read through the list of left channel values and find pulse peaks
 		for i, sample in enumerate(left_channel[:-sample_length]):
 			# iterate through one sample lenghth at the time in quick succession, ta-ta-ta-ta-ta...
 			samples = left_channel[i:i+sample_length]
-			# Flip inverts all samples if detector pulses are positive
-			samples = [flip * x for x in samples]
 			# Function calculates pulse height of all samples 
 			height = fn.pulse_height(samples)
 			# Filter out noise
