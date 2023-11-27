@@ -106,7 +106,9 @@ def pulsecatcher(mode):
 			# Function calculates pulse height of all samples 
 			height = fn.pulse_height(samples)
 			# Filter out noise
-			if samples[peak] == max(samples) and height > threshold and samples[peak] < 32768:
+			if (samples[peak] == max(samples) 
+					and (height := fn.pulse_height_q2(peak, samples)) > threshold 
+					and samples[peak] < 32768):
 				# Function normalises sample to zero and converts to integer
 				normalised = fn.normalise_pulse(samples)
 				# Compares pulse to sample and calculates distortion number
