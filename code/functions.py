@@ -60,6 +60,17 @@ def distortion(normalised, shape):
 def pulse_height(samples):
     return max(samples)-min(samples)
 
+def pulse_height_q2(m_idx, samples):
+    if m_idx == 0 or m_idx == len(samples)-1:
+    	return max(samples)-min(samples)
+    x_parab = [m_idx-1, m_idx, m_idx+1]
+    y_parab = [samples[m_idx-1], samples[m_idx], samples[m_idx+1]]
+    parab_coeff = np.polyfit(x_parab, y_parab, 2)
+    # x_max = -b/2a
+    x_extremum = 0 - parab_coeff[1] / parab_coeff[0] / 2.
+    y_extremum = parab_coeff[0] * x_extremum * x_extremum + parab_coeff[1] * x_extremum + parab_coeff[2]
+    return y_extremum-min(samples)
+
     # Function to create bin_array 
 def create_bin_array(start, stop, bin_size):
     return np.arange(start, stop, bin_size)

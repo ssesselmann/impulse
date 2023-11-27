@@ -87,8 +87,9 @@ def pulsecatcher(mode):
 		input=True,
 		output=False,
 		input_device_index=device,
-		frames_per_buffer=chunk_size)
+		frames_per_buffer=chunk_size*2)
 
+	rest = [ ]
 	while condition and (global_counts < max_counts and elapsed <= max_seconds):
 		# Read one chunk of audio data from stream into memory. 
 		data = stream.read(chunk_size, exception_on_overflow=False)
@@ -99,8 +100,12 @@ def pulsecatcher(mode):
 		# Flip inverts all samples if detector pulses are positive
 		if flip != 1:
 			left_channel = [flip * x for x in left_channel]
+		left_channel = rest + left_channel
+		skip_to = 0
 		# Read through the list of left channel values and find pulse peaks
 		for i, sample in enumerate(left_channel[:-sample_length]):
+			if i < skip_to:
+				continue
 			# iterate through one sample lenghth at the time in quick succession, ta-ta-ta-ta-ta...
 			samples = left_channel[i:i+sample_length]
 			# Function calculates pulse height of all samples 
@@ -113,6 +118,7 @@ def pulsecatcher(mode):
 				distortion = fn.distortion(normalised, shape)
 				# Filters out distorted pulses
 				if distortion < tolerance:
+					skip_to = i + int(sample_length * 4 / 5)
 					# Sorts pulse into correct bin
 					bin_index = int(height/bin_size)
 					# Adds 1 to the correct bin
@@ -121,6 +127,7 @@ def pulsecatcher(mode):
 						histogram_3d[bin_index] += 1 
 						global_counts  			+= 1	
 						global_cps 				+= 1
+		rest = left_channel[i+1:]
 
 		t1 = datetime.datetime.now() # Time capture
 		te = time.time()
