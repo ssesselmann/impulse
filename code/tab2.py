@@ -20,6 +20,7 @@ path = None
 n_clicks = None
 global_counts = 0
 global_cps = 0
+grand_cps = 0
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
@@ -28,6 +29,7 @@ def show_tab2():
     global global_counts
     global global_cps
     global cps_list
+    global grand_cps
 
     # Get all filenames in data folder and its subfolders
     files = [os.path.relpath(file, data_directory).replace("\\", "/")
@@ -109,6 +111,7 @@ def show_tab2():
             html.Div(id='counts', children= ''),
             html.Div(''),
             html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1000,  readOnly=False, value=max_counts, style={'background-color': counts_warning} )]),
+            html.Div(id='grand_cps', children=''),
             ]),
 
         html.Div(id='t2_setting_div2', children=[            
@@ -216,6 +219,7 @@ def update_output(n_clicks):
 
 @app.callback([ Output('bar-chart'          ,'figure'), 
                 Output('counts'             ,'children'),
+                Output('grand_cps'          ,'children'),
                 Output('elapsed'            ,'children'),
                 Output('cps'                ,'children')],
                [Input('interval-component'  ,'n_intervals'), 
@@ -237,6 +241,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
         raise PreventUpdate
 
     global global_counts
+    global grand_cps
     histogram1 = fn.get_path(f'{data_directory}/{filename}.json')
     histogram2 = fn.get_path(f'{data_directory}/{filename2}.json')
 
@@ -266,9 +271,11 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
             if elapsed == 0:
                 cps = 0  
+                grand_cps = 0  
             else:
                 cps = validPulseCount - global_counts
                 global_counts = validPulseCount  
+                grand_cps = validPulseCount / elapsed
      
             x = list(range(numberOfChannels))
             y = spectrum
@@ -438,7 +445,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
         if log_switch == True:
             fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0, max_log_value+0.3])) 
 
-        return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}'
+        return fig, f'{validPulseCount}', f'CPS {grand_cps:.2f}', f'{elapsed}', f'cps {cps}'
 
     else:
         layout = go.Layout(
@@ -458,7 +465,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 yaxis=dict(autorange=True),
                 uirevision="Don't change",
                 )
-        return go.Figure(data=[], layout=layout), 0, 0, 0
+        return go.Figure(data=[], layout=layout), 0, 0, 0, 0
 
 #--------UPDATE SETTINGS------------------------------------------------------------------------------------------
 @app.callback( Output('polynomial'      ,'children'),
