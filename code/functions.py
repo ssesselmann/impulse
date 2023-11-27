@@ -112,13 +112,6 @@ def update_bin(n, bins, bin_counts):
 def write_histogram_csv(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3, read_size, elapsed_f):
     
     csvfile = get_path(f'{data_directory}/{name}.csv')
-#calibcoeff : a=0 b=-7.121174829763319E-05 c=3.400583148740664 d=-1.7786266305677245
-#detectorname,scionix-impulse-48-21
-#SerialNumber,scionix-impulse-48-21
-#livetime,1386
-#realtime,1386
-#starttime,2023-11-20T15:17:02+00:00
-#ch,data
     with open(csvfile, "w+") as f:
         print("calibcoeff : a=0 b=%g c=%g d=%g" % (coeff_1,coeff_2,coeff_3), file=f)
         if (elapsed>0):
@@ -126,8 +119,8 @@ def write_histogram_csv(t0, t1, bins, counts, elapsed, name, histogram, coeff_1,
             print("remark, elapsed=%4d cps=%.3f rate=%.2f" % (elapsed, counts/elapsed, read_size/elapsed_f/1000))
             print("remark, elapsed=%4d cps=%.3f rate=%.2f" % (elapsed, counts/elapsed, read_size/elapsed_f/1000), file=f)
         print("livetime,%d" % (elapsed), file=f)
-        print("detectorname,scionix-impulse-48-21-%d" % (bins), file=f)
-        print("SerialNumber,scionix-impulse-48-21-%d" % (bins), file=f)
+        print("detectorname,impulse-48-21-%d" % (bins), file=f)
+        print("SerialNumber,impulse-48-21-%d" % (bins), file=f)
         print("realtime,%d" % (elapsed), file=f)
         print("starttime,%s" % t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"), file=f)
         print("endtime,%s" % t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"), file=f)
