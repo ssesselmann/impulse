@@ -23,6 +23,11 @@ cps_list = []
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
+# define target peak position at sample
+def target_peak_position(sample_length):
+    # return int((sample_length-1)/2)
+    return int((sample_length-1) * 0.31)
+
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
     samples =[]

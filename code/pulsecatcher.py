@@ -47,7 +47,7 @@ def pulsecatcher(mode):
 	max_seconds     = settings[26]
 	t_interval      = settings[27]
 
-	peak 		    = int((sample_length-1)/2)
+	peak 			= fn.target_peak_position(sample_length)
 	condition       = True
 
 	# Create an array of empty bins
