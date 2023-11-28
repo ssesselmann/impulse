@@ -62,32 +62,29 @@ def pulsecatcher(mode):
 	shapestring = fn.load_shape()
 
 	# Converts string to float
-	shape = [int(x) for x in shapestring]
+	shape 		= [int(x) for x in shapestring]
 	samples 	= []
 	pulses 		= []
 	left_data 	= []
 
 	p = pyaudio.PyAudio()
 
-	global global_cps 
+	global global_cps
+	global global_counts  
 
-	global_cps = 0
-
-	global global_counts 
-
-	global_counts = 0
-
-	elapsed = 0
+	global_cps 		= 0
+	global_counts 	= 0
+	elapsed 		= 0
 
 	# Open the selected audio input device
 	stream = p.open(
-		format=audio_format,
-		channels=device_channels,
-		rate=sample_rate,
-		input=True,
-		output=False,
-		input_device_index=device,
-		frames_per_buffer=chunk_size)
+		format   			= audio_format,
+		channels    		= device_channels,
+		rate  				= sample_rate,
+		input  				= True,
+		output  			= False,
+		input_device_index  = device,
+		frames_per_buffer   = chunk_size * 2)
 
 	while condition and (global_counts < max_counts and elapsed <= max_seconds):
 		# Read one chunk of audio data from stream into memory. 
@@ -122,8 +119,8 @@ def pulsecatcher(mode):
 						global_counts  			+= 1	
 						global_cps 				+= 1
 
-		t1 = datetime.datetime.now() # Time capture
-		te = time.time()
+		t1      = datetime.datetime.now() # Time capture
+		te      = time.time()
 		elapsed = te - tb
 
 		# Saves histogram to json file at interval
