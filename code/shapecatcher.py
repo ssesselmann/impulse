@@ -69,6 +69,8 @@ def shapecatcher():
 	
 	threshold_trace = [threshold] * sample_length
 
+	print("peak=%d peakshift=%d" % (peak, peakshift))
+
 	try:
 		# Get audio parameters
 		device_list 	= fn.get_device_list()

@@ -173,6 +173,10 @@ def show_tab1():
     html.Div(id='pulse_shape_div', children=[
         html.Div(id='showplot', children=[
             dcc.Graph(id='plot', figure={'data': [{}], 'layout': {}})]),
+            html.Button('Capture Pulse Shape', 
+                id       = 'get_shape_btn', 
+                n_clicks = 0, 
+                style    = {'background-color': '#4CAF50', 'color': 'white', 'font-size': '12px'}),
 
             html.Div('Peak shifter', style= { 'margin-left':'20px'}),
             html.Div(dcc.Slider(
@@ -184,13 +188,9 @@ def show_tab1():
                 marks = {-20:'-20', -15:'-15', -10:'-10', -5:'-5', 0:'0', 5:'5', 10:'10', 15:'15',20:'20'}
                 ),
                 style = {'width': '85%', 'margin-left': 'auto', 'margin-right': '0'}
-                ),
+                )
 
             
-            html.Button('Capture Pulse Shape', 
-                id       = 'get_shape_btn', 
-                n_clicks = 0, 
-                style    = {'background-color': '#4CAF50', 'color': 'white', 'font-size': '12px'})
 
         ]),
 
@@ -198,7 +198,6 @@ def show_tab1():
     html.Div(id = 'distortion_div', children=[
             html.Div(id = 'showcurve', children=[
             dcc.Graph(id = 'curve', figure={'data': [{}], 'layout': {}}),
-            html.Div('', style= { 'height':'50px'}),
             
             html.Button('Get Distortion Curve',  
                 id       = 'get_curve_btn', 
@@ -206,6 +205,7 @@ def show_tab1():
                 style    = {'background-color': '#4CAF50', 'color': 'white', 'font-size': '12px'}
                 ), 
             ]),
+            html.Div('', style= { 'height':'50px'})
         ]),
             
     ]),
