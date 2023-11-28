@@ -1,6 +1,3 @@
-# Reads data in CHUNK and looks for pulse peaks in position 26 of a 51 number array
-# Repeats x times
-# Calculates zip average
 import pyaudio
 import webbrowser
 import wave
@@ -378,6 +375,8 @@ def stop_recording():
     # To stop the while loop we first get max counts
     # then zeroise max counts
     # then put the original number back again
+
+    # I think threading can be used to interrupt the loop, but will require some rewriting
 
     database = get_path(f'{data_directory}/.data.db')
     conn     = sql.connect(database)

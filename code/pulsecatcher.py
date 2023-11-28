@@ -49,8 +49,9 @@ def pulsecatcher(mode):
 	flip 			= settings[22]
 	max_seconds     = settings[26]
 	t_interval      = settings[27]
+	peakshift       = settings[28]
 
-	peak 			= fn.target_peak_position(sample_length)
+	peak 		    = int((sample_length-1)/2) + peakshift
 	condition       = True
 
 	# Create an array of empty bins
@@ -65,35 +66,34 @@ def pulsecatcher(mode):
 	shapestring = fn.load_shape()
 
 	# Converts string to float
-	shape = [int(x) for x in shapestring]
+	shape 		= [int(x) for x in shapestring]
 	samples 	= []
 	pulses 		= []
 	left_data 	= []
 
 	p = pyaudio.PyAudio()
 
-	global global_cps 
+	global global_cps
+	global global_counts  
 
-	global_cps = 0
+	global_cps 		= 0
+	global_counts 	= 0
+	elapsed 		= 0
 
-	global global_counts 
 
-	global_counts = 0
-
-	elapsed = 0
-
-	grand_cps = 0
-	read_size = 0
+	elapsed 		= 0
+	grand_cps 		= 0
+	read_size 		= 0
 
 	# Open the selected audio input device
 	stream = p.open(
-		format=audio_format,
-		channels=device_channels,
-		rate=sample_rate,
-		input=True,
-		output=False,
-		input_device_index=device,
-		frames_per_buffer=chunk_size*2)
+		format   			= audio_format,
+		channels    		= device_channels,
+		rate  				= sample_rate,
+		input  				= True,
+		output  			= False,
+		input_device_index  = device,
+		frames_per_buffer   = chunk_size * 2)
 
 	tla = time.time()
 	read_size = 0
@@ -144,8 +144,8 @@ def pulsecatcher(mode):
 						global_cps 				+= 1
 		rest = left_channel[i+1:]
 
-		t1 = datetime.datetime.now() # Time capture
-		te = time.time()
+		t1      = datetime.datetime.now() # Time capture
+		te      = time.time()
 		elapsed = te - tb
 		if elapsed > 0:
 			grand_cps = global_counts / elapsed

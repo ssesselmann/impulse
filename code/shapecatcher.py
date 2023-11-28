@@ -17,17 +17,17 @@ from collections import defaultdict
 
 
 # Starts timer
-t0 				= time.perf_counter() 
-data 			= None
-left_channel 	= []
-sample_list 	= []
-data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
+t0 					= time.perf_counter() 
+data 				= None
+left_channel 		= []
+sample_list 		= []
+data_directory  	= os.path.join(os.path.expanduser("~"), "impulse_data")
 
 # Function to catch pulses and output time, pulkse height and distortion
 def shapecatcher():
 
-	database = fn.get_path(f'{data_directory}/.data.db')
-	shapecsv = fn.get_path(f'{data_directory}/shape.csv')
+	database 		= fn.get_path(f'{data_directory}/.data.db')
+	shapecsv 		= fn.get_path(f'{data_directory}/shape.csv')
 	n 				= 0
 	shape 			= None
 	samples_sum 	= None
@@ -55,34 +55,36 @@ def shapecatcher():
 	max_counts      = settings[9]
 	shapecatches 	= settings[10]
 	sample_length	= settings[11]
-	peak 			= fn.target_peak_position(sample_length)
+	peakshift       = settings[28]
+
+	peak 			= int((sample_length-1)/2) + peakshift
 
 	# Create an array of empty bins
-	start = 0
-	stop = bins * bin_size
-	bin_array = fn.create_bin_array(start, stop, bin_size)
-	bin_counts = defaultdict(int)
+	start 			= 0
+	stop 			= bins * bin_size
+	bin_array 		= fn.create_bin_array(start, stop, bin_size)
+	bin_counts 		= defaultdict(int)
 
-	threshold = 3200
+	threshold 		= 3200
 	
 	threshold_trace = [threshold] * sample_length
 
 	try:
 		# Get audio parameters
-		device_list = fn.get_device_list()
+		device_list 	= fn.get_device_list()
 		device_channels = fn.get_max_input_channels(device)
-		p = pyaudio.PyAudio()
-		audio_format = pyaudio.paInt16
+		p 				= pyaudio.PyAudio()
+		audio_format 	= pyaudio.paInt16
 		
 		# Open the selected audio input device
 		stream = p.open(
-			format=audio_format,
-			channels=device_channels,
-			rate=sample_rate,
-			input=True,
-			output=False,
-			input_device_index=device,
-			frames_per_buffer=chunk_size)
+			format  			= audio_format,
+			channels   			= device_channels,
+			rate   				= sample_rate,
+			input  				= True,
+			output   			= False,
+			input_device_index  = device,
+			frames_per_buffer   = chunk_size * 2)
 
 		# Loops through and finds a number of pulses (shapecatches) as loaded from settings
 		while True:
@@ -131,7 +133,9 @@ def shapecatcher():
 
 						return shape_int, threshold_trace	
 	except:
+
 		shape_int = [0] * sample_length
+
 		return shape_int, threshold_trace
 
 

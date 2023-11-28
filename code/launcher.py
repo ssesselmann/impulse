@@ -64,7 +64,8 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         theme           TEXT    DEFAULT 'lightgray',
         sigma           REAL    DEFAULT 0,
         max_seconds     INTEGER DEFAULT 3600,
-        t_interval      INTEGER DEFAULT 1              
+        t_interval      INTEGER DEFAULT 1,
+        peakshift       INTEGER DEFAULT 0              
         );"""
 
 # This query inserts the first record in settings with defaults
