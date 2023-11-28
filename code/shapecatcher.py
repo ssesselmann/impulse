@@ -55,7 +55,9 @@ def shapecatcher():
 	max_counts      = settings[9]
 	shapecatches 	= settings[10]
 	sample_length	= settings[11]
-	peak 			= int((sample_length-1)/2)
+	peakshift       = settings[28]
+
+	peak 			= int((sample_length-1)/2) + peakshift
 
 	# Create an array of empty bins
 	start 			= 0

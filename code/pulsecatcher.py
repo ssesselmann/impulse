@@ -46,8 +46,9 @@ def pulsecatcher(mode):
 	flip 			= settings[22]
 	max_seconds     = settings[26]
 	t_interval      = settings[27]
+	peakshift       = settings[28]
 
-	peak 		    = int((sample_length-1)/2)
+	peak 		    = int((sample_length-1)/2) + peakshift
 	condition       = True
 
 	# Create an array of empty bins
