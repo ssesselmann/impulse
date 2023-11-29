@@ -45,6 +45,21 @@ def average_pulse(sum_pulse, count):
     return average 
 
     # Normalises the average pulse shape
+def normalise_pulse_h(target_h, average):
+    normalised = []
+    h = max(average) - min(average)
+    if h != 0:
+        amp = target_h / h
+    else:
+        amp = 1
+    mean = sum(average) / len(average)   
+    # normalised = [n - mean for n in average]  
+    # normalised = [n - mean for n in average]  
+    # normalised_int = [int(x) for x in normalised]
+    normalised_int = [int((x - mean) * amp) for x in average]
+    return normalised_int
+
+    # Normalises the average pulse shape
 def normalise_pulse(average):
     normalised = []
     mean = sum(average) / len(average)   
@@ -57,7 +72,8 @@ def normalise_pulse(average):
     # Normalised pulse samples less normalised shape samples squared summed and rooted
 def distortion(normalised, shape):
     product = [(x - y)**2 for x, y in zip(shape, normalised)]
-    distortion = int(math.sqrt(sum(product)))
+    # distortion = int(math.sqrt(sum(product)))
+    distortion = int((sum(product))/24576)	# 603979776 == 24576**2
 
     return distortion
     # Function calculates pulse height
@@ -117,7 +133,7 @@ def write_histogram_csv(t0, t1, bins, counts, elapsed, name, histogram, coeff_1,
         print("calibcoeff : a=0 b=%g c=%g d=%g" % (coeff_1,coeff_2,coeff_3), file=f)
         if (elapsed>0):
             # print("remark, cps=%.3f" % (counts/elapsed), file=f)
-            print("remark, elapsed=%4d cps=%.3f rate=%.2f" % (elapsed, counts/elapsed, read_size/elapsed_f/1000))
+            # print("remark, elapsed=%4d cps=%.3f rate=%.2f" % (elapsed, counts/elapsed, read_size/elapsed_f/1000))
             print("remark, elapsed=%4d cps=%.3f rate=%.2f" % (elapsed, counts/elapsed, read_size/elapsed_f/1000), file=f)
         print("livetime,%d" % (elapsed), file=f)
         print("detectorname,impulse-48-21-%d" % (bins), file=f)

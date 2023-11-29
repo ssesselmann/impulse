@@ -99,6 +99,8 @@ def pulsecatcher(mode):
 	read_size = 0
 	rest = [ ]
 	sum_dist = 0.0
+	h_mult_sum = 0.
+	dist_sum = 0.
 	while condition and (global_counts < max_counts and elapsed <= max_seconds):
 		# Read one chunk of audio data from stream into memory. 
 		data = stream.read(chunk_size, exception_on_overflow=False)
@@ -124,22 +126,33 @@ def pulsecatcher(mode):
 			# height = fn.pulse_height(samples)
 			# Filter out noise
 			if (samples[peak] == max(samples) 
-					# and (height := fn.pulse_height(samples)) > threshold 
+#q#					and (height := fn.pulse_height_q2(peak, samples)) > threshold 
 					and (height := samples[peak] - min(samples)) > threshold 
 					and samples[peak] < 32768):
 				# Function normalises sample to zero and converts to integer
-				normalised = fn.normalise_pulse(samples)
+				normalised = fn.normalise_pulse_h(24576, samples)
 				# Compares pulse to sample and calculates distortion number
 				distortion = fn.distortion(normalised, shape)
 				# Filters out distorted pulses
 				# h_add = 0.006 * distortion
 				# h_add = 0.030 * distortion # D01 / ok ?
 				# h_add = 0.020 * distortion # D02 / ok ? 132 394 874
-				h_add = 0.010 * distortion # D03 / 126 392 871
+
+#q#				h_mult_sum += (height - fn.pulse_height(samples)) / height
+
+#07#				h_mult =  distortion * 0.0000025	#d05 0.0000025/0.02 ok 7.6% 121 391 865
+
+				h_mult =  distortion * 0.0000020	#d09 0.0000025/0.02 ok 7.6% 121 391 865
+				h_mult_sum += h_mult
+				dist_sum += distortion
+				if h_mult > 0.015:
+					h_mult = 0.015
 				# h_add = .000075  * distortion * samples[peak] # bad..
 				# height = samples[peak] + h_add - min(samples)
-				height += h_add
-				#print("h=%8.1f add=%8.2f" % (height, h_add))
+
+				height *= (1 + h_mult)
+
+				# print("h=%8.1f mult=%12.8f add=%8.2f" % (height, h_mult, h_mult*height))
 				#height = samples[peak];
 				if distortion < tolerance:
 					# advance next analyze pos to current + sample_length
@@ -192,6 +205,11 @@ def pulsecatcher(mode):
 				histogram_3d = [0] * bins
 
 			tla = time.time()
+			print("elapsed=%4d cps=%.3f rate=%.2f h_mult_avg = %8.4f dist_avg = %10.2f" % (elapsed, 
+					global_counts/elapsed, read_size/elapsed/1000,
+					h_mult_sum/global_cps, dist_sum/global_cps))
+			h_mult_sum = 0.
+			dist_sum = 0.
 
 			fn.write_cps_json(filename, global_cps)
 			global_cps = 0

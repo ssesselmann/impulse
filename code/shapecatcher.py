@@ -23,7 +23,7 @@ left_channel 		= []
 sample_list 		= []
 data_directory  	= os.path.join(os.path.expanduser("~"), "impulse_data")
 
-# Function to catch pulses and output time, pulkse height and distortion
+# Function to catch pulses and output time, pulse height and distortion
 def shapecatcher():
 
 	database 		= fn.get_path(f'{data_directory}/.data.db')
@@ -65,7 +65,8 @@ def shapecatcher():
 	bin_array 		= fn.create_bin_array(start, stop, bin_size)
 	bin_counts 		= defaultdict(int)
 
-	threshold 		= 3200
+	#threshold 		= 3200
+	threshold 		= 6400
 	
 	threshold_trace = [threshold] * sample_length
 
@@ -106,7 +107,7 @@ def shapecatcher():
 				# Flips samples if pulse is positive
 				samples = [flip * x for x in samples]
 				# Find pulses based only on the peak height being in the middle 80% of 32000
-				if samples[peak] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[peak] < 28800:
+				if samples[peak] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[peak] < 24576:
 					# gather a list of samples 
 					pulse_list.append(samples)
 					# Counter
@@ -118,7 +119,7 @@ def shapecatcher():
 						# Zip sum all lists
 						pulses_sum = [sum(x)/len(pulse_list) for x in zip(*pulse_list)] 
 						# Normalise summed list
-						shape = fn.normalise_pulse(pulses_sum)
+						shape = fn.normalise_pulse_h(24576, pulses_sum)
 						# convert floats to ints
 						shape_int = [int(x) for x in shape]
 						# Format and save to csv file
