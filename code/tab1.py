@@ -267,7 +267,6 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
     [Input('get_shape_btn'   ,'n_clicks')])
 
 def capture_pulse_shape(n_clicks):
-    print("capture_pulse_shape")
     layout = {
                 'title': {
                 'text': 'Pulse Shape',

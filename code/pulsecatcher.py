@@ -98,6 +98,7 @@ def pulsecatcher(mode):
 	tla = time.time()
 	read_size = 0
 	rest = [ ]
+	sum_dist = 0.0
 	while condition and (global_counts < max_counts and elapsed <= max_seconds):
 		# Read one chunk of audio data from stream into memory. 
 		data = stream.read(chunk_size, exception_on_overflow=False)
@@ -123,13 +124,23 @@ def pulsecatcher(mode):
 			# height = fn.pulse_height(samples)
 			# Filter out noise
 			if (samples[peak] == max(samples) 
-					and (height := fn.pulse_height_q2(peak, samples)) > threshold 
+					# and (height := fn.pulse_height(samples)) > threshold 
+					and (height := samples[peak] - min(samples)) > threshold 
 					and samples[peak] < 32768):
 				# Function normalises sample to zero and converts to integer
 				normalised = fn.normalise_pulse(samples)
 				# Compares pulse to sample and calculates distortion number
 				distortion = fn.distortion(normalised, shape)
 				# Filters out distorted pulses
+				# h_add = 0.006 * distortion
+				# h_add = 0.030 * distortion # D01 / ok ?
+				# h_add = 0.020 * distortion # D02 / ok ? 132 394 874
+				h_add = 0.010 * distortion # D03 / 126 392 871
+				# h_add = .000075  * distortion * samples[peak] # bad..
+				# height = samples[peak] + h_add - min(samples)
+				height += h_add
+				#print("h=%8.1f add=%8.2f" % (height, h_add))
+				#height = samples[peak];
 				if distortion < tolerance:
 					# advance next analyze pos to current + sample_length
 					# skip_to = i + sample_length - 1
@@ -142,6 +153,14 @@ def pulsecatcher(mode):
 						histogram_3d[bin_index] += 1 
 						global_counts  			+= 1	
 						global_cps 				+= 1
+#						add_dist = (height-samples[peak])/distortion/samples[peak]
+#						sum_dist += add_dist
+#						print("h: %8.1f delta: %10.4f dist: %10.0f  delta/dist: %8.6f delta/dist/h: %8.6f avg_Pers: %8.6f" % 
+#							(height,
+#							height-samples[peak], distortion, 
+#							(height-samples[peak])/distortion,
+#							(add_dist * 100),
+#							sum_dist / global_counts * 100))
 		rest = left_channel[i+1:]
 
 		t1      = datetime.datetime.now() # Time capture

@@ -48,8 +48,10 @@ def average_pulse(sum_pulse, count):
 def normalise_pulse(average):
     normalised = []
     mean = sum(average) / len(average)   
-    normalised = [n - mean for n in average]  
-    normalised_int = [int(x) for x in normalised]
+    # normalised = [n - mean for n in average]  
+    # normalised = [n - mean for n in average]  
+    # normalised_int = [int(x) for x in normalised]
+    normalised_int = [int(x - mean) for x in average]
     return normalised_int
 
     # Normalised pulse samples less normalised shape samples squared summed and rooted
@@ -83,6 +85,8 @@ def pulse_height_q2(m_idx, samples):
     # x_max = -b/2a
     x_extremum = 0 - parab_coeff[1] / parab_coeff[0] / 2.
     y_extremum = parab_coeff[0] * x_extremum * x_extremum + parab_coeff[1] * x_extremum + parab_coeff[2]
+    if y_extremum < samples[m_idx]:
+        y_extremum = samples[m_idx]
     return y_extremum-min(samples)
 
     # Function to create bin_array 
