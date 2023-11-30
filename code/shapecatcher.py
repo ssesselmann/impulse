@@ -65,8 +65,8 @@ def shapecatcher():
 	bin_array 		= fn.create_bin_array(start, stop, bin_size)
 	bin_counts 		= defaultdict(int)
 
-	#threshold 		= 3200
-	threshold 		= 6400
+	threshold 		= 3200
+	# threshold 		= 6400
 	
 	threshold_trace = [threshold] * sample_length
 
@@ -112,6 +112,7 @@ def shapecatcher():
 					pulse_list.append(samples)
 					# Counter
 					n += 1
+					print("%d catched" %(n))
 					# Stop[ afer n samples]
 					if n >= (shapecatches-1): # number of pulses to average
 						# close stream

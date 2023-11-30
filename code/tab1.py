@@ -112,7 +112,10 @@ def show_tab1():
                 {'label': '50', 'value':  '50'},
                 {'label':'100', 'value': '100'},
                 {'label':'500', 'value': '500'},
-                {'label':'1000', 'value': '1000'}
+                {'label':'1000', 'value': '1000'},
+                {'label':'2000', 'value': '2000'},
+                {'label':'4000', 'value': '4000'},
+                {'label':'8000', 'value': '8000'}
                 ],
             value     = shapecatches ,
             clearable = False, 
