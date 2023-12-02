@@ -20,11 +20,6 @@ cps_list = []
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
-# define target peak position at sample
-def target_peak_position(sample_length):
-    # return int((sample_length-1)/2)
-    return int((sample_length-1) * 0.31)
-
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
     samples =[]
@@ -45,65 +40,22 @@ def average_pulse(sum_pulse, count):
     return average 
 
     # Normalises the average pulse shape
-def normalise_pulse_h(target_h, average):
-    normalised = []
-    h = max(average) - min(average)
-    if h != 0:
-        amp = target_h / h
-    else:
-        amp = 1
-    mean = sum(average) / len(average)   
-    # normalised = [n - mean for n in average]  
-    # normalised = [n - mean for n in average]  
-    # normalised_int = [int(x) for x in normalised]
-    normalised_int = [int((x - mean) * amp) for x in average]
-    return normalised_int
-
-    # Normalises the average pulse shape
 def normalise_pulse(average):
     normalised = []
     mean = sum(average) / len(average)   
-    # normalised = [n - mean for n in average]  
-    # normalised = [n - mean for n in average]  
-    # normalised_int = [int(x) for x in normalised]
-    normalised_int = [int(x - mean) for x in average]
+    normalised = [n - mean for n in average]  
+    normalised_int = [int(x) for x in normalised]
     return normalised_int
 
     # Normalised pulse samples less normalised shape samples squared summed and rooted
 def distortion(normalised, shape):
     product = [(x - y)**2 for x, y in zip(shape, normalised)]
-    # distortion = int(math.sqrt(sum(product)))
-    distortion = int((sum(product))/24576)	# 603979776 == 24576**2
+    distortion = int(math.sqrt(sum(product)))
 
     return distortion
     # Function calculates pulse height
 def pulse_height(samples):
     return max(samples)-min(samples)
-
-def pulse_height_q(samples):
-    m_idx = np.argmax(samples)
-    if m_idx == 0 or m_idx == len(samples)-1:
-    	return max(samples)-min(samples)
-    x_parab = [m_idx-1, m_idx, m_idx+1]
-    y_parab = [samples[m_idx-1], samples[m_idx], samples[m_idx+1]]
-    parab_coeff = np.polyfit(x_parab, y_parab, 2)
-    # x_max = -b/2a
-    x_extremum = 0 - parab_coeff[1] / parab_coeff[0] / 2.
-    y_extremum = parab_coeff[0] * x_extremum * x_extremum + parab_coeff[1] * x_extremum + parab_coeff[2]
-    return y_extremum-min(samples)
-
-def pulse_height_q2(m_idx, samples):
-#    if m_idx == 0 or m_idx == len(samples)-1:
-#    	return max(samples)-min(samples)
-    x_parab = [m_idx-1, m_idx, m_idx+1]
-    y_parab = [samples[m_idx-1], samples[m_idx], samples[m_idx+1]]
-    parab_coeff = np.polyfit(x_parab, y_parab, 2)
-    # x_max = -b/2a
-    x_extremum = 0 - parab_coeff[1] / parab_coeff[0] / 2.
-    y_extremum = parab_coeff[0] * x_extremum * x_extremum + parab_coeff[1] * x_extremum + parab_coeff[2]
-    if y_extremum < samples[m_idx]:
-        y_extremum = samples[m_idx]
-    return y_extremum-min(samples)
 
     # Function to create bin_array 
 def create_bin_array(start, stop, bin_size):
@@ -124,28 +76,6 @@ def update_bin(n, bins, bin_counts):
     bin_num = histogram_count(n, bins)
     bin_counts[bin_num] += 1
     return bin_counts
-
-# This function writes a 2D histogram to InterSpectCompatible .csv
-def write_histogram_csv(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3, read_size, elapsed_f):
-    
-    csvfile = get_path(f'{data_directory}/{name}.csv')
-    with open(csvfile, "w+") as f:
-        print("calibcoeff : a=0 b=%g c=%g d=%g" % (coeff_1,coeff_2,coeff_3), file=f)
-        if (elapsed>0):
-            # print("remark, cps=%.3f" % (counts/elapsed), file=f)
-            # print("remark, elapsed=%4d cps=%.3f rate=%.2f" % (elapsed, counts/elapsed, read_size/elapsed_f/1000))
-            print("remark, elapsed=%4d cps=%.3f rate=%.2f" % (elapsed, counts/elapsed, read_size/elapsed_f/1000), file=f)
-        print("livetime,%d" % (elapsed), file=f)
-        print("detectorname,impulse-48-21-%d" % (bins), file=f)
-        print("SerialNumber,impulse-48-21-%d" % (bins), file=f)
-        print("realtime,%d" % (elapsed), file=f)
-        print("starttime,%s" % t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"), file=f)
-        print("endtime,%s" % t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"), file=f)
-        print("ch,data", file=f)
-        for line_num, line in enumerate(histogram):
-            print("%d, %d" % (line_num, line), file=f)
-
-
 
 # This function writes a 2D histogram to JSON file according to NPESv1 schema.
 def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):

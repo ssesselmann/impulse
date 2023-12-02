@@ -80,7 +80,7 @@ def distortion_finder():
 		left_channel = values[::2]
 		#global plot_data
 		for i in range(len(left_channel) - sample_length):
-			samples = left_channel[i:i+sample_length]  # Get the first 51 samples
+			samples = left_channel[i:i+sample_length]  # Get sample_length samples
 			# Flip inverts all samples if detector pulses are positive
 			samples = [flip * x for x in samples]
 			if samples[peak] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[peak] < 32768:
