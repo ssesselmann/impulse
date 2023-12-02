@@ -44,7 +44,7 @@ def distortion_finder():
 	histogram = [0] * bins
 
 
-	peak 		    = int((sample_length-1)/2) + peakshift
+	peak = int((sample_length-1)/2) + peakshift
 
 	audio_format = pyaudio.paInt16
 	device_channels = fn.get_max_input_channels(device)
@@ -85,12 +85,11 @@ def distortion_finder():
 			samples = [flip * x for x in samples]
 			if samples[peak] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[peak] < 32768:
 				# Function normalises sample to zero
-				normalised = fn.normalise_pulse_h(24576, samples)
+				normalised = fn.normalise_pulse(samples)
 				# Converts normalised to integers
 				normalised_int = [int(round(x)) for x in normalised]
 				# Calculates distortion
-				distortion = fn.distortion(normalised, shape)
-				print("dist = %12.2f" % (distortion))
+				distortion = fn.distortion(normalised_int, shape)
 				# Append distortion
 				distortion_list.append(distortion)
 				distortion_list.sort()
