@@ -35,14 +35,15 @@ def distortion_finder():
 	coeff_2			= settings[19]
 	coeff_3			= settings[20]
 	flip 			= settings[22]
-	sample_length	= settings[11]
+	sample_length		= settings[11]
+	peakshift		= settings[28]
 
 	# Create an array of ewmpty bins
 	start = 0
 	stop = bins * bin_size
 	histogram = [0] * bins
 
-	peak = int((sample_length-1)/2)
+	peak = int((sample_length-1)/2) + peakshift
 
 	audio_format = pyaudio.paInt16
 	device_channels = fn.get_max_input_channels(device)
@@ -77,8 +78,8 @@ def distortion_finder():
 		# Extract every other element (left channel)
 		left_channel = values[::2]
 		#global plot_data
-		for i in range(len(left_channel) - 51):
-			samples = left_channel[i:i+51]  # Get the first 51 samples
+		for i in range(len(left_channel) - sample_length):
+			samples = left_channel[i:i+sample_length]  # Get the first 51 samples
 			# Flip inverts all samples if detector pulses are positive
 			samples = [flip * x for x in samples]
 			if samples[peak] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[peak] < 32768:
