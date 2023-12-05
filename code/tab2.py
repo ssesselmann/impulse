@@ -134,13 +134,7 @@ def show_tab2():
 
         html.Div(id='t2_setting_div5', children=[
             html.Div('Select Comparison'),
-            html.Div(dcc.Dropdown(
-                    id='filename2',
-                    options=options_sorted,
-                    placeholder='Select acomparison',
-                    value=filename2,
-                    )),
-
+            html.Div(dcc.Dropdown(id='filename2', options=options_sorted, placeholder='Select acomparison', value=filename2 )),
             html.Div(['Show Comparison'      , daq.BooleanSwitch(id='compare_switch',on=False, color='purple',)]),
             html.Div(['Subtract Comparison'  , daq.BooleanSwitch(id='difference_switch',on=False, color='purple',)]),
 
