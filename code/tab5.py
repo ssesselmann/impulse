@@ -42,7 +42,8 @@ def show_tab5():
                         {"label": "Boring theme (lightgray)"    , "value": "lightgray"},
                         {"label": "Hippie theme (orange)"      , "value": "orange"},
                         {"label": "OMG theme (pink)"      , "value": "pink"},
-                        {"label": "Sunburst(image)"      , "value": "sunburst"}
+                        {"label": "Sunburst(image)"      , "value": "sunburst"},
+                        {"label": "Developer"      , "value": "developer"}
 
                     ], 
                     value=theme,  # pre-selected option

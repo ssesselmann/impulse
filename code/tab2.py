@@ -139,7 +139,6 @@ def show_tab2():
                     options=options_sorted,
                     placeholder='Select acomparison',
                     value=filename2,
-                    style={'font-family':'Arial', 'height':'32px', 'margin':'0px', 'padding':'0px','border':'None', 'text-align':'left'}
                     )),
 
             html.Div(['Show Comparison'      , daq.BooleanSwitch(id='compare_switch',on=False, color='purple',)]),
