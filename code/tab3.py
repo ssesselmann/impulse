@@ -1,7 +1,5 @@
 import dash
-
 import plotly.graph_objs as go
-
 import pulsecatcher as pc
 import functions as fn
 import os
@@ -144,7 +142,7 @@ def show_tab3():
 
     return html_tab3
 
-#------START---------------------------------
+#----START---------------------------------
 
 @app.callback( Output('start_text_3d'  ,'children'),
                 [Input('start_3d'  ,'n_clicks')])
@@ -153,13 +151,9 @@ def update_output(n_clicks):
 
     if n_clicks is None:
         raise PreventUpdate
-
     else:
-        mode = 3       
-        fn.clear_global_cps_list()
-        pc.pulsecatcher(mode)
-
-        return " "
+        fn.start_recording(3)
+        return ''
 #----STOP------------------------------------------------------------
 
 @app.callback( Output('stop_text_3d'  ,'children'),
@@ -169,13 +163,11 @@ def update_output(n_clicks):
 
     if n_clicks is None:
         raise PreventUpdate
-
     else:
         fn.stop_recording()
-
         return " "
 
-#-----RENDER CHART-----------------------------------------------------------
+#----RENDER CHART-----------------------------------------------------------
 
 @app.callback([ Output('chart_3d'           ,'figure'), 
                 Output('counts_3d'          ,'children'),

@@ -9,16 +9,20 @@ import json
 import time
 import os
 import platform
+import threading
 import sqlite3 as sql
 import pandas as pd
+import pulsecatcher as pc
+
 from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
 from datetime import datetime
 from urllib.request import urlopen
 
-cps_list = []
-
+cps_list        = []
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
+run_flag_lock   = threading.Lock()
+run_flag        = threading.Event()  # Using Event instead of a simple flag
 
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
@@ -319,32 +323,21 @@ def gaussian_correl(data, sigma):
     # Return the list of correlation values
     return correl_values
 
+def start_recording(mode):
+    global run_flag
+    # Start the thread
+    run_flag.set()  # Set the Event to indicate recording should start
+    audio_record = threading.Thread(target=pc.pulsecatcher, args=(mode, run_flag, run_flag_lock))
+    audio_record.start()
+    clear_global_cps_list()
+
+    return
+
 def stop_recording():
+    global run_flag
+    with run_flag_lock:
+        run_flag.clear() 
 
-    # This function is an ugly botch but it works
-    # To stop the while loop we first get max counts
-    # then zeroise max counts
-    # then put the original number back again
-
-    # I think threading can be used to interrupt the loop, but will require some rewriting
-
-    database = get_path(f'{data_directory}/.data.db')
-    conn     = sql.connect(database)
-    query1  = "SELECT max_counts FROM settings "
-    c       = conn.cursor()
-    c.execute(query1)
-    conn.commit()
-    max_counts = c.fetchall()[0][0]
-    query2 = "UPDATE settings SET max_counts = 0 WHERE ID = 0;"
-    c      = conn.cursor()
-    c.execute(query2)
-    conn.commit()
-    time.sleep(3)
-    # Wait three seconds and set max_counts back to what it was
-    query3    = f"UPDATE settings SET max_counts = {max_counts} WHERE ID = 0;"
-    c         = conn.cursor()
-    c.execute(query3)
-    conn.commit()
     return    
 
 def export_csv(filename):

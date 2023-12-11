@@ -4,24 +4,22 @@
 import pyaudio
 import wave
 import math
+import threading
 import time
 import functions as fn
 import sqlite3 as sql
 import datetime
 from collections import defaultdict
-import csv
 
 data 			= None
 left_channel 	= None
-path 			= None
-device_list 	= fn.get_device_list()
-plot 			= {}
-
 global_cps      = 0
 global_counts	= 0
+run_flag 		= True
+run_flag_lock 	= threading.Lock()
 
 # Function reads audio stream and finds pulses then outputs time, pulse height and distortion
-def pulsecatcher(mode):
+def pulsecatcher(mode, run_flag, run_flag_lock):
 
 	# Start timer
 	t0				= datetime.datetime.now()
@@ -87,7 +85,7 @@ def pulsecatcher(mode):
 		input_device_index  = device,
 		frames_per_buffer   = chunk_size * 2)
 
-	while condition and (global_counts < max_counts and elapsed <= max_seconds):
+	while run_flag.is_set() and (global_counts < max_counts and elapsed <= max_seconds):
 		# Read one chunk of audio data from stream into memory. 
 		data = stream.read(chunk_size, exception_on_overflow=False)
 		# Convert hex values into a list of decimal values

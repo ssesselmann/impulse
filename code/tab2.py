@@ -9,6 +9,8 @@ import numpy as np
 import sqlite3 as sql
 import dash_daq as daq
 import audio_spectrum as asp
+import threading
+
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
@@ -16,11 +18,10 @@ from server import app
 from dash.exceptions import PreventUpdate
 from datetime import datetime
 
-path = None
-n_clicks = None
-global_counts = 0
-global_cps = 0
-
+path            = None
+n_clicks        = None
+global_counts   = 0
+global_cps      = 0
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 def show_tab2():
@@ -181,7 +182,7 @@ def show_tab2():
 
     return html_tab2
 
-#------START---------------------------------
+#----START---------------------------------
 
 @app.callback( Output('start_text'  ,'children'),
                 [Input('start'      ,'n_clicks')])
@@ -190,9 +191,7 @@ def update_output(n_clicks):
     if n_clicks is None:
         raise PreventUpdate
     else:
-        mode = 2      
-        fn.clear_global_cps_list()
-        pc.pulsecatcher(mode)
+        fn.start_recording(2)
         return ''
 #----STOP------------------------------------------------------------
 
@@ -205,6 +204,7 @@ def update_output(n_clicks):
     else:
         fn.stop_recording()
         return " "
+
 #-------UPDATE GRAPH---------------------------------------------------------
 
 @app.callback([ Output('bar-chart'          ,'figure'), 
