@@ -476,10 +476,14 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
 def save_settings(bins, bin_size, max_counts, max_seconds, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3, peakfinder, sigma, t_interval):
     
-    database = fn.get_path(f'{data_directory}/.data.db')
-
-    conn = sql.connect(database)
-    c = conn.cursor()
+    x_bins          = [calib_bin_1, calib_bin_2, calib_bin_3]
+    x_energies      = [calib_e_1, calib_e_2, calib_e_3]
+    coefficients    = np.polyfit(x_bins, x_energies, 2)
+    polynomial_fn   = np.poly1d(coefficients)
+    
+    database        = fn.get_path(f'{data_directory}/.data.db')
+    conn            = sql.connect(database)
+    c               = conn.cursor()
 
     query = f"""UPDATE settings SET 
                     bins={bins}, 
@@ -498,23 +502,7 @@ def save_settings(bins, bin_size, max_counts, max_seconds, filename, filename2, 
                     peakfinder={peakfinder},
                     sigma={sigma},
                     t_interval={t_interval},
-                    max_seconds={max_seconds}
-                    WHERE id=0;"""
-
-    c.execute(query)
-    conn.commit()
-
-    x_bins        = [calib_bin_1, calib_bin_2, calib_bin_3]
-    x_energies    = [calib_e_1, calib_e_2, calib_e_3]
-
-    coefficients  = np.polyfit(x_bins, x_energies, 2)
-    polynomial_fn = np.poly1d(coefficients)
-
-
-    conn  = sql.connect(database)
-    c     = conn.cursor()
-
-    query = f"""UPDATE settings SET 
+                    max_seconds={max_seconds},
                     coeff_1={float(coefficients[0])},
                     coeff_2={float(coefficients[1])},
                     coeff_3={float(coefficients[2])}
