@@ -5,7 +5,9 @@ import logging
 from shproto.dispatcher import process_01
 from shproto.dispatcher import start
 
-logger          = logging.getLogger('impulse')
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+
 data_thread     = None
 
 def start_data_thread(filename):

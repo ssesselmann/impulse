@@ -9,7 +9,7 @@ import os
 import platform
 import functions as fn
 
-logger              = logging.getLogger('impulse')
+logger              = logging.getLogger(__name__)
 stopflag            = 0
 stopflag_lock       = threading.Lock()
 spec_stopflag       = 0
@@ -41,7 +41,6 @@ def start(sn=None):
     response = shproto.packet()
     while not shproto.dispatcher.stopflag:
         if shproto.dispatcher.command is not None and len(shproto.dispatcher.command) > 0:
-            print("Send command: {}".format(command))
             if command == "-rst":
                 shproto.dispatcher.clear()
             tx_packet = shproto.packet()
@@ -193,14 +192,17 @@ def process_01(filename, compression): # Compression reduces number of channels 
 def stop():
     with shproto.dispatcher.stopflag_lock:
         shproto.dispatcher.stopflag = 1
+        logger.debug('Stop flag set(dispatcher)')
 
 def spec_stop():
     with shproto.dispatcher.spec_stopflag_lock:
         shproto.dispatcher.spec_stopflag = 1
+        logger.debug('Stop flag set(dispatcher)')
 
 def process_03(_command):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = _command
+        logger.debug(f'Command received (dispatcher):{_command}')
 
 def clear():
     with shproto.dispatcher.histogram_lock:

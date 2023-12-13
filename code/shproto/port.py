@@ -2,9 +2,8 @@ import serial
 import serial.tools.list_ports
 import logging
 
-# Instantiate a logger
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.ERROR)
 
 def getallports():
     allports = serial.tools.list_ports.comports()
