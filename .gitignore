@@ -10,6 +10,7 @@ __pycache__/
 /code/data/*
 /code/myenv/*
 /code/.*
+/code/impulse.log
 /Impulse.dmg
 codesign.txt
 
