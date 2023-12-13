@@ -13,3 +13,4 @@ pyobjc
 scipy
 requests
 threading
+logging
