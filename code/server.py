@@ -2,6 +2,22 @@ import dash
 import os
 import sqlite3 as sql
 import functions as fn
+import logging
+
+# Set up the logger
+logging.basicConfig(
+	filename='impulse.log', 
+	level=logging.WARNING, 
+	filemode='w', 
+	format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Create a logger instance
+logger = logging.getLogger(__name__)
+
+# Add a handler to print log messages to the console as well
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.ERROR)
+logger.addHandler(console_handler)
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
@@ -22,7 +38,9 @@ external_stylesheets = [f'https://www.gammaspectacular.com/steven/impulse/styles
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 server = app.server
-#app.css.config.serve_locally = True
+
 app.scripts.config.serve_locally = True
+
 app.config['suppress_callback_exceptions']=True
-#app.run_server(threaded=True, debug=True, processes=1)
+
+logger.debug(f'Server GET: {external_stylesheets}')
