@@ -124,6 +124,7 @@ Change log
 53) Added tab4 with 3D Histogram
 54) Minor changes to layout + remove one dependancy
 55) Fixed Start and Stop buttons using threading to interrupt loop
+56) Major update for use with GS-MAX 
 
 
 Things to do
@@ -132,7 +133,6 @@ Things to do
 * Build interval histogram with Dead time calculation 
 * Record instruction video
 * Show Subtraction in spectrum name
-* Add functionality for use with GS-MAX serial devices
 
 
 
