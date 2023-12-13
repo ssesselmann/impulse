@@ -3,17 +3,13 @@
 
 import functions as fn
 import webbrowser
-import logging
-from threading import Timer
-import launcher
-from server import app
 import warnings
+import launcher
+
+from server import app
+from threading import Timer
 
 warnings.filterwarnings('ignore')
-
-# The following three lines limit output to errors
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
 
 # Define default `8050` port
 port = 8050 
