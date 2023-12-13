@@ -1,6 +1,7 @@
 import dash
 import json
 import os
+import logging
 import plotly.graph_objs as go
 import functions as fn
 import dash_daq as daq
@@ -11,6 +12,9 @@ from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
 from server import app
 from dash import dcc
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
