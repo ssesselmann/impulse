@@ -8,6 +8,10 @@ import functions as fn
 import sqlite3 as sql
 from collections import defaultdict
 import csv
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 data 			= None
 left_channel 	= None
