@@ -316,17 +316,19 @@ def update_output(n_clicks, filename, compression):
             time.sleep(1)
 
             shproto.dispatcher.process_01(filename, compression)
+            logger.debug(f'dispatcher.process_01 Started')
+
 
             time.sleep(1)
 
         except Exception as e:
             return f"Error: {str(e)}"
     else:
-        logger.debug('No serial port connected')
-        # If it's not a serial device, continue with the existing logic
-        mode = 2
-        fn.clear_global_cps_list()
-        pc.pulsecatcher(mode)
+        
+        fn.start_recording(2)
+
+        logger.debug('Audio Codec Recording Started')
+
         return f"Error: {str(e)}"
 #----STOP------------------------------------------------------------
 
@@ -337,8 +339,6 @@ def update_output(n_clicks, filename, compression):
 def update_output(n_clicks, filename):
     if n_clicks is None:
         raise PreventUpdate
-
-    logger.debug('Stop on tab2 clicked')
 
     sdl = fn.get_serial_device_list()
 
@@ -354,7 +354,11 @@ def update_output(n_clicks, filename):
         logger.debug('Stop command sent from (tab2)')
 
     else:
+
         fn.stop_recording()
+
+        logger.debug('Audio Codec Recording Stopped')
+
         return "loop stopped"
 
 #-------UPDATE GRAPH---------------------------------------------------------
