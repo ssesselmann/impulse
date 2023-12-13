@@ -1,3 +1,6 @@
+# Reads data in CHUNK and looks for pulse peaks in position 26 of a 51 number array
+# Repeats x times
+# Calculates zip average
 import pyaudio
 import webbrowser
 import wave
@@ -13,11 +16,16 @@ import threading
 import sqlite3 as sql
 import pandas as pd
 import pulsecatcher as pc
+import logging
 
 from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
 from datetime import datetime
 from urllib.request import urlopen
+import serial.tools.list_ports
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 cps_list        = []
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
@@ -140,9 +148,9 @@ def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_nu
     with open(jsonfile, "w") as f:
         json.dump(data, f)
 
-def write_cps_json(name, cps):
+def write_cps_json(filename, cps):
     global cps_list
-    jsonfile = get_path(f'{data_directory}/{name}-cps.json')
+    jsonfile = get_path(f'{data_directory}/{filename}-cps.json')
     cps_list.append(cps)
     data     = {'cps': cps_list }
     with open(jsonfile, "w+") as f:
@@ -211,7 +219,26 @@ def get_device_list():
     except:
         p.terminate()
         return [('no device', 99)]
-     
+
+def get_serial_device_list():
+    # Get a list of available serial ports
+    all_ports = serial.tools.list_ports.comports()
+
+    # Define criteria for selecting serial devices
+    manufacturer_criteria = "FTDI"
+    product_criteria = "FT232R USB UART"
+
+    # Create a list of tuples to store selected serial device information as couples
+    serial_device_list = []
+
+    # Filter and assign unique integer indexes to selected serial devices starting from 100
+    serial_index = 100
+    for port in all_ports:
+        if port.manufacturer == manufacturer_criteria and port.product == product_criteria:
+            serial_device_list.append((port.device, serial_index))
+            serial_index += 1
+    return serial_device_list
+         
 
 # Returns maxInputChannels in an unordered list
 def get_max_input_channels(device):
@@ -346,7 +373,7 @@ def export_csv(filename):
     # Remove the ".json" extension from the filename
     base_filename = filename.rsplit(".", 1)[0]
     # Give output file a name
-    output_file = f'{base_filename}.txt'
+    output_file = f'{base_filename}.csv'
     # Load json file
     with open(f'{data_directory}/{filename}') as f:
         data = json.load(f)
@@ -373,7 +400,7 @@ def update_coeff(filename, coeff_1, coeff_2, coeff_3):
     with open(f'{data_directory}/{filename}.json') as f:
         data = json.load(f)
 
-    coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+    coefficients    = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
     coefficients[0] = coeff_3
     coefficients[1] = coeff_2
     coefficients[2] = coeff_1
