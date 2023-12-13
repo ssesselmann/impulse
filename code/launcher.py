@@ -2,6 +2,7 @@ import dash
 import time
 import os
 import shutil
+import logging
 import functions as fn
 import sqlite3 as sql
 from dash import dcc
@@ -14,6 +15,9 @@ from tab3 import show_tab3
 from tab4 import show_tab4
 from tab5 import show_tab5
 from server import app
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 database = fn.get_path(f'{data_directory}/.data.db')
@@ -65,7 +69,8 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         sigma           REAL    DEFAULT 0,
         max_seconds     INTEGER DEFAULT 3600,
         t_interval      INTEGER DEFAULT 1,
-        peakshift       INTEGER DEFAULT 0              
+        peakshift       INTEGER DEFAULT 0,
+        compression     INTEGER DEFAULT 8               
         );"""
 
 # This query inserts the first record in settings with defaults
