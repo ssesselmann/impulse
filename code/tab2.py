@@ -329,7 +329,7 @@ def update_output(n_clicks, filename, compression):
 
         logger.debug('Audio Codec Recording Started')
 
-        return f"Error: {str(e)}"
+        return 
 #----STOP------------------------------------------------------------
 
 @app.callback( Output('stop_text'  ,'children'),
@@ -359,7 +359,7 @@ def update_output(n_clicks, filename):
 
         logger.debug('Audio Codec Recording Stopped')
 
-        return "loop stopped"
+        return 
 
 #-------UPDATE GRAPH---------------------------------------------------------
 
