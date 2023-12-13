@@ -3,7 +3,6 @@
 # the pulses are summed, averaged and normalised, 
 # finally saved as a csv file.
 # Ultimately this file should also be a JSON file as I have too many file types here. 
-
 import pyaudio
 import wave
 import math
@@ -13,8 +12,11 @@ import time
 import sqlite3 as sql
 import functions as fn
 import pandas as pd
+import logging
 from collections import defaultdict
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 # Starts timer
 t0 					= time.perf_counter() 
@@ -56,7 +58,6 @@ def shapecatcher():
 	shapecatches 	= settings[10]
 	sample_length	= settings[11]
 	peakshift       = settings[28]
-
 	peak 			= int((sample_length-1)/2) + peakshift
 
 	# Create an array of empty bins
@@ -78,13 +79,13 @@ def shapecatcher():
 		
 		# Open the selected audio input device
 		stream = p.open(
-			format  			= audio_format,
-			channels   			= device_channels,
-			rate   				= sample_rate,
-			input  				= True,
-			output   			= False,
-			input_device_index  = device,
-			frames_per_buffer   = chunk_size * 2)
+			format=audio_format,
+			channels=device_channels,
+			rate=sample_rate,
+			input=True,
+			output=False,
+			input_device_index=device,
+			frames_per_buffer=chunk_size * 2)
 
 		# Loops through and finds a number of pulses (shapecatches) as loaded from settings
 		while True:
@@ -137,6 +138,4 @@ def shapecatcher():
 		shape_int = [0] * sample_length
 
 		return shape_int, threshold_trace
-
-
 	    
