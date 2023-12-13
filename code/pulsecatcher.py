@@ -9,6 +9,7 @@ import time
 import functions as fn
 import sqlite3 as sql
 import datetime
+import logging
 from collections import defaultdict
 
 data 			= None
@@ -17,6 +18,9 @@ global_cps      = 0
 global_counts	= 0
 run_flag 		= True
 run_flag_lock 	= threading.Lock()
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 # Function reads audio stream and finds pulses then outputs time, pulse height and distortion
 def pulsecatcher(mode, run_flag, run_flag_lock):
