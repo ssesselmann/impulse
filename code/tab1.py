@@ -1,3 +1,4 @@
+# impulse
 import dash
 import plotly.graph_objects as go
 import functions as fn
@@ -5,13 +6,16 @@ import distortionchecker as dcr
 import sqlite3 as sql
 import shapecatcher as sc
 import os
+import logging
 import requests as req
-from dash import dash_table
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
 from server import app
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 
@@ -39,180 +43,179 @@ def show_tab1():
     shapecatches    = settings[10]
     sample_length   = settings[11]
     peakshift       = settings[28]
-
     response        = req.get('https://www.gammaspectacular.com/steven/impulse/news.html', verify=False)
     news            = response.text
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
     shape           = fn.load_shape()
 
-    dl = fn.get_device_list() # This should connect and get a new device list
+    try:
+        dl          = fn.get_device_list()          # audio device list
+        sdl         = fn.get_serial_device_list()   # serial device list
+        cl          = dl + sdl                      # combined device list
+    except:
+        pass
 
-    options = [{'label': name, 'value': index} for name, index in dl]
+    options         = [{'label': name, 'value': index} for name, index in cl]
+    options         = [{k: str(v) for k, v in option.items()} for option in options]
+        
+    if device >= 100:
+        serial      = 'block'
+        audio       = 'none'
+    else:
+        serial      = 'none'
+        audio       = 'block'
 
-    options = [{k: str(v) for k, v in option.items()} for option in options]
-
-    tab1    = html.Div(id='tab1', children=[ 
-
-    html.Div(id = 'firstrow'),
-
-    html.Div(id = 'news', children=[dcc.Markdown(news) ]),
-
-#  --------------- User defined settings ------------------------------
-
-    html.Div(id = 'heading', children=[html.H1('Pulse Shape Capture and Settings')]),
-
-    html.Div(id = 'tab1_settings2',children=[
-        html.Div(id = 'selected_device_text', children=''),
-        dcc.Dropdown(id = 'device_dropdown',
-            options   = options, 
-            value     = device,  # pre-selected option
-            clearable = False,
+    tab1            = html.Div(id='tab1', children=[
+        html.Div(id='firstrow'),
+        html.Div(id='news', children=[dcc.Markdown(news)]),
+        html.Div(id='heading', children=[html.H1('Device Selection and Settings')]),
+        html.Div(id='tab1_settings2', children=[
+            
+            html.Div(id='selected_device_text', children=''),
+            dcc.Dropdown(
+                id='device_dropdown',
+                options=options,
+                value=device,  # pre-selected option
+                clearable=False,
             ),
-        ]),
-
-    html.Div(id = 'tab1_settings2',children=[
-        html.Div( children = 'Sample rate'),
-        dcc.Dropdown(id = 'sample_rate',
-            options = [
-                {'label': '44.1 kHz'    , 'value': '44100'},
-                {'label': '48 kHz'      , 'value': '48000'},
-                {'label': '96 kHz'      , 'value': '96000'},
-                {'label': '192 kHz'     , 'value': '192000'},
-                {'label': '384 kHz'     , 'value': '384000'}
-            ], 
-            value     =sample_rate,  # pre-selected option
-            clearable =False,
-            ),
-        ]),
-
-    html.Div(id = 'tab1_settings2', children=[ 
-        html.Div( children = f'Sample size', style={'text-align':'left'}),
-        html.Div(dcc.Dropdown(id = 'sample_length', 
-            options = [
-                {'label':'11 dots', 'value': '11'},
-                {'label':'16 dots', 'value': '16'},
-                {'label':'21 dots', 'value': '21'},
-                {'label':'31 dots', 'value': '31'},
-                {'label':'41 dots', 'value': '41'},
-                {'label':'51 dots', 'value': '51'},
-                {'label':'61 dots', 'value': '61'}
-                ],
-            value = sample_length ,
-            clearable = False, 
-            )),
-            html.Div(id = 'sampling_time_output', children=''),
-        ]),
-
-    html.Div(id = 'tab1_settings2', children=[ 
-        html.Div( children = 'Pulses to sample'),
-        html.Div(dcc.Dropdown(id='catch', 
-            options=[
-                {'label': '10', 'value':  '10'},
-                {'label': '50', 'value':  '50'},
-                {'label':'100', 'value': '100'},
-                {'label':'500', 'value': '500'},
-                {'label':'1000', 'value': '1000'}
-                ],
-            value     = shapecatches ,
-            clearable = False, 
-            )),
-        html.Div( 
-            children = '', 
-            style    = {'color': 'red'}),
-        ]),
-
-    html.Div(id='tab1_settings2', children = [ 
-        html.Div( children='Buffer Size'),
-        html.Div(dcc.Dropdown(id='chunk_size', 
-            options=[
-                {'label': '516', 'value':  '516'},
-                {'label':'1024', 'value': '1024'},
-                {'label':'2048', 'value': '2048'},
-                {'label':'4096', 'value': '4096'}
-                ],
-            value     = chunk_size, 
-            clearable = False,
-            )),
-        html.Div(id = 'output_chunk_text', children=''),
-        ]),      
-   
-    html.Div(id = 'n_clicks_storage',),
-    html.Button('Save Settings', 
-        id = 'submit', 
-        n_clicks = 0, 
-        style = {'visibility':'hidden'}),
-            
-    html.Div(children=[ 
-        html.Div(id ='button', children=[ 
-        html.Div(id ='output_div'),
-                
-#-----------------------------------------------------------------------------------------------------------
-                        
-    html.Div(id='instruction_div', children=[ 
-        html.Div(id='instructions', children=[
-            html.H2('Easy step by step setup and run'),
-            html.P('1) Connect the spectrometer before running the program.'),
-            html.P('2) Select your input device'),
-            html.P('3) Select sample rate, sample size, pulses to sample and buffer size'),
-            html.P('4) Click Capture Pulse Shape to start pulse shape training'),
-            html.P('5) Click get Distortion Curve and wait for chart to update'),
-            html.P('6) Well done, go to tab2 and your first spectrum'),
-            html.P('7) Found a bug 🐞 or have a suggestion, email me below'),
-            html.P('Steven Sesselmann'),
-            html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
-            html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
-            html.Hr(),
-            html.Div(id='path_text', children=f'Note: {data_directory}'),
-            ]), 
-        ]),
-
-    html.Div(id='pulse_shape_div', children=[
-        html.Div(id='showplot', children=[
-            dcc.Graph(id='plot', figure={'data': [{}], 'layout': {}})]),
-
-            html.Div('Peak shifter', style= { 'margin-left':'20px'}),
-            html.Div(dcc.Slider(
-                id    ='peakshifter', 
-                min   = -20 ,
-                max   = 20, 
-                step  = 1, 
-                value = peakshift, 
-                marks = {-20:'-20', -15:'-15', -10:'-10', -5:'-5', 0:'0', 5:'5', 10:'10', 15:'15',20:'20'}
-                ),
-                style = {'width': '85%', 'margin-left': 'auto', 'margin-right': '0'}
-                ),
-
-            
-            html.Button('Capture Pulse Shape', 
-                id       = 'get_shape_btn', 
-                n_clicks = 0, 
-                style    = {'background-color': '#4CAF50', 'color': 'white', 'font-size': '12px'})
-
-        ]),
-
-    
-    html.Div(id = 'distortion_div', children=[
-            html.Div(id = 'showcurve', children=[
-            dcc.Graph(id = 'curve', figure={'data': [{}], 'layout': {}}),
-            html.Div('', style= { 'height':'50px'}),
-            
-            html.Button('Get Distortion Curve',  
-                id       = 'get_curve_btn', 
-                n_clicks = 0,
-                style    = {'background-color': '#4CAF50', 'color': 'white', 'font-size': '12px'}
-                ), 
             ]),
-        ]),
-            
-    ]),
+        html.Div(id='tab1_settings2', children=[
+            html.Div(children='Sample rate'),
+            dcc.Dropdown(id='sample_rate',
+                         options=[
+                             {'label': '44.1 kHz', 'value': '44100'},
+                             {'label': '48 kHz', 'value': '48000'},
+                             {'label': '96 kHz', 'value': '96000'},
+                             {'label': '192 kHz', 'value': '192000'},
+                             {'label': '384 kHz', 'value': '384000'},
+                             {'label': 'not used', 'value': 'not used'}
+                         ],
+                         value=sample_rate,  # pre-selected option
+                         clearable=False,
+                         style={'display':audio}
+                         ),
+        ],
+        style={'display':audio}
+        ),
 
-    html.Div(id='footer', children=[
-        html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif'),
-        html.Div(id="rate_output")]),
-    ]) # tab1 ends here
-    ]),
+        html.Div(id='tab1_settings2', children=[
+            html.Div(children='Sample size', style={'text-align': 'left'}),
+            html.Div(dcc.Dropdown(id='sample_length',
+                                  options=[
+                                      {'label': '11 dots', 'value': '11'},
+                                      {'label': '16 dots', 'value': '16'},
+                                      {'label': '21 dots', 'value': '21'},
+                                      {'label': '31 dots', 'value': '31'},
+                                      {'label': '41 dots', 'value': '41'},
+                                      {'label': '51 dots', 'value': '51'},
+                                      {'label': '61 dots', 'value': '61'}
+                                  ],
+                                  value=sample_length,
+                                  clearable=False,
+                                  style={'display':audio}
+                                  )),
+            html.Div(id='sampling_time_output', children=''),
+        ],style={'display':audio}),
 
+        html.Div(id='tab1_settings2', children=[
+            html.Div(children='Pulses to sample'),
+            html.Div(dcc.Dropdown(id='catch',
+                                  options=[
+                                      {'label': '10', 'value': '10'},
+                                      {'label': '50', 'value': '50'},
+                                      {'label': '100', 'value': '100'},
+                                      {'label': '500', 'value': '500'},
+                                      {'label': '1000', 'value': '1000'}
+                                  ],
+                                  value=shapecatches,
+                                  clearable=False,
+                                  style={'display':audio}
+                                  )),
+            html.Div(children='', style={'color': 'red'}),
+        ],style={'display':audio}),
+
+        html.Div(id='tab1_settings2', children=[
+            html.Div(children='Buffer Size'),
+            html.Div(dcc.Dropdown(id='chunk_size',
+                                  options=[
+                                      {'label': '516', 'value': '516'},
+                                      {'label': '1024', 'value': '1024'},
+                                      {'label': '2048', 'value': '2048'},
+                                      {'label': '4096', 'value': '4096'}
+                                  ],
+                                  value=chunk_size,
+                                  clearable=False,
+                                  style={'display':audio}
+                                  )),
+            html.Div(id='output_chunk_text', children=''),
+        ], style={'display':audio}),
+
+        html.Div(id='n_clicks_storage', ),
+        html.Button('Save Settings', id='submit', n_clicks=0, style={'display':'none'}),
+        html.Div(children=[
+            html.Div(id='button', children=[
+                html.Div(id='output_div'),
+
+                # -------------------------------------------
+
+                html.Div(id='canvas', children=[
+
+                    html.Div(id='instruction_div', children=[
+                        html.Div(id='instructions', children=[
+                            html.H2('Easy step by step setup and run'),
+                            html.P('You have selected a GS-MAX serial device'),
+                            html.P('Proceed to tab2, nothing to see here.'),
+                            html.P(' '),
+                            html.P(' '),
+                            html.P(' '),
+                            html.P(' '),
+                            html.P('Found a bug 🐞 or have a suggestion, email me below'),
+                            html.P('Steven Sesselmann'),
+                            html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
+                            html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
+                            html.Hr(),
+                            html.Div(id='path_text', children=f'Note: {data_directory}'),
+                        ]),
+                    ]),
+
+                    html.Div(id='pulse_shape_div', children=[
+                        html.Div(id='showplot', children=[
+                            dcc.Graph(id='plot', figure={'data': [{}], 'layout': {}})]),
+
+                            html.Div('Peak shifter', style= { 'margin-left':'20px'}),
+                            html.Div(dcc.Slider(
+                                id    ='peakshifter', 
+                                min   = -20 ,
+                                max   = 20, 
+                                step  = 1, 
+                                value = peakshift, 
+                                marks = {-20:'-20', -15:'-15', -10:'-10', -5:'-5', 0:'0', 5:'5', 10:'10', 15:'15',20:'20'}
+                                ),
+                                style = {'width': '85%', 'margin-left': 'auto', 'margin-right': '0'}
+                                ),
+
+                        html.Button('Capture Pulse Shape', id='get_shape_btn', n_clicks=0, style={'background-color':'purple','border-radius':'6px','color':'white','font-weight':'bold','margin-top':'10px'}),
+                    ], style={  'display':audio }),
+
+                    html.Div(id='distortion_div', children=[
+                        html.Div(id='showcurve', children=[
+                            dcc.Graph(id='curve', figure={'data': [{}], 'layout': {}}),
+                            html.Div('', style= { 'height':'50px'}),
+                            html.Button('Get Distortion Curve', id='get_curve_btn', n_clicks=0, style={'background-color':'purple','border-radius':'6px','color':'white','font-weight':'bold','margin-top':'10px'}),
+                        ]),
+                    ], style={'display':audio}),
+
+                ],style={'background-color':'white', 'width':'100%', 'height': '500px', 'float':'left'}),
+
+
+            ]),
+            html.Div(id='footer', children=[
+                html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif'),
+                html.Div(id="rate_output")]),
+        ]),  # tab1 ends here
+    ]),
+    
     return tab1
 
 # Callback to save settings ---------------------------
@@ -230,7 +233,7 @@ def show_tab1():
     ])
 
 def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
-    
+
     if n_clicks == 0:
         device      = value1
         sample_rate = value2
@@ -242,7 +245,14 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
         database    = fn.get_path(f'{data_directory}/.data.db')
         conn        = sql.connect(database)
         c           = conn.cursor()
-        query       = f"UPDATE settings SET device={device}, sample_rate={sample_rate}, chunk_size={chunk_size}, shapecatches={catch}, sample_length={length}, peakshift={peakshift} WHERE id=0;"
+        query       = f'''
+                    UPDATE settings SET device={device}, 
+                    sample_rate={sample_rate},
+                    chunk_size={chunk_size}, 
+                    shapecatches={catch}, 
+                    sample_length={length}, 
+                    peakshift={peakshift} 
+                    WHERE id=0;'''
         
         c.execute(query)
         conn.commit()
@@ -253,6 +263,8 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
 
         if pulse_length >= 334:
             warning = 'WARNING LONG'
+
+        logger.debug(f'Settings Saved tab1 ({query})')
 
         return f'Device ({device}) selected', f'{warning} Dead time ~ {pulse_length} µs'
 
