@@ -12,6 +12,10 @@ from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
 from server import app
 from flask import request
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
@@ -39,11 +43,12 @@ def show_tab5():
             html.Button(id='exit-button', children=''),
             html.Div(dcc.Dropdown(id="theme",
                     options=[
-                        {"label": "Boring theme (lightgray)"    , "value": "lightgray"},
-                        {"label": "Hippie theme (orange)"      , "value": "orange"},
-                        {"label": "OMG theme (pink)"      , "value": "pink"},
-                        {"label": "Sunburst(image)"      , "value": "sunburst"},
-                        {"label": "Developer"      , "value": "developer"}
+                        {"label": "Boring theme (lightgray)", "value": "lightgray"},
+                        {"label": "Hippie theme (orange)"   , "value": "orange"},
+                        {"label": "OMG theme (pink)"        , "value": "pink"},
+                        {"label": "Sunburst(image)"         , "value": "sunburst"},
+                        {"label": "Potassium"               , "value": "potassium"},
+                        {"label": "Developer"               , "value": "developer"}
 
                     ], 
                     value=theme,  # pre-selected option
@@ -73,6 +78,10 @@ def show_tab5():
                 html.P('Computer sound cards operate on an AC voltage of around +- 1V and are not compatible with old school NIM equipment unless the signal is attenuated down to the correct range.'),
                 
                 html.H2('Tab1 - Settings and Control'),
+
+                html.H4('Devise Specific Rendering of tab1'),
+                html.P('When selecting a GS-MAX serial device and refreshing the page, fields specific to audio input devices will be hidden from view.'),
+
                 
                 html.H4('Enter Device Index'),
                 html.P('Your computer may have several audio devices connected, so we need to instruct the program which audio input device to use, so click on the button called [Get Device Table] and identify your input device, then set your input devise to the index number in the first column.'),
