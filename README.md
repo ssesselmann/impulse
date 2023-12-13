@@ -125,6 +125,7 @@ Change log
 54) Minor changes to layout + remove one dependancy
 55) Fixed Start and Stop buttons using threading to interrupt loop
 56) Major update for use with GS-MAX 
+57) Bug fix - Start button fixed
 
 
 Things to do
