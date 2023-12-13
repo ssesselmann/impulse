@@ -5,6 +5,7 @@ import functions as fn
 import os
 import json
 import glob
+import logging
 import numpy as np
 import sqlite3 as sql
 import dash_daq as daq
@@ -15,6 +16,9 @@ from dash.dependencies import Input, Output
 from server import app
 from dash.exceptions import PreventUpdate
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 path = None
 n_clicks = None
