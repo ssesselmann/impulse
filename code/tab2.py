@@ -636,8 +636,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 Input('compression'     ,'value')  # [17]
                 ])  
 
-# def save_settings(bins, bin_size, max_counts, max_seconds, filename, filename2, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3, peakfinder, sigma, t_interval, compression):
-
 def save_settings(*args):
 
 
@@ -761,24 +759,3 @@ def update_output(selected_cmd):
         logging.exception(f"Error in update_output: {e}")
 
         return "An error occurred."
-
-# -----Update Compression -------------------------------        
-
-# @app.callback(
-#     Output('compressor-output'  , 'children'),
-#     [Input('compressor'         , 'value')]
-# )
-# def update_settings_compression(compression):
-
-#     database    = fn.get_path(f'{data_directory}/.data.db')
-#     conn        = sql.connect(database)
-#     c           = conn.cursor()
-#     query       = f'UPDATE settings SET compression={compression} WHERE id=0;'
-
-#     c.execute(query)
-#     conn.commit()
-
-
-#     return f'New compression: {compression}'
-
-
