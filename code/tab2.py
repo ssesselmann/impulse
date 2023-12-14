@@ -343,10 +343,8 @@ def update_output(n_clicks, filename):
     sdl = fn.get_serial_device_list()
 
     if sdl:
-        # Stop Spectrum
-        
+        # Stop Spectrum 
         spec = threading.Thread(target=shproto.dispatcher.stop)
-
         spec.start()
 
         time.sleep(0.1)
