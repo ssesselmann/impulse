@@ -294,7 +294,7 @@ def update_output(n_clicks, filename, compression):
         try:
             logger.debug('Serial ports discovered')
 
-            shproto.dispatcher.spec_stopflag == 0
+            shproto.dispatcher.spec_stopflag = 0
 
             dispatcher = threading.Thread(target=shproto.dispatcher.start)
             dispatcher.start()
