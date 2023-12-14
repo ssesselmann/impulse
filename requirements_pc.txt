@@ -3,13 +3,15 @@ dash_daq
 datetime
 flask
 jason
+logging
 numpy
 pandas
 pathlib
 plotly
+pyserial
 wave
 pyaudio
-scipy
 requests
+scipy
 threading
-logging
+
