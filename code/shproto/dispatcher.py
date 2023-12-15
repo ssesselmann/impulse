@@ -189,6 +189,125 @@ def process_01(filename, compression): # Compression reduces number of channels 
 
         last_counts = counts
 
+    return    
+
+def process_02(filename, compression):
+    logger.debug(f'dispatcher.process_01({filename})')
+
+    print('process_02()')
+
+    global counts
+    global last_counts
+    global total_counts  # New variable to store total counts
+
+    counts = 0
+    last_counts = 0
+    total_counts = 0  # Initialize total counts
+    compression = int(compression)
+    t0 = time.time()
+    original_bins = 8192
+    compressed_bins = int(original_bins / compression)
+
+    filename = filename + '_3d'
+    file_path = os.path.expanduser('~/impulse_data/' + filename + '.json')
+
+    settings = fn.load_settings()
+    coeff_1 = settings[18]
+    coeff_2 = settings[19]
+    coeff_3 = settings[20]
+
+    # Initialize last_compressed_hst
+    last_compressed_hst = [0] * compressed_bins
+
+    # Write the initial JSON schema to the file without the spectrum field
+    initial_data = {
+        "schemaVersion": "NPESv1",
+        "resultData": {
+            "startTime": int(t0 * 1e6),  # Convert seconds to microseconds
+            "energySpectrum": {
+                "numberOfChannels": compressed_bins,
+                "energyCalibration": {
+                    "polynomialOrder": 2,
+                    "coefficients": [float(coeff_3), float(coeff_2), float(coeff_1)]
+                },
+                "validPulseCount": counts,
+                "totalPulseCount": total_counts,  # New field for total counts
+                "measurementTime": 0,
+            }
+        }
+    }
+
+    with open(file_path, "w") as wjf:
+        json.dump(initial_data, wjf, separators=(",", ":"))
+
+    while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag):
+        time.sleep(1)
+
+        # Get the current time in microseconds
+        t1 = int(time.time() * 1e6)
+
+        # Fetch histogram and counts from device
+        hst = shproto.dispatcher.histogram
+        counts = sum(hst)
+
+        # Clear counts in the last bin
+        hst[-1] = 0
+
+        # Combine every 'compression' elements into one for compression
+        compressed_hst = [sum(hst[i:i + compression]) for i in range(0, original_bins, compression)]
+
+        # Calculate net counts in each bin
+        net_compressed_hst = [current - last for current, last in zip(compressed_hst, last_compressed_hst)]
+
+        # Update total counts
+        total_counts += counts
+
+        last_counts = counts
+        last_compressed_hst = compressed_hst
+
+        # Load existing data from the JSON file
+        existing_data = load_existing_data(file_path)
+
+        # Check if the spectrum field exists, and if not, add it
+        if "spectrum" not in existing_data["resultData"]["energySpectrum"]:
+            existing_data["resultData"]["energySpectrum"]["spectrum"] = []
+
+        # Append the new histogram to the existing spectrum
+        existing_data["resultData"]["energySpectrum"]["spectrum"].append(net_compressed_hst)
+
+        # Update the endTime, validPulseCount, totalPulseCount, and measurementTime
+        existing_data["resultData"]["endTime"] = t1
+        existing_data["resultData"]["energySpectrum"]["validPulseCount"] = counts
+        existing_data["resultData"]["energySpectrum"]["totalPulseCount"] = total_counts
+        existing_data["resultData"]["energySpectrum"]["measurementTime"] = int((t1 - initial_data["resultData"]["startTime"]) / 1e6)
+
+        # Write the updated data back to the file
+        with open(file_path, "w") as wjf:
+            json.dump(existing_data, wjf, separators=(",", ":"))
+
+    return
+
+
+def load_existing_data(file_path):
+    existing_data = {}
+
+    # Load existing data if the file exists
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            try:
+                existing_data = json.load(file)
+            except json.JSONDecodeError:
+                pass
+
+    return existing_data
+
+def process_03(_command):
+    with shproto.dispatcher.command_lock:
+        shproto.dispatcher.command = _command
+        logger.debug(f'Command received (dispatcher):{_command}')
+        print('process03:', _command)    
+
+
 def stop():
     with shproto.dispatcher.stopflag_lock:
         shproto.dispatcher.stopflag = 1
@@ -198,11 +317,7 @@ def spec_stop():
     with shproto.dispatcher.spec_stopflag_lock:
         shproto.dispatcher.spec_stopflag = 1
         logger.debug('Stop flag set(dispatcher)')
-
-def process_03(_command):
-    with shproto.dispatcher.command_lock:
-        shproto.dispatcher.command = _command
-        logger.debug(f'Command received (dispatcher):{_command}')
+        print('Stop function')
 
 def clear():
     with shproto.dispatcher.histogram_lock:
