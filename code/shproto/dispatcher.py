@@ -9,12 +9,13 @@ import os
 import platform
 import functions as fn
 
+max_bins            = 8192
 logger              = logging.getLogger(__name__)
 stopflag            = 0
 stopflag_lock       = threading.Lock()
 spec_stopflag       = 0
 spec_stopflag_lock  = threading.Lock()
-histogram           = [0] * 8192
+histogram           = [0] * max_bins
 histogram_lock      = threading.Lock()
 command             = ""
 command_lock        = threading.Lock()
@@ -32,6 +33,7 @@ data_directory      = None
 cps_list            = []
 
 
+# This function communicates with the device
 def start(sn=None):
     READ_BUFFER = 1
     shproto.dispatcher.clear()
@@ -110,8 +112,9 @@ def start(sn=None):
                 response.clear()
     nano.close()
 
+# This function writes the 2D spectrum to a JSON file
 
-def process_01(filename, compression): # Compression reduces number of channels bt 8, 4 or 2
+def process_01(filename, compression):  # Compression reduces the number of channels by 8, 4, or 2
     logger.debug(f'dispatcher.process_01({filename})')
 
     global counts
@@ -122,17 +125,15 @@ def process_01(filename, compression): # Compression reduces number of channels 
     compression     = int(compression)
     t0              = time.time()
     dt              = 0
-    original_bins   = 8192
-    compressed_bins = int(original_bins/compression)
+    compressed_bins = int(max_bins / compression)
 
-    settings        = []
     settings        = fn.load_settings()
     coeff_1         = settings[18]
     coeff_2         = settings[19]
     coeff_3         = settings[20]
 
-    # Define histogram list
-    hst = [0] * original_bins  # Initialize the original histogram list
+    # Define the histogram list
+    hst             = [0] * max_bins  # Initialize the original histogram list
 
     while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag):
 
@@ -141,22 +142,22 @@ def process_01(filename, compression): # Compression reduces number of channels 
         # Get the current time
         t1 = time.time()
 
-        # Calculate time difference
+        # Calculate the time difference
         dt = int(t1 - t0)
 
-        # Fetch histogram from device
+        # Fetch the histogram from the device
         hst = shproto.dispatcher.histogram
 
         # Clear counts in the last bin
         hst[-1] = 0
 
         # Combine every 8 elements into one for compression
-        compressed_hst = [sum(hst[i:i + compression]) for i in range(0, original_bins, compression)]
+        compressed_hst = [sum(hst[i:i + compression]) for i in range(0, max_bins, compression)]
 
         # Sum total counts
         counts = sum(compressed_hst)
 
-        cps    = (counts - last_counts) # Strictly not cps but counts per loop in this while loop !! (need to fix)
+        cps = (counts - last_counts)  # Strictly not cps but counts per loop in this while loop!! (need to fix)
 
         # The rest of your JSON data and file writing logic remains the same
         data = {
@@ -191,30 +192,31 @@ def process_01(filename, compression): # Compression reduces number of channels 
 
     return    
 
-def process_02(filename, compression):
+# This function writes the 3D spectrum to a JSON file
+
+def process_02(filename, compression, t_interval):
     logger.debug(f'dispatcher.process_01({filename})')
 
-    print('process_02()')
+    print(f'process_02(): {filename}, {compression}, {t_interval}')
 
     global counts
     global last_counts
     global total_counts  # New variable to store total counts
 
-    counts = 0
-    last_counts = 0
-    total_counts = 0  # Initialize total counts
-    compression = int(compression)
-    t0 = time.time()
-    original_bins = 8192
-    compressed_bins = int(original_bins / compression)
+    counts          = 0
+    last_counts     = 0
+    total_counts    = 0  # Initialize total counts
+    compression     = int(compression)
+    t0              = time.time()
+    compressed_bins = int(max_bins / compression)
 
-    filename = filename + '_3d'
-    file_path = os.path.expanduser('~/impulse_data/' + filename + '.json')
+    filename        = filename + '_3d'
+    file_path       = os.path.expanduser('~/impulse_data/' + filename + '.json')
 
-    settings = fn.load_settings()
-    coeff_1 = settings[18]
-    coeff_2 = settings[19]
-    coeff_3 = settings[20]
+    settings        = fn.load_settings()
+    coeff_1         = settings[18]
+    coeff_2         = settings[19]
+    coeff_3         = settings[20]
 
     # Initialize last_compressed_hst
     last_compressed_hst = [0] * compressed_bins
@@ -233,6 +235,7 @@ def process_02(filename, compression):
                 "validPulseCount": counts,
                 "totalPulseCount": total_counts,  # New field for total counts
                 "measurementTime": 0,
+                "spectrum": []
             }
         }
     }
@@ -241,12 +244,12 @@ def process_02(filename, compression):
         json.dump(initial_data, wjf, separators=(",", ":"))
 
     while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag):
-        time.sleep(1)
+        time.sleep(t_interval)
 
         # Get the current time in microseconds
         t1 = int(time.time() * 1e6)
 
-        # Fetch histogram and counts from device
+        # Fetch the histogram and counts from the device
         hst = shproto.dispatcher.histogram
         counts = sum(hst)
 
@@ -254,7 +257,7 @@ def process_02(filename, compression):
         hst[-1] = 0
 
         # Combine every 'compression' elements into one for compression
-        compressed_hst = [sum(hst[i:i + compression]) for i in range(0, original_bins, compression)]
+        compressed_hst = [sum(hst[i:i + compression]) for i in range(0, max_bins, compression)]
 
         # Calculate net counts in each bin
         net_compressed_hst = [current - last for current, last in zip(compressed_hst, last_compressed_hst)]
@@ -321,7 +324,7 @@ def spec_stop():
 
 def clear():
     with shproto.dispatcher.histogram_lock:
-        shproto.dispatcher.histogram        = [0] * 8192
+        shproto.dispatcher.histogram        = [0] * max_bins
         shproto.dispatcher.pkts01           = 0
         shproto.dispatcher.pkts03           = 0
         shproto.dispatcher.pkts04           = 0
@@ -331,4 +334,3 @@ def clear():
         shproto.dispatcher.total_time       = 0
         shproto.dispatcher.lost_impulses    = 0
         shproto.dispatcher.dropped          = 0
-
