@@ -236,7 +236,7 @@ def update_output(n_clicks, filename, compression, t_interval):
             return f"Error: {str(e)}"
     else:
         
-        fn.start_recording(2)
+        fn.start_recording(3)
 
         logger.debug('Audio Codec Recording Started')
 
