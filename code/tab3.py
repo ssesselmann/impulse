@@ -5,14 +5,23 @@ import functions as fn
 import os
 import json
 import glob
-import logging
+import time
 import numpy as np
 import sqlite3 as sql
 import dash_daq as daq
 import audio_spectrum as asp
+
+import subprocess
+import serial.tools.list_ports
+import threading
+import logging
+
+import shproto.dispatcher
+import shproto.port as port
+
 from dash import dcc
 from dash import html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from server import app
 from dash.exceptions import PreventUpdate
 from datetime import datetime
@@ -75,6 +84,14 @@ def show_tab3():
     coeff_3         = settings[20]
     max_seconds     = settings[26]
     t_interval      = settings[27]
+    compression     = settings[29]
+
+    if device >= 100:
+        serial          = 'block'
+        audio           = 'none'
+    else:
+        serial          = 'none'
+        audio           = 'block'
 
     refresh_rate = t_interval * 1000
 
@@ -103,15 +120,37 @@ def show_tab3():
 
         html.Div(id='t2_setting_div3', children=[
             html.Div(['File name:', dcc.Input(id='filename' ,type='text' ,value=filename )]),
-            html.Div(['Number of bins:', dcc.Input(id='bins'        ,type='number'  ,value=bins )]),
-            html.Div(['Bin size      :', dcc.Input(id='bin_size'    ,type='number'  ,value=bin_size )]),
+            html.Div(['Number of bins:', dcc.Input(id='bins'        ,type='number'  ,value=bins )],
+                style={'display': audio}
+                ),
+            html.Div(['Bin size      :', dcc.Input(id='bin_size'    ,type='number'  ,value=bin_size )],
+                style={'display': audio}
+                ),
+            html.Div(['Resolution:', dcc.Dropdown(id='compression',
+                    options=[
+                        {'label': '512 Bins ', 'value': '16'},
+                        {'label': '1024 Bins', 'value': '8'},
+                        {'label': '2048 Bins', 'value': '4'},
+                        {'label': '4096 Bins', 'value': '2'},
+                        {'label': '8192 Bins', 'value': '1'},
+                    ],
+                    value=compression,
+                    className='dropdown')
+                    ],
+                     style={'display': serial}
+                     ),
             ]), 
 
         html.Div(id='t2_setting_div4', children=[
             
-            html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', step=10, value=threshold )]),
-            html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', step=1000,  value=tolerance )]),
-            html.Div(['Update Interval(s)', dcc.Input(id='t_interval', type='number', step=1,  readOnly=False, value=t_interval )]),
+            html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', step=10, value=threshold )],
+                style={'display': audio}
+                ),
+            html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', step=1000,  value=tolerance )],
+                style={'display': audio}
+                ),
+            html.Div(['Time Interval Sec.', dcc.Input(id='t_interval', type='number', step=1,  readOnly=False, value=t_interval )],
+                ),
             ]),
 
         html.Div(id='t2_setting_div5', children=[
@@ -148,16 +187,60 @@ def show_tab3():
 
 #----START---------------------------------
 
-@app.callback( Output('start_text_3d'  ,'children'),
-                [Input('start_3d'  ,'n_clicks')])
+@app.callback(Output('start_text_3d'   , 'children'),
+              [Input('start_3d'        , 'n_clicks')], 
+              [State('filename'      , 'value'),
+              State('compression'     , 'value'),
+              State('t_interval'   , 'value')])
 
-def update_output(n_clicks):
+def update_output(n_clicks, filename, compression, t_interval):
 
-    if n_clicks is None:
+    if n_clicks == None:
         raise PreventUpdate
+
+    logger.debug(f'Start on tab2 clicked: {n_clicks}, {filename}, {compression}, {t_interval}')
+    print(f'Start on tab2 clicked: {n_clicks}, {filename}, {compression}, {t_interval}')
+
+    sdl = fn.get_serial_device_list()
+
+    if sdl:
+        try:
+            logger.debug('Serial ports discovered')
+
+            shproto.dispatcher.spec_stopflag = 0
+            dispatcher = threading.Thread(target=shproto.dispatcher.start)
+            dispatcher.start()
+
+            time.sleep(1)
+
+            # Reset spectrum
+            command = '-rst'
+            shproto.dispatcher.process_03(command)
+            logger.debug(f'tab2 sends command {command}')
+
+            time.sleep(1)
+
+            # Start multichannel analyser
+            command = '-sta'
+            shproto.dispatcher.process_03(command)
+            logger.debug(f'tab2 sends command {command}')
+
+            time.sleep(1)
+
+            shproto.dispatcher.process_02(filename, compression, t_interval)
+            logger.debug(f'dispatcher.process_01 Started')
+
+            time.sleep(1)
+
+        except Exception as e:
+            return f"Error: {str(e)}"
     else:
-        fn.start_recording(3)
-        return ''
+        
+        fn.start_recording(2)
+
+        logger.debug('Audio Codec Recording Started')
+
+        return 
 #----STOP------------------------------------------------------------
 
 @app.callback( Output('stop_text_3d'  ,'children'),
@@ -167,6 +250,18 @@ def update_output(n_clicks):
 
     if n_clicks is None:
         raise PreventUpdate
+
+    sdl = fn.get_serial_device_list()
+
+    if sdl:
+        # Stop Spectrum 
+        spec = threading.Thread(target=shproto.dispatcher.stop)
+        spec.start()
+
+        time.sleep(0.1)
+
+        logger.debug('Stop command sent from (tab2)')
+
     else:
         fn.stop_recording()
         return " "
@@ -178,7 +273,7 @@ def update_output(n_clicks):
                 Output('elapsed_3d'         ,'children'),
                 Output('cps_3d'             ,'children')],
                [Input('interval-component'  ,'n_intervals'), 
-                Input('filename'            ,'value'), 
+                Input('filename'         ,'value'), 
                 Input('epb_switch'          ,'on'),
                 Input('log_switch'          ,'on'),
                 Input('cal_switch'          ,'on'),
