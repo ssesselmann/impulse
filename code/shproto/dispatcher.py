@@ -74,7 +74,7 @@ def start(sn=None):
                     resp_decoded = resp_decoded.decode("ascii")
                 except UnicodeDecodeError:
                     print("Unknown non-text response.")
-                print("<< {}".format(resp_decoded))
+                #print("<< {}".format(resp_decoded))
                 response.clear()
             elif response.cmd == shproto.MODE_HISTOGRAM:
                 shproto.dispatcher.pkts01 += 1
@@ -197,7 +197,7 @@ def process_01(filename, compression):  # Compression reduces the number of chan
 def process_02(filename, compression, t_interval):
     logger.debug(f'dispatcher.process_01({filename})')
 
-    print(f'process_02(): {filename}, {compression}, {t_interval}')
+    # print(f'process_02(): {filename}, {compression}, {t_interval}')
 
     global counts
     global last_counts
@@ -308,7 +308,7 @@ def process_03(_command):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = _command
         logger.debug(f'Command received (dispatcher):{_command}')
-        print('process03:', _command)    
+        #print('process03:', _command)    
 
 
 def stop():
@@ -320,7 +320,7 @@ def spec_stop():
     with shproto.dispatcher.spec_stopflag_lock:
         shproto.dispatcher.spec_stopflag = 1
         logger.debug('Stop flag set(dispatcher)')
-        print('Stop function')
+        #print('Stop function')
 
 def clear():
     with shproto.dispatcher.histogram_lock:
