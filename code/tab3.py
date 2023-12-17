@@ -199,7 +199,6 @@ def update_output(n_clicks, filename, compression, t_interval):
         raise PreventUpdate
 
     logger.debug(f'Start on tab2 clicked: {n_clicks}, {filename}, {compression}, {t_interval}')
-    print(f'Start on tab2 clicked: {n_clicks}, {filename}, {compression}, {t_interval}')
 
     sdl = fn.get_serial_device_list()
 
