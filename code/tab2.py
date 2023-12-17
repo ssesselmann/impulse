@@ -10,17 +10,13 @@ import numpy as np
 import sqlite3 as sql
 import dash_daq as daq
 import audio_spectrum as asp
-import threading
 
 import subprocess
 import serial.tools.list_ports
 import threading
 import logging
 
-import shproto.alert
 import shproto.dispatcher
-import shproto.port as port
-import shproto.thread_module as tm
 
 from dash import dcc, html, Input, Output, callback, Dash
 from dash.dependencies import Input, Output, State
@@ -145,6 +141,7 @@ def show_tab2():
             html.Div(id='compression_div', children=[
                 html.Div(['Resolution:', dcc.Dropdown(id='compression',
                     options=[
+                        {'label': '512 Bins', 'value': '16'},
                         {'label': '1024 Bins', 'value': '8'},
                         {'label': '2048 Bins', 'value': '4'},
                         {'label': '4096 Bins', 'value': '2'},
@@ -295,7 +292,6 @@ def update_output(n_clicks, filename, compression):
             logger.debug('Serial ports discovered')
 
             shproto.dispatcher.spec_stopflag = 0
-
             dispatcher = threading.Thread(target=shproto.dispatcher.start)
             dispatcher.start()
 
@@ -317,7 +313,6 @@ def update_output(n_clicks, filename, compression):
 
             shproto.dispatcher.process_01(filename, compression)
             logger.debug(f'dispatcher.process_01 Started')
-
 
             time.sleep(1)
 
