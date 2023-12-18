@@ -164,12 +164,16 @@ def show_tab1():
                     html.Div(id='instruction_div', children=[
                         html.Div(id='instructions', children=[
                             html.H2('Easy step by step setup and run'),
-                            html.P('You have selected a GS-MAX serial device'),
-                            html.P('Proceed to tab2, nothing to see here.'),
-                            html.P(' '),
-                            html.P(' '),
-                            html.P(' '),
-                            html.P(' '),
+                            html.P('You have selected a GS-MAX serial device',          style={'display': serial}), 
+                            html.P('Nothing to do here ... Go to tab 2 -->'  ,          style={'display': serial}),
+
+                            html.P('You have selected an GS-PRO Audio device',          style={'display': audio}),
+                            html.P('1) Select preferred sample rate, higher is better', style={'display': audio}),
+                            html.P('2) Select sample length - dead time < 200 µs',      style={'display': audio}),
+                            html.P('3) Sample up to 1000 pulses for a good mean',       style={'display': audio}),
+                            html.P('4) Capture pulse shape (about 3000 for Cs-137)',    style={'display': audio}),
+                            html.P('5) Optionally check distortion curve, this will help you set correct tolerance on tab2',    style={'display': audio}),
+                            html.P('6) Once pulse shape shows on plot go to tab2',      style={'display': audio}),
                             html.P('Found a bug 🐞 or have a suggestion, email me below'),
                             html.P('Steven Sesselmann'),
                             html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
