@@ -80,7 +80,7 @@ def show_tab5():
                 html.H2('Tab1 - Settings and Control'),
 
                 html.H4('Devise Specific Rendering of tab1'),
-                html.P('When selecting a GS-MAX serial device and refreshing the page, fields specific to audio input devices will be hidden from view.'),
+                html.P('After selecting a GS-MAX or ATOM-NANO serial device and refreshing the page, fields specific to audio input devices will be hidden from view.'),
 
                 
                 html.H4('Enter Device Index'),
