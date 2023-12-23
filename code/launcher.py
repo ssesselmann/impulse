@@ -1,3 +1,4 @@
+# launcher.py
 import dash
 import time
 import os
@@ -5,16 +6,9 @@ import shutil
 import logging
 import functions as fn
 import sqlite3 as sql
-from dash import dcc
-from dash import html
 from server import app
-from dash.dependencies import Input, Output
-from tab1 import show_tab1
-from tab2 import show_tab2
-from tab3 import show_tab3
-from tab4 import show_tab4
-from tab5 import show_tab5
-from server import app
+
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -76,9 +70,37 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
 # This query inserts the first record in settings with defaults
 query2  =  f'INSERT INTO settings (id, name) SELECT 0, "myspectrum" WHERE NOT EXISTS (SELECT 1 FROM settings WHERE id = 0);'
 
+
+query3 = """CREATE TABLE IF NOT EXISTS user (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    first_name      TEXT    DEFAULT 'first_name',
+    first_name_f    BOOLEAN DEFAULT 1,
+    last_name       TEXT    DEFAULT 'last_name',
+    last_name_f     BOOLEAN DEFAULT 1,
+    institution     TEXT    DEFAULT 'institution',
+    institution_f   BOOLEAN DEFAULT 1,
+    city            TEXT    DEFAULT 'city',
+    city_f          BOOLEAN DEFAULT 1,
+    country         TEXT    DEFAULT 'country',
+    country_f       BOOLEAN DEFAULT 1,    
+    email           TEXT    DEFAULT 'user@domain.com',
+    email_f         BOOLEAN DEFAULT 0,
+    phone           TEXT    DEFAULT 'prefix + phone',
+    phone_f         BOOLEAN DEFAULT 0,
+    website         TEXT    DEFAULT 'www.yourdomain.com',
+    website_f       BOOLEAN DEFAULT 1,
+    social_url      TEXT    DEFAULT 'www.facebook.com',
+    social_url_f    BOOLEAN DEFAULT 1,
+    notes           TEXT    DEFAULT 'notes about my research',
+    notes_f         BOOLEAN DEFAULT 1,
+    api_key         TEXT    DEFAULT 'xyz'
+    );"""
+
+query4  =  f'INSERT INTO user (id, first_name) SELECT 0, "first_name" WHERE NOT EXISTS (SELECT 1 FROM user WHERE id = 0);'
+
 # This excecutes the sqli query
 with conn:
-    c.execute(query).execute(query2)
+    c.execute(query).execute(query2).execute(query3).execute(query4)
     conn.commit()
 
 # This script places the isotope sample spectra into the data directory when the program is run the first time
@@ -91,57 +113,5 @@ if not os.path.exists(data_directory_path):
         shutil.copytree(isotope_folder_path, data_directory_path)
 
 
-#---Defines the browser tabs------------------------------------------------------------
 
-app.layout = html.Div([
-    
-    dcc.Tabs(
-        id='tabs', 
-        value='tab1', 
-        children=[
-            dcc.Tab(
-                label= 'Settings & Control', 
-                value= 'tab1'),
-            dcc.Tab(
-                label='2D Pulse Height Histogram', 
-                value='tab2'), 
-            dcc.Tab(
-                label='3D Pulse Height Histogram', 
-                value='tab3'),      
-            dcc.Tab(
-                label='Count Rate Histogram', 
-                value='tab4'),
-            dcc.Tab(
-                label='Export, Exit and Manual', 
-                value='tab5'),
-        ]),
-    html.Div(id = 'tabs-content'),# Empty Div, where the out of render_tabs is sent to. (The page content)
-    ],className='app-styles')
 
-#---Tab values call function and provide page contents
-
-@app.callback(
-    Output('tabs-content','children'),
-    Input('tabs','value'))
-
-def render_content(tab):
-    if tab == 'tab1':
-        html_tab1 = show_tab1()
-        return html_tab1  
-        
-    elif tab == 'tab2':
-        html_tab2 = show_tab2()
-        return html_tab2
-
-    elif tab == 'tab3':
-        html_tab3 = show_tab3()
-        return html_tab3    
-        
-    elif tab == 'tab4':
-        html_tab4 = show_tab4()
-        return html_tab4   
-
-    elif tab == 'tab5':
-        html_tab5 = show_tab5()
-        return html_tab5      
-   
