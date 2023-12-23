@@ -1,18 +1,19 @@
-
+# tab5.py
 import dash
 import dash_daq as daq
 import sys
 import os
 import glob
+import logging
 import sqlite3 as sql
 import functions as fn
+
 from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
 from server import app
 from flask import request
-import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -195,6 +196,7 @@ def show_tab5():
               [Input('exit-button', 'n_clicks')])
 
 def shutdown_server(n_clicks):
+    
     if n_clicks is not None:
         fn.shutdown()
         return 'Port Closed'
