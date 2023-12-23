@@ -3,6 +3,9 @@ IMPULSE
 Python Script MCA for gamma spectrometry.
 ----------------------------------------
  This program reads a stream of data from the PC sound card and picks out pulses, the pulses are subsequently filtered and written to a JSON file in a special format called [NPES-JSON](https://github.com/OpenGammaProject/NPES-JSON). A live histogram and counts per second can be viewed in the browser tabs. 
+
+ The current version of Impulse is also compatible with Atom-Nano and GS-Max devices with USB serial communication.
+ When used in serial device mode the already completed spectrum is retrieved from the device and the program performs the display monitor function only.
  
 Installation Method (Windows, Mac or Linux)
 -------------------------------------------
@@ -126,15 +129,15 @@ Change log
 55) Fixed Start and Stop buttons using threading to interrupt loop
 56) Major update for use with GS-MAX 
 57) Bug fix - Start button fixed
+58) Added user table to local database for later use in publishing spectra
 
 
 Things to do
 ------------
 * Build functionality for right channel recording and coincidence counting
 * Build interval histogram with Dead time calculation 
-* Record instruction video
 * Show Subtraction in spectrum name
-
+* Add functionality for publishing spectra to and reading spectra from an online database.
 
 
 If anyone has requests for additional features please contact me via the "Contact us" link at gammaspectacular.com
