@@ -1,3 +1,4 @@
+# tab2.py
 import dash
 import plotly.graph_objs as go
 import pulsecatcher as pc
@@ -18,14 +19,14 @@ import logging
 
 import shproto.dispatcher
 
-from dash import dcc, html, Input, Output, callback, Dash
+from dash import dcc, html, Input, Output, State, callback, Dash
 from dash.dependencies import Input, Output, State
 from server import app
 from dash.exceptions import PreventUpdate
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 
 path            = None
 n_clicks        = None
@@ -38,7 +39,6 @@ data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 sdl             = fn.get_serial_device_list()
 
 def show_tab2():
-
     global global_counts
     global global_cps
     global cps_list
@@ -275,8 +275,9 @@ def show_tab2():
 
 @app.callback(Output('start_text'   , 'children'),
               [Input('start'        , 'n_clicks')], 
-              [State('filename'      , 'value'),
-              State('compression'   , 'value')])
+              [State('filename'     , 'value'),
+              State('compression'   , 'value'),
+              ])
 
 def update_output(n_clicks, filename, compression):
 
@@ -329,9 +330,11 @@ def update_output(n_clicks, filename, compression):
 
 @app.callback( Output('stop_text'  ,'children'),
                 [Input('stop'      ,'n_clicks'),
-                Input('filename'   , 'value')])
+                Input('filename'   , 'value'),
+                ])
 
 def update_output(n_clicks, filename):
+
     if n_clicks is None:
         raise PreventUpdate
 
@@ -369,14 +372,10 @@ def update_output(n_clicks, filename):
                 Input('compare_switch'      ,'on'),
                 Input('difference_switch'   ,'on'),
                 Input('peakfinder'          ,'value'),
-                Input('sigma'               ,'value'),
-                Input('tabs'                ,'value')
+                Input('sigma'               ,'value')
                 ])
 
-def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, active_tab):
-
-    if active_tab != 'tab2':  # only update the chart when "tab2" is active
-        raise PreventUpdate
+def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma):
 
     global global_counts
     histogram1 = fn.get_path(f'{data_directory}/{filename}.json')
@@ -631,8 +630,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
 def save_settings(*args):
 
-
-    
     n_clicks = args[0]
     if n_clicks is None:
         raise PreventUpdate
@@ -716,6 +713,7 @@ def play_sound(n_clicks, filename2):
     ])
 
 def update_current_calibration(n_clicks, filename):
+
     if n_clicks is None:
         raise PreventUpdate
     else:
@@ -735,10 +733,15 @@ def update_current_calibration(n_clicks, filename):
 # ------MAX Dropdown callback ---------------------------
 
 @app.callback(
-    Output('cmd_text', 'children'),
-    [Input('selected_cmd', 'value')]
-)
-def update_output(selected_cmd):
+    Output('cmd_text'       , 'children'),
+    [Input('selected_cmd'   , 'value')],
+    [State('tabs'            ,'value')]
+    )
+
+def update_output(selected_cmd, active_tab):
+
+    if active_tab != 'tab2':  # only update the chart when "tab4" is active
+        raise PreventUpdate
 
     logger.debug(f'Command selected (tab2): {selected_cmd}')
 
