@@ -1,3 +1,4 @@
+# tab4.py
 import dash
 import json
 import os
@@ -7,11 +8,11 @@ import functions as fn
 import dash_daq as daq
 import sqlite3 as sql
 import pandas as pd
-from dash import html
-from dash.dependencies import Input, Output
-from dash.exceptions import PreventUpdate
+
+from dash import html, dcc
+from dash.dependencies import Input, Output, State
+#from dash.exceptions import PreventUpdate
 from server import app
-from dash import dcc
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -54,15 +55,11 @@ def show_tab4():
 @app.callback(Output('count_rate_chart'  , 'figure'),
               [Input('interval_component', 'n_intervals'),
                Input('filename'          , 'value'),
-               Input('tabs'              , 'value'),
-               Input('t_interval'        , 'value')
-               ]) 
+               Input('t_interval'        , 'value')],
+               [State('tabs'             , 'value')],
+               ) 
 
-def update_count_rate_chart(n_intervals, filename, active_tab, t_interval):
-
-
-    if active_tab != 'tab4':  # only update the chart when "tab4" is active
-        raise PreventUpdate
+def update_count_rate_chart(n_intervals, filename, t_interval, tab):
 
     cps_file = fn.get_path(f'{data_directory}/{filename}-cps.json')
 
