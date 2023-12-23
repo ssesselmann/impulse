@@ -1,5 +1,4 @@
-# impulse
-import dash
+# tab1.py
 import plotly.graph_objects as go
 import functions as fn
 import distortionchecker as dcr
@@ -8,10 +7,9 @@ import shapecatcher as sc
 import os
 import logging
 import requests as req
-from dash import dcc
-from dash import html
+
+from dash import dcc, html
 from dash.dependencies import Input, Output
-from dash.exceptions import PreventUpdate
 from server import app
 
 logger = logging.getLogger(__name__)
@@ -32,9 +30,9 @@ def show_tab1():
     settings = c.fetchall()[0]
 
     name            = settings[1]
-    device          = settings[2]             
+    device          = settings[2]          
     sample_rate     = settings[3]
-    chunk_size      = settings[4]                        
+    chunk_size      = settings[4]                  
     threshold       = settings[5]
     tolerance       = settings[6]
     bins            = settings[7]
@@ -50,92 +48,100 @@ def show_tab1():
     shape           = fn.load_shape()
 
     try:
-        dl          = fn.get_device_list()          # audio device list
+        dl          = fn.get_device_list()      # audio device list
         sdl         = fn.get_serial_device_list()   # serial device list
-        cl          = dl + sdl                      # combined device list
+        cl          = dl + sdl            # combined device list
     except:
         pass
 
-    options         = [{'label': name, 'value': index} for name, index in cl]
-    options         = [{k: str(v) for k, v in option.items()} for option in options]
+    options   = [{'label': name, 'value': index} for name, index in cl]
+    options   = [{k: str(v) for k, v in option.items()} for option in options]
+    options   = fn.cleanup_serial_options(options)
         
     if device >= 100:
-        serial      = 'block'
-        audio       = 'none'
+        serial = 'block'
+        audio  = 'none'
     else:
-        serial      = 'none'
-        audio       = 'block'
+        serial = 'none'
+        audio  = 'block'
 
-    tab1            = html.Div(id='tab1', children=[
+    tab1 = html.Div(id='tab1', children=[
         html.Div(id='firstrow'),
         html.Div(id='news', children=[dcc.Markdown(news)]),
         html.Div(id='heading', children=[html.H1('Device Selection and Settings')]),
-        html.Div(id='tab1_settings2', children=[
+        html.Div(id='tab1_settings1', children=[
             
-            html.Div(id='selected_device_text', children=''),
-            dcc.Dropdown(
-                id='device_dropdown',
-                options=options,
-                value=device,  # pre-selected option
-                clearable=False,
-            ),
-            ]),
+        html.Div(id='selected_device_text', children=''),
+        dcc.Dropdown(
+            id='device_dropdown',
+            options=options,
+            value=device,  # pre-selected option
+            clearable=False,
+        ),
+        ]),
         html.Div(id='tab1_settings2', children=[
             html.Div(children='Sample rate'),
-            dcc.Dropdown(id='sample_rate',
-                         options=[
-                             {'label': '44.1 kHz', 'value': '44100'},
-                             {'label': '48 kHz', 'value': '48000'},
-                             {'label': '96 kHz', 'value': '96000'},
-                             {'label': '192 kHz', 'value': '192000'},
-                             {'label': '384 kHz', 'value': '384000'},
-                             {'label': 'not used', 'value': 'not used'}
-                         ],
-                         value=sample_rate,  # pre-selected option
-                         clearable=False,
-                         style={'display':audio}
-                         ),
+            dcc.Dropdown(
+                id='sample_rate',
+                options=[
+
+                    {'label': '44.1 kHz', 'value': '44100'},
+                    {'label': '48 kHz', 'value': '48000'},
+                    {'label': '96 kHz', 'value': '96000'},
+                    {'label': '192 kHz', 'value': '192000'},
+                    {'label': '384 kHz', 'value': '384000'},
+                    {'label': 'not used', 'value': 'not used'}
+                 ],
+                value=sample_rate,  # pre-selected option
+                clearable=False,
+                style={'display':audio}
+                ),
         ],
         style={'display':audio}
         ),
 
-        html.Div(id='tab1_settings2', children=[
+        html.Div(id='tab1_settings3', children=[
             html.Div(children='Sample size', style={'text-align': 'left'}),
             html.Div(dcc.Dropdown(id='sample_length',
-                                  options=[
-                                      {'label': '11 dots', 'value': '11'},
-                                      {'label': '16 dots', 'value': '16'},
-                                      {'label': '21 dots', 'value': '21'},
-                                      {'label': '31 dots', 'value': '31'},
-                                      {'label': '41 dots', 'value': '41'},
-                                      {'label': '51 dots', 'value': '51'},
-                                      {'label': '61 dots', 'value': '61'}
-                                  ],
-                                  value=sample_length,
-                                  clearable=False,
-                                  style={'display':audio}
-                                  )),
+                options=[
+                    {'label': '11 dots', 'value': '11'},
+                    {'label': '16 dots', 'value': '16'},
+                    {'label': '21 dots', 'value': '21'},
+                    {'label': '31 dots', 'value': '31'},
+                    {'label': '41 dots', 'value': '41'},
+                    {'label': '51 dots', 'value': '51'},
+                    {'label': '61 dots', 'value': '61'}
+                    ],
+                value=sample_length,
+                clearable=False,
+                style={'display':audio}
+                )),
+
             html.Div(id='sampling_time_output', children=''),
-        ],style={'display':audio}),
+            ],style={'display':audio}),
 
-        html.Div(id='tab1_settings2', children=[
+        html.Div(id='tab1_settings4', children=[
             html.Div(children='Pulses to sample'),
-            html.Div(dcc.Dropdown(id='catch',
-                                  options=[
-                                      {'label': '10', 'value': '10'},
-                                      {'label': '50', 'value': '50'},
-                                      {'label': '100', 'value': '100'},
-                                      {'label': '500', 'value': '500'},
-                                      {'label': '1000', 'value': '1000'}
-                                  ],
-                                  value=shapecatches,
-                                  clearable=False,
-                                  style={'display':audio}
-                                  )),
-            html.Div(children='', style={'color': 'red'}),
-        ],style={'display':audio}),
+            html.Div(dcc.Dropdown(
+                id='catch',
+                options=[
+                    {'label': '10', 'value': '10'},
+                    {'label': '50', 'value': '50'},
+                    {'label': '100', 'value': '100'},
+                    {'label': '500', 'value': '500'},
+                    {'label': '1000', 'value': '1000'}
+                    ],
+                value=shapecatches,
+                clearable=False,
+                style={'display':audio}
+                )),
 
-        html.Div(id='tab1_settings2', children=[
+        html.Div(
+            children='', 
+            style={'color': 'red'}),
+            ],style={'display':audio}),
+
+        html.Div(id='tab1_settings5', children=[
             html.Div(children='Buffer Size'),
             html.Div(dcc.Dropdown(id='chunk_size',
                                   options=[
@@ -164,16 +170,16 @@ def show_tab1():
                     html.Div(id='instruction_div', children=[
                         html.Div(id='instructions', children=[
                             html.H2('Easy step by step setup and run'),
-                            html.P('You have selected a GS-MAX serial device',          style={'display': serial}), 
-                            html.P('Nothing to do here ... Go to tab 2 -->'  ,          style={'display': serial}),
+                            html.P('You have selected a GS-MAX serial device',      style={'display': serial}), 
+                            html.P('Nothing to do here ... Go to tab 2 -->'  ,      style={'display': serial}),
 
-                            html.P('You have selected an GS-PRO Audio device',          style={'display': audio}),
+                            html.P('You have selected an GS-PRO Audio device',      style={'display': audio}),
                             html.P('1) Select preferred sample rate, higher is better', style={'display': audio}),
-                            html.P('2) Select sample length - dead time < 200 µs',      style={'display': audio}),
-                            html.P('3) Sample up to 1000 pulses for a good mean',       style={'display': audio}),
+                            html.P('2) Select sample length - dead time < 200 µs',    style={'display': audio}),
+                            html.P('3) Sample up to 1000 pulses for a good mean',      style={'display': audio}),
                             html.P('4) Capture pulse shape (about 3000 for Cs-137)',    style={'display': audio}),
                             html.P('5) Optionally check distortion curve, this will help you set correct tolerance on tab2',    style={'display': audio}),
-                            html.P('6) Once pulse shape shows on plot go to tab2',      style={'display': audio}),
+                            html.P('6) Once pulse shape shows on plot go to tab2',    style={'display': audio}),
                             html.P('Found a bug 🐞 or have a suggestion, email me below'),
                             html.P('Steven Sesselmann'),
                             html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
@@ -189,7 +195,7 @@ def show_tab1():
 
                             html.Div('Peak shifter', style= { 'margin-left':'20px'}),
                             html.Div(dcc.Slider(
-                                id    ='peakshifter', 
+                                id  ='peakshifter', 
                                 min   = -20 ,
                                 max   = 20, 
                                 step  = 1, 
@@ -225,15 +231,15 @@ def show_tab1():
 # Callback to save settings ---------------------------
 
 @app.callback(
-    [Output('selected_device_text'  ,'children'),
-    Output('sampling_time_output'   ,'children')],
-    [Input('submit'                 ,'n_clicks')],
-    [Input('device_dropdown'        ,'value'),
-    Input('sample_rate'             ,'value'),
-    Input('chunk_size'              ,'value'),
-    Input('catch'                   ,'value'),
-    Input('sample_length'           ,'value'),
-    Input('peakshifter'             ,'value')
+    [Output('selected_device_text'      ,'children'),
+    Output('sampling_time_output'       ,'children')],
+    [Input('submit'                     ,'n_clicks')],
+    [Input('device_dropdown'            ,'value'),
+    Input('sample_rate'                 ,'value'),
+    Input('chunk_size'                  ,'value'),
+    Input('catch'                       ,'value'),
+    Input('sample_length'               ,'value'),
+    Input('peakshifter'                 ,'value'),
     ])
 
 def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
@@ -275,9 +281,10 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
 #-------- Callback to capture and save mean pulse shape ----------
 
 @app.callback(
-    [Output('plot'              ,'figure'),
-    Output('showplot'           ,'figure')],
-    [Input('get_shape_btn'   ,'n_clicks')])
+    [Output('plot'        ,'figure'),
+    Output('showplot'         ,'figure')],
+    [Input('get_shape_btn'    ,'n_clicks')
+    ])
 
 def capture_pulse_shape(n_clicks):
 
@@ -312,23 +319,23 @@ def capture_pulse_shape(n_clicks):
     if n_clicks == 0:
         fig = {'data': [{}], 'layout': layout}
         feedback = ''
-    else:    
+    else:   
         shape = sc.shapecatcher()
         dots = list(range(len(shape[0])))
 
         data = go.Scatter(
-            x          = dots, 
-            y          = shape[0], 
-            mode       = 'lines+markers',  
-            marker     = {'color': 'black', 'size':4}, 
-            line       = {'color':'blue', 'width':2},
+            x = dots, 
+            y = shape[0], 
+            mode = 'lines+markers',  
+            marker = {'color': 'black', 'size':4}, 
+            line = {'color':'blue', 'width':2},
             showlegend = False)
         
         threshold = go.Scatter(
-            x          = dots, 
-            y          = shape[1], 
-            mode       = 'lines',  
-            line       = {'color':'red', 'width':1},
+            x = dots, 
+            y = shape[1], 
+            mode = 'lines',  
+            line = {'color':'red', 'width':1},
             showlegend = False)
 
         fig = go.Figure(data=[data, threshold], layout=layout)
@@ -338,9 +345,10 @@ def capture_pulse_shape(n_clicks):
 #------- Distortion curve -----------------------------------
 
 @app.callback(
-            [Output('curve'        ,'figure'),
-            Output('showcurve'     ,'figure')],
-            [Input('get_curve_btn' ,'n_clicks')])
+            [Output('curve'         ,'figure'),
+            Output('showcurve'      ,'figure')],
+            [Input('get_curve_btn'  ,'n_clicks'),
+            ])
 
 def distortion_curve(n_clicks):
 
@@ -351,11 +359,11 @@ def distortion_curve(n_clicks):
         fig = {'data': [{}], 'layout': layout}
 
     else: 
-        lines  = dict(size = 2, color = 'blue')
-        y      = dcr.distortion_finder()
-        x      = list(range(len(y)))
-        data   = [{'x': x, 'y': y, 'type': 'line', 'name': 'SF', 'mode': 'lines', 'marker':lines}]
-        fig    = {'data': data, 'layout': layout}
+        lines   = dict(size = 2, color = 'blue')
+        y       = dcr.distortion_finder()
+        x       = list(range(len(y)))
+        data    = [{'x': x, 'y': y, 'type': 'line', 'name': 'SF', 'mode': 'lines', 'marker':lines}]
+        fig     = {'data': data, 'layout': layout}
 
     return fig, fig
         
