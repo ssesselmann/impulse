@@ -1,3 +1,4 @@
+# distortionchecker.py
 # This page is the main pulse catcher file, it 
 # collects, normalises and filters the pulses 
 # ultimately saving the histogram file to JSON.
@@ -6,9 +7,10 @@ import wave
 import math
 import functions as fn
 import sqlite3 as sql
-from collections import defaultdict
 import csv
 import logging
+
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -39,7 +41,7 @@ def distortion_finder():
 	coeff_2			= settings[19]
 	coeff_3			= settings[20]
 	flip 			= settings[22]
-	sample_length		= settings[11]
+	sample_length	= settings[11]
 	peakshift		= settings[28]
 
 	# Create an array of ewmpty bins
