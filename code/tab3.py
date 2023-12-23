@@ -1,3 +1,4 @@
+# tab3.py
 import dash
 import plotly.graph_objs as go
 import pulsecatcher as pc
@@ -19,8 +20,7 @@ import logging
 import shproto.dispatcher
 import shproto.port as port
 
-from dash import dcc
-from dash import html
+from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from server import app
 from dash.exceptions import PreventUpdate
@@ -189,9 +189,9 @@ def show_tab3():
 
 @app.callback(Output('start_text_3d'   , 'children'),
               [Input('start_3d'        , 'n_clicks')], 
-              [State('filename'      , 'value'),
-              State('compression'     , 'value'),
-              State('t_interval'   , 'value')])
+              [State('filename'        , 'value'),
+              State('compression'      , 'value'),
+              State('t_interval'       , 'value')])
 
 def update_output(n_clicks, filename, compression, t_interval):
 
@@ -272,19 +272,15 @@ def update_output(n_clicks):
                 Output('elapsed_3d'         ,'children'),
                 Output('cps_3d'             ,'children')],
                [Input('interval-component'  ,'n_intervals'), 
-                Input('filename'         ,'value'), 
+                Input('filename'            ,'value'), 
                 Input('epb_switch'          ,'on'),
                 Input('log_switch'          ,'on'),
                 Input('cal_switch'          ,'on'),
-                Input('tabs'                ,'value'),
-                Input('t_interval'          ,'value')
-                ])
+                Input('t_interval'          ,'value')], prevent_initial_call=True
+                )
 
 
-def update_graph(n, filename, epb_switch, log_switch, cal_switch, active_tab, t_interval):
-
-    if active_tab != 'tab3':
-        raise PreventUpdate
+def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
     
     if n is None:
         raise PreventUpdate
