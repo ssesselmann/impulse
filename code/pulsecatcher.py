@@ -1,3 +1,4 @@
+# pulsecatcher.py
 # This page is the main pulse catcher file, it 
 # collects, normalises and filters the pulses 
 # ultimately saving the histogram file to JSON.

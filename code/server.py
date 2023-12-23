@@ -1,3 +1,4 @@
+# server.py
 import dash
 import os
 import sqlite3 as sql
@@ -22,12 +23,14 @@ logger.addHandler(console_handler)
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 try:
-	database = fn.get_path(f'{data_directory}/.data.db')
-	conn = sql.connect(database)
-	c = conn.cursor()
-	query = "SELECT theme FROM settings "
+	database 	= fn.get_path(f'{data_directory}/.data.db')
+	conn 		= sql.connect(database)
+	c 			= conn.cursor()
+	query 		= "SELECT theme FROM settings "
+
 	c.execute(query) 
-	theme = c.fetchall()[0][0]
+	
+	theme 		= c.fetchall()[0][0]
 	
 except:
 	theme = 'lightgray'	

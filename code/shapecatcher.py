@@ -1,8 +1,11 @@
+# shapecatcher.py
+
 # This page contains a function to generate a pulse shape file
 # First it finds a list of pulses, then
 # the pulses are summed, averaged and normalised, 
 # finally saved as a csv file.
 # Ultimately this file should also be a JSON file as I have too many file types here. 
+
 import pyaudio
 import wave
 import math
