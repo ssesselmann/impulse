@@ -409,3 +409,14 @@ def update_coeff(filename, coeff_1, coeff_2, coeff_3):
         json.dump(data, f, indent=4)
 
     return
+
+# removes the path from serial device list (looks better)
+def cleanup_serial_options(options): 
+
+    prefix_to_remove = '/dev/cu.usbserial-'
+
+    for item in options:
+        if 'label' in item and item['label'].startswith(prefix_to_remove):
+            item['label'] = 'Serial # ' + item['label'][len(prefix_to_remove):]
+
+    return options    
