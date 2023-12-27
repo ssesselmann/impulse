@@ -226,7 +226,7 @@ def get_serial_device_list():
 
     # Define criteria for selecting serial devices
     manufacturer_criteria = "FTDI"
-    product_criteria = "FT232R USB UART"
+    #product_criteria = "FT232R USB UART"
 
     # Create a list of tuples to store selected serial device information as couples
     serial_device_list = []
@@ -234,12 +234,11 @@ def get_serial_device_list():
     # Filter and assign unique integer indexes to selected serial devices starting from 100
     serial_index = 100
     for port in all_ports:
-        if port.manufacturer == manufacturer_criteria and port.product == product_criteria:
+        if port.manufacturer == manufacturer_criteria:
             serial_device_list.append((port.device, serial_index))
             serial_index += 1
     return serial_device_list
          
-
 # Returns maxInputChannels in an unordered list
 def get_max_input_channels(device):
     p = pyaudio.PyAudio()
@@ -410,11 +409,9 @@ def update_coeff(filename, coeff_1, coeff_2, coeff_3):
 
     return
 
-# removes the path from serial device list (looks better)
-def cleanup_serial_options(options): 
-
+# removes the path from serial device list Mac only
+def cleanup_serial_options(options):
     prefix_to_remove = '/dev/cu.usbserial-'
-
     for item in options:
         if 'label' in item and item['label'].startswith(prefix_to_remove):
             item['label'] = 'Serial # ' + item['label'][len(prefix_to_remove):]

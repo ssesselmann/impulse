@@ -9,7 +9,7 @@ def getallports():
     allports = serial.tools.list_ports.comports()
     nanoports = []
     for port in allports:
-        if port.manufacturer == "FTDI" and port.product == "FT232R USB UART":
+        if port.manufacturer == "FTDI":
             nanoports.append(port)
     return nanoports
 

@@ -48,15 +48,17 @@ def show_tab1():
     shape           = fn.load_shape()
 
     try:
-        dl          = fn.get_device_list()      # audio device list
+        adl         = fn.get_device_list()          # audio device list
         sdl         = fn.get_serial_device_list()   # serial device list
-        cl          = dl + sdl            # combined device list
+        dl          = adl + sdl                     # combined device list
     except:
         pass
 
-    options   = [{'label': name, 'value': index} for name, index in cl]
+    options   = [{'label': name, 'value': index} for name, index in dl]
     options   = [{k: str(v) for k, v in option.items()} for option in options]
     options   = fn.cleanup_serial_options(options)
+
+    print('options:',options)
         
     if device >= 100:
         serial = 'block'

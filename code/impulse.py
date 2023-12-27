@@ -20,11 +20,8 @@ from tab5 import show_tab5
 
 from dash import dcc, html, Input, Output, State, callback, callback_context
 
-
 warnings.filterwarnings('ignore')
 
-# Define default `8050` port
-port = 8050 
 content = None
 
 #---Defines the browser tabs------------------------------------------------------------
@@ -65,8 +62,10 @@ def render_content(tab):
 
     return content
 
+#---------------------------------------------
+port = 8050
 
 # Application must be started from (__main__)
 if __name__ == '__main__':
     Timer(1, fn.open_browser(port)).start();
-    app.run_server(debug=False, threaded=True, port=port)
+    app.run_server(host='0.0.0.0', debug=False, threaded=True, port=port)
