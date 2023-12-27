@@ -57,8 +57,6 @@ def show_tab1():
     options   = [{'label': name, 'value': index} for name, index in dl]
     options   = [{k: str(v) for k, v in option.items()} for option in options]
     options   = fn.cleanup_serial_options(options)
-
-    print('options:',options)
         
     if device >= 100:
         serial = 'block'
