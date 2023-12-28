@@ -137,10 +137,12 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 			coeff_2			= settings[19]
 			coeff_3			= settings[20]
 
-			global_cps = int(global_cps/t_interval)
+			global_cps 		= int(global_cps/t_interval)
+			location 		= ""
+			note 			= ""
 			
 			if mode == 2:
-				fn.write_histogram_json(t0, t1, bins, global_counts, int(elapsed), filename, histogram, coeff_1, coeff_2, coeff_3)
+				fn.write_histogram_npesv2(t0, t1, bins, global_counts, int(elapsed), filename, histogram, coeff_1, coeff_2, coeff_3, device, location, note )
 				tla = time.time()
 
 			if mode == 3:

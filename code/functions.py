@@ -93,6 +93,7 @@ def update_bin(n, bins, bin_counts):
 def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
     
     jsonfile = get_path(f'{data_directory}/{name}.json')
+
     data =  {"schemaVersion":"NPESv1",
                 "resultData":{
                     "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
@@ -113,7 +114,46 @@ def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1
     with open(jsonfile, "w+") as f:
         json.dump(data, f)
 
-# This function writes 3D intervals to JSON file according to NPESv1 schema.
+
+# This function writes a 2D histogram to JSON file according to NPESv1 schema.
+def write_histogram_npesv2(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3, device, location, note):
+    
+    jsonfile = get_path(f'{data_directory}/{name}.json')
+
+    data =  {"schemaVersion": "NPESv2",
+              "data": [
+                {
+                  "deviceData": {
+                    "softwareName": "IMPULSE",
+                    "deviceName": device,
+                  },
+                  "sampleInfo": {
+                    "name": name,
+                    "location": location,
+                    "note": note,
+                  },
+                  "resultData": {
+                    "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                    "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                    "energySpectrum": {
+                      "numberOfChannels": bins,
+                      "energyCalibration": {
+                        "polynomialOrder": 2,
+                        "coefficients": [coeff_3,coeff_2,coeff_1],
+                      },
+                      "validPulseCount": counts,
+                      "measurementTime": elapsed,
+                      "spectrum": histogram
+                    }
+                  }
+                }
+              ]
+            }
+
+    with open(jsonfile, "w+") as f:
+        json.dump(data, f)        
+
+# This function writes 3D intervals to NPESv1 JSON
 def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_number, coeff_1, coeff_2, coeff_3):
 
     jsonfile = get_path(f'{data_directory}/{filename}_3d.json')

@@ -32,6 +32,7 @@ path            = None
 n_clicks        = None
 commands        = None
 cmd             = None
+schemaVersion   = None
 global_counts   = 0
 global_cps      = 0
 stop_event      = threading.Event()
@@ -108,6 +109,7 @@ def show_tab2():
 
     if max_seconds == 0:
         seconds_warning = 'red'
+
     else: 
         seconds_warning = 'white'  
 
@@ -385,13 +387,20 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
         with open(histogram1, "r") as f:
 
             data = json.load(f)
+
+            schemaVersion       = data["schemaVersion"]
+
+            if schemaVersion  == "NPESv2":
+
+                data = data["data"][0] # This makes it backwards compatible
+
             numberOfChannels    = data["resultData"]["energySpectrum"]["numberOfChannels"]
             validPulseCount     = data["resultData"]["energySpectrum"]["validPulseCount"]
             elapsed             = data["resultData"]["energySpectrum"]["measurementTime"]
             polynomialOrder     = data["resultData"]["energySpectrum"]["energyCalibration"]["polynomialOrder"]
             coefficients        = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
             spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
-            coefficients        = coefficients[::-1] # Revese order
+            coefficients        = coefficients[::-1] # Revese order   
 
             now = datetime.now()
             time = now.strftime("%A %d %B %Y")
@@ -519,7 +528,15 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
             if os.path.exists(histogram2):
                 with open(histogram2, "r") as f:
+
                     data_2 = json.load(f)
+
+                    schema_version = data_2["schemaVersion"]
+
+                    if schema_version  == "NPESv2":
+
+                        data_2 = data_2["data"][0] # This makes it backwards compatible
+
                     numberOfChannels_2    = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
                     elapsed_2             = data_2["resultData"]["energySpectrum"]["measurementTime"]
                     spectrum_2            = data_2["resultData"]["energySpectrum"]["spectrum"]
