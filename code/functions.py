@@ -125,7 +125,7 @@ def write_histogram_npesv2(t0, t1, bins, counts, elapsed, name, histogram, coeff
                 {
                   "deviceData": {
                     "softwareName": "IMPULSE",
-                    "deviceName": device,
+                    "deviceName": "AUDIO-CODEC",
                   },
                   "sampleInfo": {
                     "name": name,

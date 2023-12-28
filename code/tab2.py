@@ -33,6 +33,7 @@ n_clicks        = None
 commands        = None
 cmd             = None
 schemaVersion   = None
+device          = None
 global_counts   = 0
 global_cps      = 0
 stop_event      = threading.Event()
@@ -43,6 +44,7 @@ def show_tab2():
     global global_counts
     global global_cps
     global cps_list
+    global device
 
     # Get all filenames in data folder and its subfolders
     files = [os.path.relpath(file, data_directory).replace("\\", "/")
@@ -278,8 +280,8 @@ def show_tab2():
 @app.callback(Output('start_text'   , 'children'),
               [Input('start'        , 'n_clicks')], 
               [State('filename'     , 'value'),
-              State('compression'   , 'value'),
-              ])
+                State('compression' , 'value')
+                ])
 
 def update_output(n_clicks, filename, compression):
 
@@ -314,7 +316,7 @@ def update_output(n_clicks, filename, compression):
 
             time.sleep(1)
 
-            shproto.dispatcher.process_01(filename, compression)
+            shproto.dispatcher.process_01(filename, compression, "GS-MAX or ATOM-NANO")
             logger.debug(f'dispatcher.process_01 Started')
 
             time.sleep(1)

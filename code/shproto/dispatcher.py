@@ -114,7 +114,7 @@ def start(sn=None):
 
 # This function writes the 2D spectrum to a JSON file
 
-def process_01(filename, compression):  # Compression reduces the number of channels by 8, 4, or 2
+def process_01(filename, compression, device):  # Compression reduces the number of channels by 8, 4, or 2
     logger.debug(f'dispatcher.process_01({filename})')
 
     global counts
@@ -160,23 +160,56 @@ def process_01(filename, compression):  # Compression reduces the number of chan
         cps = (counts - last_counts)  # Strictly not cps but counts per loop in this while loop!! (need to fix)
 
         # The rest of your JSON data and file writing logic remains the same
+        # data = {
+        #     "schemaVersion": "NPESv1",
+        #     "resultData": {
+        #         "startTime": t0,
+        #         "endTime": t1,
+        #         "energySpectrum": {
+        #             "numberOfChannels": compressed_bins,
+        #             "energyCalibration": {
+        #                 "polynomialOrder": 2,
+        #                 "coefficients": [coeff_3, coeff_2, coeff_1]
+        #             },
+        #             "validPulseCount": counts,
+        #             "measurementTime": dt,
+        #             "spectrum": compressed_hst
+        #         }
+        #     }
+        # }
+
         data = {
-            "schemaVersion": "NPESv1",
-            "resultData": {
-                "startTime": t0,
-                "endTime": t1,
-                "energySpectrum": {
-                    "numberOfChannels": compressed_bins,
-                    "energyCalibration": {
-                        "polynomialOrder": 2,
-                        "coefficients": [coeff_3, coeff_2, coeff_1]
+            "schemaVersion": "NPESv2",
+            "data": [
+                {
+                    "deviceData": {
+                        "softwareName": "IMPULSE",
+                        "deviceName": device,
                     },
-                    "validPulseCount": counts,
-                    "measurementTime": dt,
-                    "spectrum": compressed_hst
+                    "sampleInfo": {
+                        "name": filename,
+                        "location": "",
+                        "note": ""
+                    },
+                    "resultData": {
+                        "startTime": t0, 
+                        "endTime": t1,
+                        "energySpectrum": {
+                            "numberOfChannels": compressed_bins,
+                            "energyCalibration": {
+                                "polynomialOrder": 2,
+                                "coefficients": [coeff_3, coeff_2, coeff_1]
+                            },
+                            "validPulseCount": counts,
+                            "measurementTime": dt,
+                            "spectrum": compressed_hst
+                        }
+                    }
                 }
-            }
+            ]
         }
+
+
         json_data = json.dumps(data, separators=(",", ":"))
 
         # Construct the full path to the file
