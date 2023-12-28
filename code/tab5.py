@@ -109,7 +109,7 @@ def show_tab5():
                 html.H2('Tab2 - Pulse Height Histogram'),
                 html.H4('Spectrum File Name'),
                 
-                html.P('This is exactly what it says, you can name your spectrum anything you like, it will automatically save in the user home directory ~/impulse_data/myspectrum.json , the JSON file format is NPESv1 and is compatible with  '),
+                html.P('This is exactly what it says, you can name your spectrum anything you like, it will automatically save in the user home directory ~/impulse_data/myspectrum.json , the JSON file format is NPESv2 and is backwards compatible with NPESv1 '),
                 html.Div(html.A('https://github.com/OpenGammaProject/NPES-JSON', href='https://github.com/OpenGammaProject/NPES-JSON', target='_blank')),
                 
                 html.H4('Number of Bins & Bin Size'),
