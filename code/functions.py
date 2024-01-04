@@ -417,8 +417,8 @@ def export_csv(filename):
     with open(f'{data_directory}/{filename}') as f:
         data = json.load(f)
     # Extract data from json file
-    spectrum     = data["resultData"]["energySpectrum"]["spectrum"]
-    coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+    spectrum     = data["data"][0]["resultData"]["energySpectrum"]["spectrum"]
+    coefficients = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
     # Make sure coefficient[2] is not negative
     if coefficients[2] <= 0:
         coefficients[2] = 0
@@ -439,7 +439,7 @@ def update_coeff(filename, coeff_1, coeff_2, coeff_3):
     with open(f'{data_directory}/{filename}.json') as f:
         data = json.load(f)
 
-    coefficients    = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+    coefficients    = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
     coefficients[0] = coeff_3
     coefficients[1] = coeff_2
     coefficients[2] = coeff_1

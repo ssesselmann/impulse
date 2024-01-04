@@ -2,6 +2,9 @@ import sys
 import threading
 import time
 import json
+from struct import *
+import binascii
+import re
 import shproto
 import shproto.port
 import logging
@@ -32,6 +35,11 @@ last_counts         = 0
 data_directory      = None
 cps_list            = []
 
+serial_number       = ""
+calibration         = [0., 1., 0., 0., 0.]
+calibration_updated = 0
+calibration_lock    = threading.Lock()
+inf_str             = ''
 
 # This function communicates with the device
 def start(sn=None):
@@ -70,11 +78,36 @@ def start(sn=None):
             if response.cmd == shproto.MODE_TEXT:
                 shproto.dispatcher.pkts03 += 1
                 resp_decoded = bytes(response.payload[:len(response.payload) - 2])
+                resp_lines = []
                 try:
                     resp_decoded = resp_decoded.decode("ascii")
+                    resp_lines = resp_decoded.splitlines()
+                    if re.search('^VERSION', resp_decoded):
+                        shproto.dispatcher.inf_str = resp_decoded
+                        shproto.dispatcher.inf_str = re.sub(r'\[[^]]*\]', '...', shproto.dispatcher.inf_str, count = 2)
+                        logger.debug("nano-pro settings: {}".format(shproto.dispatcher.inf_str))
                 except UnicodeDecodeError:
                     print("Unknown non-text response.")
                 #print("<< {}".format(resp_decoded))
+                if len(resp_lines) == 40:
+                    shproto.dispatcher.serial_number = " s/n: {}".format(resp_lines[39]);
+                    logger.debug("nano-pro detector serial num: {}".format(shproto.dispatcher.serial_number))
+                    b_str =  ''
+                    for b in resp_lines[0:10]:
+                        b_str += b
+                    crc = binascii.crc32(bytearray(b_str, 'ascii')) % 2**32
+                    if (crc == int(resp_lines[10],16)):
+                        with shproto.dispatcher.calibration_lock:
+                            shproto.dispatcher.calibration[0] = unpack('d', int((resp_lines[0] + resp_lines[1]),16).to_bytes(8, 'little'))[0]
+                            shproto.dispatcher.calibration[1] = unpack('d', int((resp_lines[2] + resp_lines[3]),16).to_bytes(8, 'little'))[0]
+                            shproto.dispatcher.calibration[2] = unpack('d', int((resp_lines[4] + resp_lines[5]),16).to_bytes(8, 'little'))[0]
+                            shproto.dispatcher.calibration[3] = unpack('d', int((resp_lines[6] + resp_lines[7]),16).to_bytes(8, 'little'))[0]
+                            shproto.dispatcher.calibration[4] = unpack('d', int((resp_lines[8] + resp_lines[9]),16).to_bytes(8, 'little'))[0]
+                            shproto.dispatcher.calibration_updated = 1
+                        logger.debug("got calibration: {}".format(shproto.dispatcher.calibration))
+                    else:
+                        logger.debug("wrong crc for calibration values got: {:08x} expected: {:08x}".format(int(resp_lines[10],16), crc))
+	
                 response.clear()
             elif response.cmd == shproto.MODE_HISTOGRAM:
                 shproto.dispatcher.pkts01 += 1
@@ -90,6 +123,27 @@ def start(sn=None):
                                     ((response.payload[i * 4 + 5]) << 24)
                             shproto.dispatcher.histogram[index] = value & 0x7FFFFFF
                 response.clear()
+            elif response.cmd == shproto.MODE_PULSE: ### debug mode, pulse shape
+                if pulse_file_opened != 1:
+                    fd_pulses = open("/tmp/pulses.csv", "w+")
+                    pulse_file_opened = 1
+
+                #print("<< got pulse", fd_pulses)
+                shproto.dispatcher.pkts01 += 1
+                offset = response.payload[0] & 0xFF | ((response.payload[1] & 0xFF) << 8)
+                count = int((response.len - 2) / 2)
+                pulse = []
+                for i in range(0, count):
+                    index = offset + i
+                    if index < len(shproto.dispatcher.histogram):
+                        value = (response.payload[i * 2 + 2]) | \
+                                ((response.payload[i * 2 + 3]) << 8)
+                        pulse = pulse + [(value & 0x7FFFFFF)]
+                    fd_pulses.writelines("{:d} ".format(value & 0x7FFFFFF))
+                fd_pulses.writelines("\n")
+                fd_pulses.flush()
+                # print("len: ", count, "shape: ", pulse)
+                response.clear()
             elif response.cmd == shproto.MODE_STAT:
                 shproto.dispatcher.pkts04 += 1
                 shproto.dispatcher.total_time = (response.payload[0] & 0xFF) | \
@@ -101,11 +155,16 @@ def start(sn=None):
                                          ((response.payload[7] & 0xFF) << 8) | \
                                          ((response.payload[8] & 0xFF) << 16) | \
                                          ((response.payload[9] & 0xFF) << 24)
-                if response.len >= (15 + 2):
+                if response.len >= (11 + 2):
                     shproto.dispatcher.lost_impulses = (response.payload[10] & 0xFF) | \
                                                        ((response.payload[11] & 0xFF) << 8) | \
                                                        ((response.payload[12] & 0xFF) << 16) | \
                                                        ((response.payload[13] & 0xFF) << 24)
+                if response.len >= (15 + 2):
+                    shproto.dispatcher.total_pulse_width = (response.payload[14] & 0xFF) | \
+                                                       ((response.payload[15] & 0xFF) << 8) | \
+                                                       ((response.payload[16] & 0xFF) << 16) | \
+                                                       ((response.payload[17] & 0xFF) << 24)
                 response.clear()
             else:
                 print("Wtf received: cmd:{}\r\npayload: {}".format(response.cmd, response.payload))
@@ -184,7 +243,7 @@ def process_01(filename, compression, device):  # Compression reduces the number
                 {
                     "deviceData": {
                         "softwareName": "IMPULSE",
-                        "deviceName": device,
+                        "deviceName": "{}{}".format(device, shproto.dispatcher.serial_number)
                     },
                     "sampleInfo": {
                         "name": filename,
@@ -366,4 +425,5 @@ def clear():
         shproto.dispatcher.cps              = 0
         shproto.dispatcher.total_time       = 0
         shproto.dispatcher.lost_impulses    = 0
+        shproto.dispatcher.total_pulse_width = 0
         shproto.dispatcher.dropped          = 0

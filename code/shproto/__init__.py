@@ -9,7 +9,7 @@ BUFFER_SIZE = 4096    # Maximum buffer size
 
 # Define constant values for different modes
 MODE_HISTOGRAM = 0x01
-MODE_OSCILO = 0x02
+MODE_PULSE = 0x02
 MODE_TEXT = 0x03
 MODE_STAT = 0x04
 MODE_BOOTLOADER = 0xF3  # Bootloader mode
