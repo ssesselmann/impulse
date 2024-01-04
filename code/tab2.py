@@ -721,7 +721,7 @@ def play_sound(n_clicks, filename2):
         if os.path.exists(histogram2):
                 with open(histogram2, "r") as f:
                     data_2     = json.load(f)
-                    spectrum_2 = data_2["resultData"]["energySpectrum"]["spectrum"]
+                    spectrum_2 = data_2["data"][0]["resultData"]["energySpectrum"]["spectrum"]
 
         gc = fn.gaussian_correl(spectrum_2, 1)
 
