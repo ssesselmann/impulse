@@ -173,6 +173,7 @@ def show_tab2():
                     {'label': 'Pause MCA'         , 'value': '-sto'},
                     {'label': 'Restart MCA'       , 'value': '-sta'},
                     {'label': 'Reset histogram  ' , 'value': '-rst'},
+                    {'label': 'Read calibration'  , 'value': '-cal'},
                     {'label': '----Gain--------'  , 'value': ''},
                     {'label': 'Approx 580 Volts'  , 'value': '-U040'},
                     {'label': 'Approx 596 Volts'  , 'value': '-U048'},
@@ -207,9 +208,12 @@ def show_tab2():
                 placeholder='Select command',
                 value=commands[0] if commands else None, # Check if commands is not None before accessing its elements
                 className='dropdown',
+            ),
+            html.Div(id='cmd_text', children=[
+                html.Div("TestTest")]
             )], style={'display':serial}),  
 
-            html.Div(id='cmd_text', children='', style={'display': 'none'}),
+            # html.Div(id='cmd_text', children='', style={'display': 'none'}),
             html.Div(['LLD Threshold:'      , dcc.Input(id='threshold'  , type='number', value=threshold, className='input')], style={'display':audio}),
             html.Div(['Shape Tolerance:'    , dcc.Input(id='tolerance'  , type='number', value=tolerance, className='input' )], style={'display':audio}),
             html.Div(['Update Interval(s)'  , dcc.Input(id='t_interval' , type='number', step=1,  readOnly=False, value=t_interval, className='input' )], style={'display':audio}),
@@ -650,14 +654,20 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 def save_settings(*args):
 
     n_clicks = args[0]
-    if n_clicks is None:
+    if n_clicks is None and not shproto.dispatcher.calibration_updated:
         raise PreventUpdate
 
-    x_bins          = [args[8], args[9], args[10]]
-    x_energies      = [args[11], args[12], args[13]]
+    if shproto.dispatcher.calibration_updated:
+        with shproto.dispatcher.calibration_lock:
+            shproto.dispatcher.calibration_updated = 0
+            x_bins          = [0, 1000, 3000]
+            polynomial_fn   = np.poly1d(shproto.dispatcher.calibration[::-1])
+            x_energies      = [polynomial_fn(x_bins[0]), polynomial_fn(x_bins[1]), polynomial_fn(x_bins[2])]
+    else:
+        x_bins          = [args[8], args[9], args[10]]
+        x_energies      = [args[11], args[12], args[13]]
     coefficients    = np.polyfit(x_bins, x_energies, 2)
     polynomial_fn   = np.poly1d(coefficients)
-    
     database        = fn.get_path(f'{data_directory}/.data.db')
     conn            = sql.connect(database)
     c               = conn.cursor()
@@ -671,12 +681,12 @@ def save_settings(*args):
                     comparison='{args[5]}',
                     threshold={args[6]}, 
                     tolerance={args[7]}, 
-                    calib_bin_1={args[8]},
-                    calib_bin_2={args[9]},
-                    calib_bin_3={args[10]},
-                    calib_e_1={args[11]},
-                    calib_e_2={args[12]},
-                    calib_e_3={args[13]},
+                    calib_bin_1={x_bins[0]},
+                    calib_bin_2={x_bins[1]},
+                    calib_bin_3={x_bins[2]},
+                    calib_e_1={x_energies[0]},
+                    calib_e_2={x_energies[1]},
+                    calib_e_3={x_energies[2]},
                     peakfinder={args[14]},
                     sigma={args[15]},
                     t_interval={args[16]},
@@ -759,15 +769,14 @@ def update_current_calibration(n_clicks, filename):
 
 def update_output(selected_cmd, active_tab):
 
-    if active_tab != 'tab2':  # only update the chart when "tab4" is active
+    if active_tab != 'tab_2':  # only update the chart when "tab4" is active
         raise PreventUpdate
-
     logger.debug(f'Command selected (tab2): {selected_cmd}')
 
     try:
         shproto.dispatcher.process_03(selected_cmd)
 
-        return f'Command: {selected_cmd}'
+        return f'Cmd: {selected_cmd}'
 
     except Exception as e:
 
