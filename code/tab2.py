@@ -660,9 +660,25 @@ def save_settings(*args):
 
             shproto.dispatcher.calibration_updated = 0
 
-            x_bins          = [0, 4096, 8192]
+            # Nano has 8192 bins
+            x_bins_default = [0, 4096, 8192]
+
+            # Option to show less bins (divide by compression)
+            x_bins = [value / args[17] for value in x_bins_default]
+
+            # Flip polynomial function
             polynomial_fn   = np.poly1d(shproto.dispatcher.calibration[::-1])
-            x_energies      = [polynomial_fn(x_bins[0]), polynomial_fn(x_bins[1]), polynomial_fn(x_bins[2])]
+
+            # Calulate energies to insert into database
+            x_energies      = [polynomial_fn(x_bins_default[0]), polynomial_fn(x_bins_default[1]), polynomial_fn(x_bins_default[2])]
+
+            #-----------------------------------------------------
+            # This section needs improving: C
+            # Changes calibration don't appear to be working
+            # unless the spectrum is stopped and restarted. 
+            # While loop does not load the new polynomial function
+            #-----------------------------------------------------
+
     else:
         x_bins          = [args[8], args[9], args[10]]
         x_energies      = [args[11], args[12], args[13]]
