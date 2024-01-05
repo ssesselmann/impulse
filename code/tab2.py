@@ -333,7 +333,7 @@ def update_output(n_clicks, filename, compression):
 
         logger.debug('Audio Codec Recording Started')
 
-        return 
+    return 
 #----STOP------------------------------------------------------------
 
 @app.callback( Output('stop_text'  ,'children'),
@@ -394,10 +394,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
             data = json.load(f)
 
-            schemaVersion       = data["schemaVersion"]
-
-            if schemaVersion  == "NPESv2":
-
+            if data["schemaVersion"]  == "NPESv2":
                 data = data["data"][0] # This makes it backwards compatible
 
             numberOfChannels    = data["resultData"]["energySpectrum"]["numberOfChannels"]

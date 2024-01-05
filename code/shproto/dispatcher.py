@@ -218,25 +218,6 @@ def process_01(filename, compression, device):  # Compression reduces the number
 
         cps = (counts - last_counts)  # Strictly not cps but counts per loop in this while loop!! (need to fix)
 
-        # The rest of your JSON data and file writing logic remains the same
-        # data = {
-        #     "schemaVersion": "NPESv1",
-        #     "resultData": {
-        #         "startTime": t0,
-        #         "endTime": t1,
-        #         "energySpectrum": {
-        #             "numberOfChannels": compressed_bins,
-        #             "energyCalibration": {
-        #                 "polynomialOrder": 2,
-        #                 "coefficients": [coeff_3, coeff_2, coeff_1]
-        #             },
-        #             "validPulseCount": counts,
-        #             "measurementTime": dt,
-        #             "spectrum": compressed_hst
-        #         }
-        #     }
-        # }
-
         data = {
             "schemaVersion": "NPESv2",
             "data": [
