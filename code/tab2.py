@@ -655,14 +655,18 @@ def save_settings(*args):
         raise PreventUpdate
 
     if shproto.dispatcher.calibration_updated:
+
         with shproto.dispatcher.calibration_lock:
+
             shproto.dispatcher.calibration_updated = 0
-            x_bins          = [0, 1000, 3000]
+
+            x_bins          = [0, 4096, 8192]
             polynomial_fn   = np.poly1d(shproto.dispatcher.calibration[::-1])
             x_energies      = [polynomial_fn(x_bins[0]), polynomial_fn(x_bins[1]), polynomial_fn(x_bins[2])]
     else:
         x_bins          = [args[8], args[9], args[10]]
         x_energies      = [args[11], args[12], args[13]]
+
     coefficients    = np.polyfit(x_bins, x_energies, 2)
     polynomial_fn   = np.poly1d(coefficients)
     database        = fn.get_path(f'{data_directory}/.data.db')
