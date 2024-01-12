@@ -117,14 +117,12 @@ def start(sn=None):
                 offset = response.payload[0] & 0xFF | ((response.payload[1] & 0xFF) << 8)
                 count = int((response.len - 2) / 4)
                 with shproto.dispatcher.histogram_lock:
-                    for i in range(0, count):
-                        index = offset + i
-                        if index < len(shproto.dispatcher.histogram):
-                            value = (response.payload[i * 4 + 2]) | \
-                                    ((response.payload[i * 4 + 3]) << 8) | \
-                                    ((response.payload[i * 4 + 4]) << 16) | \
-                                    ((response.payload[i * 4 + 5]) << 24)
-                            shproto.dispatcher.histogram[index] = value & 0x7FFFFFF
+                    if (offset <= 8192 and offset+count <= 8192):
+                        format_unpack_str = "<{}I".format(count)
+                        
+                        shproto.dispatcher.histogram[offset:offset+count] = list(unpack(format_unpack_str, bytes(response.payload[2:count*4+2])))
+                    else:
+                        logger.debug("histogram index is out of range: {} - {} c:{}".format(offset, offset+count, offset+count))
                 response.clear()
             elif response.cmd == shproto.MODE_PULSE: ### debug mode, pulse shape
                 if pulse_file_opened != 1:
@@ -133,7 +131,7 @@ def start(sn=None):
 
                 #print("<< got pulse", fd_pulses)
                 shproto.dispatcher.pkts01 += 1
-                offset = response.payload[0] & 0xFF | ((response.payload[1] & 0xFF) << 8)
+                offset = unpack("<H", bytes(response.payload[0:2]))[0]
                 count = int((response.len - 2) / 2)
                 pulse = []
                 for i in range(0, count):
@@ -149,20 +147,13 @@ def start(sn=None):
                 response.clear()
             elif response.cmd == shproto.MODE_STAT:
                 shproto.dispatcher.pkts04 += 1
-                shproto.dispatcher.total_time = (response.payload[0] & 0xFF) | \
-                                                ((response.payload[1] & 0xFF) << 8) | \
-                                                ((response.payload[2] & 0xFF) << 16) | \
-                                                ((response.payload[3] & 0xFF) << 24)
-                shproto.dispatcher.cpu_load = (response.payload[4] & 0xFF) | ((response.payload[5] & 0xFF) << 8)
-                shproto.dispatcher.cps = (response.payload[6] & 0xFF) | \
-                                         ((response.payload[7] & 0xFF) << 8) | \
-                                         ((response.payload[8] & 0xFF) << 16) | \
-                                         ((response.payload[9] & 0xFF) << 24)
+                shproto.dispatcher.total_time = unpack("<I", bytes(response.payload[0:4]))[0]
+                shproto.dispatcher.cpu_load = unpack("<H", bytes(response.payload[4:6]))[0]
+                shproto.dispatcher.cps = unpack("<I", bytes(response.payload[6:10]))[0]
                 if response.len >= (11 + 2):
-                    shproto.dispatcher.lost_impulses = (response.payload[10] & 0xFF) | \
-                                                       ((response.payload[11] & 0xFF) << 8) | \
-                                                       ((response.payload[12] & 0xFF) << 16) | \
-                                                       ((response.payload[13] & 0xFF) << 24)
+                    shproto.dispatcher.lost_impulses = unpack("<I", bytes(response.payload[10:14]))[0]
+                if response.len >= (15 + 2):
+                    shproto.dispatcher.total_pulse_width = unpack("<I", bytes(response.payload[14:18]))[0]
                 if response.len >= (15 + 2):
                     shproto.dispatcher.total_pulse_width = (response.payload[14] & 0xFF) | \
                                                        ((response.payload[15] & 0xFF) << 8) | \
