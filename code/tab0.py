@@ -10,12 +10,14 @@ import requests as req
 import dash_daq as daq
 from server import app
 from dash import dcc, html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
+
+n_clicks = None
 
 def show_tab0():
 
@@ -139,7 +141,10 @@ def show_tab0():
 				color='green',
 				className='my_checkbox',
 			),
-			dcc.Input(id='api_key', type='text', value=api_key, placeholder='api_key', className='my_inputs', style={'margin-bottom': '10px'}),
+			html.Hr(),
+			dcc.Input(id='api_key', type='text', value=api_key, placeholder='api_key', className='my_inputs', style={'margin-bottom': '10px', 'font-size':'8px', 'width':'80%'}),
+			html.Button('Request API', id='get_api', style={'margin-left':'10px'}),
+			html.Div(id='get_api_output', children=''),
 			html.Hr(),
 			html.Div(id='output-div'),
 			html.P('This page will be used for a new feature coming soon'),
@@ -150,7 +155,7 @@ def show_tab0():
 
 	return html_tab0
 
-#---- Callback ----------------------------------------------------------
+#---- Callback to update database-----------------------------------------------
 @app.callback(
 	Output('output-div'		, 'children'),
 	[Input('first_name'		, 'value'),
@@ -221,3 +226,85 @@ def update_output(first_name, first_name_f, last_name, last_name_f,
 		return 'Details saved'
 	except Exception as e:
 		return f'Error: {str(e)}'
+
+
+# -----Request API button -----------------------------
+
+@app.callback(
+    Output('get_api_output', 'children'),
+    Input('get_api', 'n_clicks'),
+    [State('first_name'		, 'value'),
+	 State('first_name_f'	, 'on'),
+	 State('last_name'		, 'value'),
+	 State('last_name_f'	, 'on'),
+	 State('institution'	, 'value'),
+	 State('institution_f'	, 'on'),
+	 State('city'			, 'value'),
+	 State('city_f'			, 'on'),
+	 State('country'		, 'value'),
+	 State('country_f'		, 'on'),
+	 State('email'			, 'value'),
+	 State('email_f'		, 'on'),
+	 State('phone'			, 'value'),
+	 State('phone_f'		, 'on'),
+	 State('website'		, 'value'),
+	 State('website_f'		, 'on'),
+	 State('social_url'		, 'value'),
+	 State('social_url_f'	, 'on'),
+	 State('notes'			, 'value'),
+	 State('notes_f'		, 'on')
+    ]
+)
+
+
+def request_api_key(n_clicks, first_name, first_name_f, last_name, 
+					last_name_f, institution, institution_f, city,
+					city_f, country, country_f, email, email_f,
+					phone, phone_f, website, website_f, social_url,
+					social_url_f, notes, notes_f):
+
+    if n_clicks is None or n_clicks == 0:
+        return "Click the button to get your API key"
+    else:
+        # Construct the data payload
+        data = {
+            "first_name": first_name,
+            "first_name_f": first_name_f,
+            "last_name": last_name,
+            "last_name_f": last_name_f, 
+            "institution": institution, 
+            "institution_f": institution_f, 
+            "city": city,
+			"city_f": city_f, 
+			"country": country, 
+			"country_f": country_f, 
+			"email": email, 
+			"email_f": email_f,
+			"phone": phone, 
+			"phone_f": phone_f, 
+			"website": website, 
+			"website_f": website_f, 
+			"social_url": social_url,
+			"social_url_f": social_url_f, 
+			"notes": notes, 
+			"notes_f": notes_f
+        }
+
+        # URL of your server endpoint
+        url = "https://gammaspectacular.com/spectra/request_api_key"
+
+        # Sending a POST request to the server
+        try:
+            response = req.post(url, json=data)
+            if response.status_code == 200:
+                # Handle successful response
+                return "API key requested. Please check your email."
+            else:
+                # Handle error in response
+                return f"Error requesting API key: {response.text}"
+        except req.exceptions.RequestException as e:
+            # Handle request exception
+            return f"An error occurred: {e}"
+
+        return "API key requested. Please check your email."
+
