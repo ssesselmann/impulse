@@ -13,4 +13,5 @@ __pycache__/
 /code/impulse.log
 /Impulse.dmg
 codesign.txt
+impulse_api_token.txt
 
