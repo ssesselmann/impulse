@@ -873,7 +873,7 @@ def display_confirmation_result(confirm_button_clicks, cancel_button_clicks, fil
         # function to upload spectrum here
         response_message = fn.publish_spectrum(filename)
 
-        return f'Published:{response_message}'
+        return f'{filename} \nPublished'
     elif button_id == "cancel-button" and cancel_button_clicks:
 
         return "You canceled!"
