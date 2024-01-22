@@ -17,7 +17,8 @@ import sqlite3 as sql
 import pandas as pd
 import pulsecatcher as pc
 import logging
-
+import paramiko
+import requests as req
 from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
 from datetime import datetime
@@ -32,10 +33,11 @@ data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 run_flag_lock   = threading.Lock()
 run_flag        = threading.Event()  # Using Event instead of a simple flag
 
+
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
     samples =[]
-    pulses = []
+    pulses  = []
     for i in range(len(left_channel) - 51):
         samples = left_channel[i:i+51]  # Get the first 51 samples
         if samples[25] >= max(samples) and (max(samples)-min(samples)) > 100 and samples[25] < 32768:
@@ -403,7 +405,6 @@ def stop_recording():
     global run_flag
     with run_flag_lock:
         run_flag.clear() 
-
     return    
 
 def export_csv(filename):
@@ -468,3 +469,63 @@ def cleanup_serial_options(options):
             item['label'] = 'Serial # ' + item['label'][len(prefix_to_remove):]
 
     return options    
+
+def get_api_key(): # Fetch api_key from table user
+
+    try:
+        database    = get_path(f'{data_directory}/.data.db')
+        conn        = sql.connect(database)
+        c           = conn.cursor()
+        query       = "SELECT api_key FROM user LIMIT 1"
+        # Carry out query
+        c.execute(query)
+        # assign api_key
+        api_key = c.fetchone() 
+        # return result
+        return api_key[0] if api_key else None
+
+    except Exception as e:
+        print(f"code/functions/get_api_key() failed: {e}")
+        return None
+
+    finally:
+        conn.close()
+
+def publish_spectrum(filename):
+    # routing address
+    url = "https://gammaspectacular.com/spectra/publish_spectrum"
+
+    # gets client api
+    api_key = get_api_key()
+
+    # local file directory
+    spectrum_file_path = f'{data_directory}/{filename}.json'
+
+    # Prepare the file and data payload for the POST request
+    try:
+        with open(spectrum_file_path, 'rb') as file:
+            files = {'file': (filename, file)}
+            data  = {'api_key': api_key}
+            
+            # Sending a POST request to the server
+            response = req.post(url, files=files, data=data)
+
+            # Handle successful response
+            if response.status_code == 200:
+                return f'{filename}\npublished:\n{response}'
+
+            # Handle error in response
+            else:
+                print(f'code/functions/publish_spectrum {response.text}')
+                return f'code/functions/publish_spectrum {response.text}'
+
+    # Handle request exception
+    except req.exceptions.RequestException as e:
+        return f'code/functions/publish_spectrum: {e}'
+
+    except FileNotFoundError:
+        return f'code/functions/publish_spectrum: {spectrum_file_path}'
+
+    except Exception as e:
+        return f'code/functions/publish_spectrum {e}'
+

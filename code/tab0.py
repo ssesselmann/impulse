@@ -6,6 +6,7 @@ import sqlite3 as sql
 import shapecatcher as sc
 import os
 import logging
+import dash_table
 import requests as req
 import dash_daq as daq
 from server import app
@@ -53,15 +54,15 @@ def show_tab0():
 
 	html_tab0 = html.Div(id = 'tab_0', children=[
 
-		html.Div(id='tab0_text_box', children= [
+		html.Div(id='tab0_box_1', children= [
 			html.P(''),
 			html.P(''),
-			html.H1(f'{first_name} {last_name}\'s Details'),
+			html.H1(f'My Details'),
 			html.P('This page is intended for your personal details and all fields are stored on your local machine, so you don\'t have to worry about privacy.'),
 			html.P('When you choose to publish one of your great spectra for other users to see, you can choose which fields to publish, putting you in control of your data.'),
 			html.Hr(),
 
-			dcc.Input(id='first_name', type='text', value=first_name, placeholder='Firstname', className='my_inputs', style={'margin-bottom': '10px'}),
+			dcc.Input(id='first_name', type='text', value=first_name, placeholder='Firstname', className='my_inputs', style={'marginBottom': '10px'}),
 			daq.BooleanSwitch(
 				id='first_name_f',
 				on= bool(first_name_f),
@@ -70,7 +71,7 @@ def show_tab0():
 			),
 			html.Label(id='publish_label', children=' << Publish'),
 
-			dcc.Input(id='last_name', type='text', value=last_name, placeholder='Lastname', className='my_inputs', style={'margin-bottom': '10px'}),
+			dcc.Input(id='last_name', type='text', value=last_name, placeholder='Lastname', className='my_inputs', style={'marginBottom': '10px'}),
 			daq.BooleanSwitch(
 				id='last_name_f',
 				on=bool(last_name_f),
@@ -78,7 +79,7 @@ def show_tab0():
 				className='my_checkbox'
 			),
 
-			dcc.Input(id='institution', type='text', value=institution, placeholder='Institution', className='my_inputs', style={'margin-bottom': '10px'}),
+			dcc.Input(id='institution', type='text', value=institution, placeholder='Institution', className='my_inputs', style={'marginBottom': '10px'}),
 			daq.BooleanSwitch(
 				id='institution_f',
 				on=bool(institution_f),
@@ -86,7 +87,7 @@ def show_tab0():
 				className='my_checkbox'
 			),
 
-			dcc.Input(id='city', type='text', value=city, placeholder='City', className='my_inputs', style={'margin-bottom': '10px'}),
+			dcc.Input(id='city', type='text', value=city, placeholder='City', className='my_inputs', style={'marginBottom': '10px'}),
 			daq.BooleanSwitch(
 				id='city_f',
 				on=bool(city_f),
@@ -94,7 +95,7 @@ def show_tab0():
 				className='my_checkbox'
 			),
 
-			dcc.Input(id='country', type='text', value=country, placeholder='Country', className='my_inputs', style={'margin-bottom': '10px'}),
+			dcc.Input(id='country', type='text', value=country, placeholder='Country', className='my_inputs', style={'marginBottom': '10px'}),
 			daq.BooleanSwitch(
 				id='country_f',
 				on=bool(country_f),
@@ -102,7 +103,7 @@ def show_tab0():
 				className='my_checkbox'
 			),
 
-			dcc.Input(id='email', type='text', value=email, placeholder='email', className='my_inputs', style={'margin-bottom': '10px'}),
+			dcc.Input(id='email', type='text', value=email, placeholder='email', className='my_inputs', style={'marginBottom': '10px'}),
 			daq.BooleanSwitch(
 				id='email_f',
 				on=bool(email_f),
@@ -110,7 +111,7 @@ def show_tab0():
 				className='my_checkbox'
 			),
 
-			dcc.Input(id='phone', type='text', value=phone, placeholder='+00 0000 000 000 phone', className='my_inputs', style={'margin-bottom': '10px'}),
+			dcc.Input(id='phone', type='text', value=phone, placeholder='+00 0000 000 000 phone', className='my_inputs', style={'marginBottom': '10px'}),
 			daq.BooleanSwitch(
 				id='phone_f',
 				on=bool(phone_f),
@@ -118,7 +119,7 @@ def show_tab0():
 				className='my_checkbox'
 			),
 
-			dcc.Input(id='website', type='text', value=website, placeholder='www.domain.com', className='my_inputs', style={'margin-bottom': '10px'}),
+			dcc.Input(id='website', type='text', value=website, placeholder='www.domain.com', className='my_inputs', style={'marginBottom': '10px'}),
 			daq.BooleanSwitch(
 				id='website_f',
 				on=bool(website_f),
@@ -126,7 +127,7 @@ def show_tab0():
 				className='my_checkbox'
 			),
 
-			dcc.Input(id='social_url', type='text', value=social_url, placeholder='social_url', className='my_inputs', style={'margin-bottom': '10px'}),
+			dcc.Input(id='social_url', type='text', value=social_url, placeholder='social_url', className='my_inputs', style={'marginBottom': '10px'}),
 			daq.BooleanSwitch(
 				id='social_url_f',
 				on=bool(social_url_f),
@@ -142,15 +143,22 @@ def show_tab0():
 				className='my_checkbox',
 			),
 			html.Hr(),
-			dcc.Input(id='api_key', type='text', value=api_key, placeholder='api_key', className='my_inputs', style={'margin-bottom': '10px', 'font-size':'8px', 'width':'80%'}),
-			html.Button('Request API', id='get_api', style={'margin-left':'10px'}),
+			dcc.Input(id='api_key', type='text', value=api_key, placeholder='api_key', className='my_inputs', style={'marginBottom': '10px', 'fontSize':'8px', 'width':'80%'}),
+			html.Button('Request API', id='get_api', style={'marginLeft':'10px'}),
 			html.Div(id='get_api_output', children=''),
 			html.Hr(),
 			html.Div(id='output-div'),
-			html.P('This page will be used for a new feature coming soon'),
+			html.Button('Update my spectra', id='update_my_spectra', style={'visibility':'hidden'}),
+			html.P(id='delete_output', children=''),
 
-
-		]),
+			]),
+		
+		# Box to disply My Published spectra.
+		html.Div(id='tab0_box_2', children= [
+			
+			]),
+			
+		html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
 	]) # end of page html_tab0 --------------------------------------------------
 
 	return html_tab0
@@ -307,4 +315,81 @@ def request_api_key(n_clicks, first_name, first_name_f, last_name,
             return f"An error occurred: {e}"
 
         return "API key requested. Please check your email."
+
+@app.callback(
+    Output('tab0_box_2', 'children'),
+    [Input('update_my_spectra', 'n_intervals')]  
+)
+def update_my_spectra(n):
+
+    api_key = fn.get_api_key()
+
+    response = req.post('https://www.gammaspectacular.com/spectra/get_my_spectra', data={'api_key': api_key})
+
+    print('Response:', response)
+
+    if response.status_code == 200:
+        spectra_data = response.json()
+
+    # Convert data for DataTable
+        data_for_table = [
+            {
+                'ID': spectrum['id'],
+                'Date': spectrum['datetime'],
+                'Filename': spectrum['filename'],
+                # Format the download link as markdown
+                'Download': f"[Download](https://www.gammaspectacular.com/spectra/files/{spectrum['id']}.json)",
+                'Delete':"X"
+            } for spectrum in spectra_data
+        ]
+        
+
+        table = html.Div([
+        	
+            html.H1('My Published Spectra'),
+            dash_table.DataTable(
+            	id='my_spectra_table',
+                data=data_for_table,
+                columns=[
+                    {'name': 'ID', 'id': 'ID'},
+                    {'name': 'Date', 'id': 'Date'},
+                    {'name': 'Filename', 'id': 'Filename'},
+                    {'name': 'Download', 'id': 'Download', 'presentation': 'markdown'},
+                    {'name': 'Delete', 'id': 'Delete'}
+                ],
+                style_cell={'width': 'auto', 'text-align':'center', 'fontFamily':'Arial', 'height': '12px'},
+                markdown_options={"link_target": "_blank"}  # Open links in new tab
+            )
+        ])
+
+        return table
+
+    else:
+
+        return html.P(f'Error fetching data')
+
+@app.callback(
+    Output('delete_output', 'children'),  # Output to display some deletion status
+    Input('my_spectra_table', 'active_cell'),  # Input from the DataTable
+    State('my_spectra_table', 'data')  # State of the data in the DataTable
+)
+def delete_spectrum(active_cell, data):
+    if active_cell and active_cell['column_id'] == 'Delete':
+        row_id = data[active_cell['row']]['ID']
+        api_key = fn.get_api_key()
+
+        try:
+            response = req.post('https://www.gammaspectacular.com/spectra/delete', data={'api_key': api_key, 'spectrum_id': row_id})
+
+            if response.status_code == 200:
+                return f"Spectrum with ID {row_id} has been deleted."
+            else:
+                # Return a more informative error message
+                return f"Error deleting spectrum: {response.text}"
+
+        except Exception as e:
+            # Return the error message for debugging
+            return f"An error occurred: {str(e)}"
+
+    return ""   
 

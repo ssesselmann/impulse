@@ -103,14 +103,14 @@ def show_tab3():
             ]),
 
         html.Div(id='t2_filler_div', children=''),
-        html.Div(id='t2_setting_div', children=[
+        html.Div(id='t2_setting_div1', children=[
             html.Button('START', id='start_3d'),    #Start button
             html.Div(id='counts_3d', children= ''),
             html.Div(id='start_text_3d' , children =''),
             html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1000, readOnly=False, value=max_counts )]),
             ]),
 
-        html.Div(id='t2_setting_div', children=[            
+        html.Div(id='t2_setting_div2', children=[            
             html.Button('STOP', id='stop_3d'),
             html.Div(id='elapsed_3d', children= '' ),
             html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=60,  readOnly=False, value=max_seconds )]),
@@ -298,7 +298,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
     now = datetime.now()
     time = now.strftime("%A %d %B %Y")
 
-    title_text = "<b>{}</b><br><span style='font-size: 12px'>{}</span>".format(filename, time)
+    title_text = "<b>{}</b><br><span style='fontSize: 12px'>{}</span>".format(filename, time)
 
     layout = go.Layout(
             uirevision='nochange',

@@ -15,3 +15,5 @@ requests
 scipy
 threading
 wave
+dash_bootstrap_components
+paramiko

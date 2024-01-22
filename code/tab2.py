@@ -10,6 +10,7 @@ import time
 import numpy as np
 import sqlite3 as sql
 import dash_daq as daq
+import dash_bootstrap_components as dbc
 import audio_spectrum as asp
 
 import subprocess
@@ -248,7 +249,30 @@ def show_tab2():
             html.Button('Gaussian sound <)' , id='soundbyte'),
             html.Div(id='audio', children=''),
             html.Button('Update calibration', id='update_calib_button'),
-            html.Div(id='update_calib_message', children='')
+            html.Div(id='update_calib_message', children=''),
+            dbc.Button("Publish Spectrum", id="publish_button", color="primary", className="mb-3"),
+            
+            dbc.Modal(
+                children=[
+                    #dbc.ModalHeader("Confirmation"),
+
+                    dbc.ModalBody(f"Are you sure you want to publish \"{filename}\" spectrum?"),
+
+                    dbc.ModalFooter([
+                        dbc.Button("Confirm", id="confirm-button", className="ml-auto", color="primary"),
+
+                        dbc.Button("Cancel", id="cancel-button", className="mr-auto", color="secondary"),
+                        ],
+                    ),
+                ],
+                id="confirmation-modal",
+                centered=True,
+                size="md",
+                className="custom-modal",  # Apply the custom class here
+            ),
+
+            html.Div(id="confirmation-output", children= ''),
+
         ]),
 
         html.Div(id='t2_setting_div8', children=[
@@ -502,7 +526,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     )
                 )
 
-            title_text = "<b>{}</b><br><span style='font-size: 12px'>{}</span>".format(filename, time)
+            title_text = "<b>{}</b><br><span style='fontSize: 12px'>{}</span>".format(filename, time)
 
             layout = go.Layout(
                 paper_bgcolor = 'white', 
@@ -800,3 +824,60 @@ def update_output(selected_cmd, active_tab):
         logging.exception(f"Error in update_output: {e}")
 
         return "An error occurred."
+
+
+# -----Callback to publish spectrum to web with confirm message ---------------------------------------------
+@app.callback(
+    Output("confirmation-modal", "is_open"),
+    [Input("publish_button", "n_clicks"),
+     Input("confirm-button", "n_clicks"),
+     Input("cancel-button", "n_clicks")],
+    [State("confirmation-modal", "is_open")]
+)
+def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_button_clicks, is_open):
+
+    ctx = dash.callback_context
+
+    if not ctx.triggered_id:
+        button_id = None
+
+    else:
+        button_id = ctx.triggered_id.split(".")[0]
+
+    if button_id == "publish_button" and open_button_clicks:
+        return not is_open
+
+    elif button_id in ["confirm-button", "cancel-button"]:
+        return not is_open
+
+    else:
+        return is_open
+
+@app.callback(
+    Output("confirmation-output", "children"),
+    [Input("confirm-button", "n_clicks"),
+     Input("cancel-button", "n_clicks"),
+     State("filename", "value")],
+)
+def display_confirmation_result(confirm_button_clicks, cancel_button_clicks, filename):
+
+    ctx = dash.callback_context
+
+    if not ctx.triggered_id:
+        button_id = None
+
+    else:
+        button_id = ctx.triggered_id.split(".")[0]
+
+    if button_id == "confirm-button" and confirm_button_clicks:
+        # function to upload spectrum here
+        response_message = fn.publish_spectrum(filename)
+
+        return f'Published:{response_message}'
+    elif button_id == "cancel-button" and cancel_button_clicks:
+
+        return "You canceled!"
+
+    else:
+
+        return ""
