@@ -696,12 +696,6 @@ def save_settings(*args):
             # Calulate energies to insert into database
             x_energies      = [polynomial_fn(x_bins_default[0]), polynomial_fn(x_bins_default[1]), polynomial_fn(x_bins_default[2])]
 
-            #-----------------------------------------------------
-            # This section needs improving: C
-            # Changes calibration don't appear to be working
-            # unless the spectrum is stopped and restarted. 
-            # While loop does not load the new polynomial function
-            #-----------------------------------------------------
 
     else:
         x_bins          = [args[8], args[9], args[10]]
