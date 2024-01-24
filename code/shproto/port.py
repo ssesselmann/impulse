@@ -3,7 +3,6 @@ import serial.tools.list_ports
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 def getallports():
     allports = serial.tools.list_ports.comports()
@@ -54,5 +53,5 @@ def connectdevice(sn=None):
 
 def send_command(command):
     shproto.dispatcher.process_03(command)
-    logger.debug(f'Send command {command}')
+    logger.info(f'Send command {command}')
     return

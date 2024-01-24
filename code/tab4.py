@@ -15,7 +15,6 @@ from dash.dependencies import Input, Output, State
 from server import app
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 

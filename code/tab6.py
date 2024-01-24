@@ -16,7 +16,6 @@ from server import app
 from flask import request
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
@@ -213,9 +212,14 @@ def show_tab6():
 def shutdown_server(n_clicks):
     
     if n_clicks is not None:
+
         fn.shutdown()
+
+        logger.info('Port closed by user')
+
         return 'Port Closed'
     else:
+
         return 'Click to Exit'
 
 @app.callback(Output('theme_output'    ,'children'),
@@ -232,6 +236,8 @@ def theme_change(value):
     query = f"UPDATE settings SET theme='{value}' WHERE id=0;"
     c.execute(query) 
     conn.commit()
+
+    logger.info('User changed theme')
 
     return 'Restart to see new theme'
 

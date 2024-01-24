@@ -21,7 +21,6 @@ run_flag 		= True
 run_flag_lock 	= threading.Lock()
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 # Function reads audio stream and finds pulses then outputs time, pulse height and distortion
 def pulsecatcher(mode, run_flag, run_flag_lock):

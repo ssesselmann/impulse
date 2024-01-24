@@ -8,10 +8,7 @@ import functions as fn
 import sqlite3 as sql
 from server import app
 
-
-
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 database = fn.get_path(f'{data_directory}/.data.db')

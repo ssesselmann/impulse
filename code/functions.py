@@ -26,7 +26,6 @@ from urllib.request import urlopen
 import serial.tools.list_ports
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 cps_list        = []
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")

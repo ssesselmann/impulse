@@ -13,7 +13,6 @@ from dash.dependencies import Input, Output
 from server import app
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 
@@ -274,7 +273,7 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
         if pulse_length >= 334:
             warning = 'WARNING LONG'
 
-        logger.debug(f'Settings Saved tab1 ({query})')
+        logger.info(f'Settings saved to database tab1')
 
         return f'Device: {device} (Refresh page after change!)', f'{warning} Dead time ~ {pulse_length} µs'
 

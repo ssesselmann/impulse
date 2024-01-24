@@ -27,7 +27,6 @@ from dash.exceptions import PreventUpdate
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 path = None
 n_clicks = None
@@ -198,13 +197,10 @@ def update_output(n_clicks, filename, compression, t_interval):
     if n_clicks == None:
         raise PreventUpdate
 
-    logger.debug(f'Start on tab2 clicked: {n_clicks}, {filename}, {compression}, {t_interval}')
-
     sdl = fn.get_serial_device_list()
 
     if sdl:
         try:
-            logger.debug('Serial ports discovered')
 
             shproto.dispatcher.spec_stopflag = 0
             dispatcher = threading.Thread(target=shproto.dispatcher.start)
@@ -215,29 +211,31 @@ def update_output(n_clicks, filename, compression, t_interval):
             # Reset spectrum
             command = '-rst'
             shproto.dispatcher.process_03(command)
-            logger.debug(f'tab2 sends command {command}')
+            logger.info(f'tab2 sends command {command}')
 
             time.sleep(1)
 
             # Start multichannel analyser
             command = '-sta'
             shproto.dispatcher.process_03(command)
-            logger.debug(f'tab2 sends command {command}')
+            logger.info(f'tab2 sends command {command}')
 
             time.sleep(1)
 
             shproto.dispatcher.process_02(filename, compression, t_interval)
-            logger.debug(f'dispatcher.process_01 Started')
+            logger.info(f'dispatcher.process_01 Started')
 
             time.sleep(1)
 
         except Exception as e:
+
+            logger.error(f'update_output() on tab3 failed: {e}')
             return f"Error: {str(e)}"
     else:
         
         fn.start_recording(3)
 
-        logger.debug('Audio Codec Recording Started')
+        logger.info('Audio Codec Recording Started')
 
         return 
 #----STOP------------------------------------------------------------
@@ -259,7 +257,7 @@ def update_output(n_clicks):
 
         time.sleep(0.1)
 
-        logger.debug('Stop command sent from (tab2)')
+        logger.info('Stop command sent from (tab2)')
 
     else:
         fn.stop_recording()

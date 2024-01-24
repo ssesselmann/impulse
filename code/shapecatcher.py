@@ -19,7 +19,6 @@ import logging
 from collections import defaultdict
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 # Starts timer
 t0 					= time.perf_counter() 

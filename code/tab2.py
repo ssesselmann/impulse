@@ -27,7 +27,6 @@ from dash.exceptions import PreventUpdate
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 path            = None
 n_clicks        = None
@@ -316,14 +315,10 @@ def update_output(n_clicks, filename, compression):
     if n_clicks == None:
         raise PreventUpdate
 
-    logger.debug('Start on tab2 clicked')
-
     sdl = fn.get_serial_device_list()
 
     if sdl:
         try:
-            logger.debug('Serial ports discovered')
-
             shproto.dispatcher.spec_stopflag = 0
             dispatcher = threading.Thread(target=shproto.dispatcher.start)
             dispatcher.start()
@@ -333,29 +328,30 @@ def update_output(n_clicks, filename, compression):
             # Reset spectrum
             command = '-rst'
             shproto.dispatcher.process_03(command)
-            logger.debug(f'tab2 sends command {command}')
+            logger.info(f'tab2 sends command {command}')
 
             time.sleep(1)
 
             # Start multichannel analyser
             command = '-sta'
             shproto.dispatcher.process_03(command)
-            logger.debug(f'tab2 sends command {command}')
+            logger.info(f'tab2 sends command {command}')
 
             time.sleep(1)
 
             shproto.dispatcher.process_01(filename, compression, "GS-MAX or ATOM-NANO")
-            logger.debug(f'dispatcher.process_01 Started')
+            logger.info(f'dispatcher.process_01 Started')
 
             time.sleep(1)
 
         except Exception as e:
+            logger.error(f'update_output() error {e}')
             return f"Error: {str(e)}"
     else:
         
         fn.start_recording(2)
 
-        logger.debug('Audio Codec Recording Started')
+        logger.info('Audio Codec Recording Started')
 
     return 
 #----STOP------------------------------------------------------------
@@ -379,13 +375,13 @@ def update_output(n_clicks, filename):
 
         time.sleep(0.1)
 
-        logger.debug('Stop command sent from (tab2)')
+        logger.info('Stop command sent from (tab2)')
 
     else:
 
         fn.stop_recording()
 
-        logger.debug('Audio Codec Recording Stopped')
+        logger.info('Audio Codec Recording Stopped')
 
         return 
 
@@ -734,7 +730,7 @@ def save_settings(*args):
     c.execute(query)
     conn.commit()
 
-    logger.debug(f'Settings Saved (tab2) {query}')
+    logger.info(f'Settings saved tab2')
 
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
 
@@ -764,7 +760,7 @@ def play_sound(n_clicks, filename2):
 
         asp.play_wav_file(filename2)
 
-    logger.debug(f'Play Gaussian Sound: {filename2}')
+    logger.info(f'Play Gaussian Sound')
         
     return
 
@@ -789,7 +785,7 @@ def update_current_calibration(n_clicks, filename):
         # Update the calibration coefficients using the specified values
         fn.update_coeff(filename, coeff_1, coeff_2, coeff_3)
 
-        logger.debug(f'Calibration updated (tab2): {filename, coeff_1, coeff_2, coeff_3}')
+        logger.info(f'Calibration updated tab2: {filename, coeff_1, coeff_2, coeff_3}')
 
         # Return a message indicating that the update was successful
         return f"Update {n_clicks}"
@@ -806,7 +802,8 @@ def update_output(selected_cmd, active_tab):
 
     if active_tab != 'tab_2':  # only update the chart when "tab4" is active
         raise PreventUpdate
-    logger.debug(f'Command selected (tab2): {selected_cmd}')
+
+    logger.info(f'Command selected tab2: {selected_cmd}')
 
     try:
         shproto.dispatcher.process_03(selected_cmd)
@@ -815,7 +812,7 @@ def update_output(selected_cmd, active_tab):
 
     except Exception as e:
 
-        logging.exception(f"Error in update_output: {e}")
+        logging.error(f"Error in update_output tab2: {e}")
 
         return "An error occurred."
 
@@ -867,7 +864,10 @@ def display_confirmation_result(confirm_button_clicks, cancel_button_clicks, fil
         # function to upload spectrum here
         response_message = fn.publish_spectrum(filename)
 
+        logger.info(f'User published spectrum {filename}')
+
         return f'{filename} \nPublished'
+        
     elif button_id == "cancel-button" and cancel_button_clicks:
 
         return "You canceled!"
