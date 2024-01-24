@@ -78,14 +78,20 @@ def show_tab6():
                 html.P('Gamma radiation detectors with photomultipler tubes PMTs, output pulses in the form of an analogue voltage. Typically the pulses are on the order of 4 µs. which is too fast for sampling by commercial sound cards, but by aplifying and passing the signal through a low pass filter the pulse can be stretched to 100 µs. and then it can be sampled by an audio codec. '),
                 html.P('Computer sound cards operate on an AC voltage of around +- 1V and are not compatible with old school NIM equipment unless the signal is attenuated down to the correct range.'),
                 
-                html.H2('Tab1 - Settings and Control'),
+                html.H2('My Details tab'),
+                html.P('This tab gives you control over your personal details and your published spectra. Your details are saved in a hidden database in the \'~/impulse_data\' folder on your PC or Mac, and when you apply for an API an account is created for you on the gammaspectacular.com web server which mirrors the data on the client.'),
+                html.P('Once you click the \'Request API\' button the server will respond by sending you an email with your personal API key, copy and paste the key into the api_key field.'),
+                html.P('Any spectra you publish will appear on the right hand panel. By clicking the x in the last column you can delete a previously uploaded spectrum. This could be handy if you want to replace an old spectrum with a better one.'), 
 
-                html.H4('Devise Specific Rendering of tab1'),
-                html.P('After selecting a GS-MAX or ATOM-NANO serial device and refreshing the page, fields specific to audio input devices will be hidden from view.'),
+
+                html.H2('Device and Control tab'),
+
+                html.H4('Devise Specific Rendering'),
+                html.P('After selecting a spectrometer device from the pulldown menu, refresh the page, fields specific to your device will show.'),
 
                 
                 html.H4('Enter Device Index'),
-                html.P('Your computer may have several audio devices connected, so we need to instruct the program which audio input device to use, so click on the button called [Get Device Table] and identify your input device, then set your input devise to the index number in the first column.'),
+                html.P('Your computer may have several devices connected, so we need to instruct the program which input to use, so click on the button called [Get Device Table] and identify your input device, then set your input devise to the index number in the first column.'),
                 
                 html.H4('Sample Rate'),
                 html.P('Analogue to digital audio sampling involves taking a voltage reading of the analogue signal multiple times a second, the faster the sampling rate the more accurately we can reconstruct the signal. Most modern computers can handle audio sampling rates up to 384 kHz. Faster sampling will generally produce a better spectrum, but it also requires a longer pulse which limits the pulse acquisition rate. If your objective is to measure a high count rate you may want a shorter pulse and a lower sample rate. '),
@@ -106,7 +112,7 @@ def show_tab6():
                 html.H4('Pulse Shape'),
                 html.P('What you see in the pulse shape graph is a normalised positive pulse shape and a horizontal red line representing the fixed height threshold which must be exceeded for a pulse to get sampled (this threshold is hard coded). The program runs a quick function to check if the pulses are negative or positive and automatically flips the pulses if necessary, therefore we have no setting for negative pulses. '),
 
-                html.H2('Tab2 - Pulse Height Histogram'),
+                html.H2('2D Histogram'),
                 html.H4('Spectrum File Name'),
                 
                 html.P('This is exactly what it says, you can name your spectrum anything you like, it will automatically save in the user home directory ~/impulse_data/myspectrum.json , the JSON file format is NPESv2 and is backwards compatible with NPESv1 '),
@@ -145,6 +151,9 @@ def show_tab6():
                 html.H4('Update Calibration Button'),
                 html.P('During normal recording your calibration settings are automatically saved in the JSON file, however when you want to re-calibrate a previously recorded spectrum you can do so by clicking on this button. The function opens the JSON file and edits the polynomial coefficients'),
 
+                html.H4('Publish Spectrum Button'),
+                html.P('Once you have recorded and calibrated a beutiful spectrum, share it with the wider community of Impulse users.'),
+
                 html.H4('Calibration'),
                 html.P('The calibration switch turns calibration on or off. Energy calibration is done by a second order polynomial fit. There are six fields where the user may enter three bins with three corresponding energies. By choosing a linear relationship between bins and energies you can achieve a linear spectrum and by choosing non linear relationships you can correct for detectors that are non linear. The typical use case would be to enter the bins and known ebnergies from three widely spread gamma peaks.  '),
                 
@@ -154,13 +163,19 @@ def show_tab6():
                 html.H4('Gaussian Correlation'),
                 html.P('This function identifies peaks which are hard to see with the naked eye, it takes the normalised spectrum and calculates the dot product of the gaussian shape with a standard deviation dependant bin number, the slider adjusts sigma, which determines how many bins to avertage the gaussian function.'),
 
-                html.H2('Tab3 - 3D Count Rate Histogram'),
+                html.H2('3D Histogram tab'),
                 html.P('This page functions much the same way as the regular histogram on tab2, with the added feature of a time axis. You can control the time interval between each update. NOTE: Because this spectrum writes a lot of data to the browser it is advisable to keep the number of channels and time intervals to a minimum'), 
 
 
-                html.H2('Tab4 - Count Rate Histogram'),
+                html.H2('Count Rate tab'),
                 html.P('This is a line chart the count rate over time and is entirely driven by the settings on the previous tab-1 and tab-2. The green line is a 10 second rolling average. No options or settings on this page yet.'),
                 
+                html.H2('Repository tab'),
+                html.P('The is is where spectra published by all Impulse users appear. All published spectra are saved in NPESv2 json format and can be opened in many popular programs. Please contribute your spectra and make more data available to the community. The search field is a convenient way to find what you are looking for so make sure you give your published spactra a good name.'),
+                
+
+
+
                 html.Hr(),
                 html.H1('The Gammaspectacular Spectrometer'),
                 html.Div('This program operates with a sound card spectrometer, this technology was invented in Australia by professor Marek Dolleiser' ),
