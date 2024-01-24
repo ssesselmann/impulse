@@ -29,22 +29,25 @@ def show_tab5():
     ], style={'textAlign': 'center', 'marginTop': '20px', 'marginBottom': '20px', 'width': '300px', 'margin': 'auto'})
 
     return html.Div([
-        # Search input
-        dcc.Input(
-            id='tab5_search', 
-            type='text', 
-            placeholder='Search spectra', 
-            autoFocus=True,
-            style={'float': 'right', 'width':'200px', 'textAlign':'left', 'marginBottom':'20px', 'backgroundColor':'#D1E9F9', 'fontSize':18, 'padding':5}),
-        
-        html.H1("Public Spectrum Repository", style={'textAlign': 'center'}),
-        html.H3('Contribute to Scientific Discovery: Share Your Calibrated Spectra!'),
-        html.P("Welcome to our dynamic, searchable database of calibrated spectra. By uploading your high-quality spectral data, you're not only contributing to a rich scientific resource but also fostering collaboration and exploration within the community."),
-        html.H3('Give Your Spectrum a Descriptive Name:'),
-        html.P('Help others easily find and understand your data by choosing clear, informative names for your spectra.  Don\'t hesitate to upload your spectra, even if similar ones already exist. Every contribution enriches our database, offering more insights and opportunities for discovery. Explore the Unknown: Got a mystery mineral source? Share it! Let\'s dive into exciting discussions and unravel the mysteries together.'),
-        html.H3('Let\'s Collaborate and Discover!'),
-        html.P('Note: Calibration on thumb nail spectra may be out due to data compression', style={'fontSize':'10px', 'textAlign': 'right', 'paddingRight':'10%'}),
-        html.Hr(),
+
+        html.Div(id='t5_heading', children=[  
+            # Search input
+            dcc.Input(
+                id='tab5_search', 
+                type='text', 
+                placeholder='Search spectra', 
+                autoFocus=True,
+                style={'float': 'right', 'width':'200px', 'textAlign':'left', 'marginBottom':'20px', 'backgroundColor':'#D1E9F9', 'fontSize':18, 'padding':5}),
+            
+            html.H1("Public Spectrum Repository", style={'textAlign': 'center'}),
+            html.H3('Contribute to Scientific Discovery: Share Your Calibrated Spectra!'),
+            html.P("Welcome to our dynamic, searchable database of calibrated spectra. By uploading your high-quality spectral data, you're not only contributing to a rich scientific resource but also fostering collaboration and exploration within the community."),
+            html.H3('Give Your Spectrum a Descriptive Name:'),
+            html.P('Help others easily find and understand your data by choosing clear, informative names for your spectra.  Don\'t hesitate to upload your spectra, even if similar ones already exist. Every contribution enriches our database, offering more insights and opportunities for discovery. Explore the Unknown: Got a mystery mineral source? Share it! Let\'s dive into exciting discussions and unravel the mysteries together.'),
+            html.H3('Let\'s Collaborate and Discover!'),
+            html.P('Note: Calibration on thumb nail spectra may be out due to data compression', style={'fontSize':'10px', 'textAlign': 'right', 'paddingRight':'10%'}),
+            html.Hr(),
+        ], style={'width':'90%', 'margin':'auto', 'textAlign':'center'}),
 
         # Container for the data rows
         html.Div(id='spectrum-data', style={'width': '90%', 'margin': 'auto'}),
@@ -56,7 +59,7 @@ def show_tab5():
 
         html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
 
-    ], style={'width':'95%', 'padding':30,'height':'100%','margin':'auto', 'backgroundColor':'white'})
+    ], style={'width':'95%', 'padding':30,'height':'100%','margin':'auto', 'backgroundColor':'white', 'textAlign':'center'})
 
 
 
@@ -149,7 +152,7 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                 html.P(f"Date: {date}"),
                 html.P(f"Channels: "),
                 html.A("Download", href=download, target='_blank')
-            ], style={'width': '200px', 'padding': '10px'})
+            ], style={'width': '130px', 'padding': '10px'})
 
             # Format client information
             client_info_div = html.Div([
@@ -161,7 +164,7 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                 html.P(html.A(social, href=social, target="_blank"), style={'height':10}),
                 html.P(f"Notes: {notes}"),
                 # Include other client details as needed
-            ], style={'width': '450px', 'padding': '10px'})
+            ], style={'width': '380px', 'padding': '10px'})
 
             # Plot div - placeholder for now, replace with actual plot code as needed
             plot_div = html.Div([
@@ -200,7 +203,7 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                     figure=fig,
                     style={'height': '100%', 'width': '100%'}
                 )
-            ], style={'float': 'left', 'width': '40%'})
+            ], style={'width': '40%'})
 
             # Combine the divs into a single row
             row_div = html.Div([file_info_div, client_info_div, plot_div], 
