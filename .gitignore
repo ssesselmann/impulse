@@ -11,6 +11,7 @@ __pycache__/
 /code/myenv/*
 /code/.*
 /code/impulse.log
+/code/last_run_log
 /Impulse.dmg
 codesign.txt
 impulse_api_token.txt
