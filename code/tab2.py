@@ -700,7 +700,7 @@ def save_settings(*args):
 
     coefficients    = np.polyfit(x_bins, x_energies, 2)
     polynomial_fn   = np.poly1d(coefficients)
-    database        = fn.get_path(f'{data_directory}/.data.db')
+    database        = fn.get_path(f'{data_directory}/.data_v2.db')
     conn            = sql.connect(database)
     c               = conn.cursor()
 
