@@ -46,7 +46,7 @@ def show_tab5():
             html.H3('Let\'s Collaborate and Discover!'),
             html.P('Note: Calibration on thumb nail spectra may be out due to data compression', style={'fontSize':'10px', 'textAlign': 'right', 'paddingRight':'10%'}),
             html.Hr(),
-        ], style={'width':'90%', 'margin':'auto', 'textAlign':'center'}),
+        ], style={'width':'90%', 'margin':'auto', 'textAlign':'left'}),
 
         # Container for the data rows
         html.Div(id='spectrum-data', style={'width': '90%', 'margin': 'auto'}),

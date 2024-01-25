@@ -53,111 +53,116 @@ def show_tab0():
 
     html_tab0 = html.Div(id = 'tab_0', children=[
 
-        html.Div(id='tab0_box_1', children= [
-            html.P(''),
-            html.P(''),
-            html.H1(f'My Details'),
-            html.P('This page is intended for your personal details and all fields are stored on your local machine, so you don\'t have to worry about privacy.'),
-            html.P('When you choose to publish one of your great spectra for other users to see, you can choose which fields to publish, putting you in control of your data.'),
-            html.Hr(),
+        html.Div(id='tab0_frame', children=[
 
-            dcc.Input(id='first_name', type='text', value=first_name, placeholder='Firstname', className='my_inputs', style={'marginBottom': '10px'}),
-            daq.BooleanSwitch(
-                id='first_name_f',
-                on= bool(first_name_f),
-                color='green',
-                className='my_checkbox'
-            ),
-            html.Label(id='publish_label', children=' << Publish'),
+            html.Div(id='tab0_box_1', children= [
+                html.P(''),
+                html.P(''),
+                html.H1(f'My Details'),
+                html.P('This page is intended for your personal details and all fields are stored on your local machine, so you don\'t have to worry about privacy.'),
+                html.P('When you choose to publish one of your great spectra for other users to see, you can choose which fields to publish, putting you in control of your data.'),
+                html.Hr(),
+                html.Div(id='publish_label', children='Publish'),
 
-            dcc.Input(id='last_name', type='text', value=last_name, placeholder='Lastname', className='my_inputs', style={'marginBottom': '10px'}),
-            daq.BooleanSwitch(
-                id='last_name_f',
-                on=bool(last_name_f),
-                color='green',
-                className='my_checkbox'
-            ),
+                dcc.Input(id='first_name', type='text', value=first_name, placeholder='Firstname', className='my_inputs', style={'marginBottom': '10px'}),
+                daq.BooleanSwitch(
+                    id='first_name_f',
+                    on= bool(first_name_f),
+                    color='green',
+                    className='my_checkbox'
+                ),
+                
+                dcc.Input(id='last_name', type='text', value=last_name, placeholder='Lastname', className='my_inputs', style={'marginBottom': '10px'}),
+                daq.BooleanSwitch(
+                    id='last_name_f',
+                    on=bool(last_name_f),
+                    color='green',
+                    className='my_checkbox'
+                ),
 
-            dcc.Input(id='institution', type='text', value=institution, placeholder='Institution', className='my_inputs', style={'marginBottom': '10px'}),
-            daq.BooleanSwitch(
-                id='institution_f',
-                on=bool(institution_f),
-                color='green',
-                className='my_checkbox'
-            ),
+                dcc.Input(id='institution', type='text', value=institution, placeholder='Institution', className='my_inputs', style={'marginBottom': '10px'}),
+                daq.BooleanSwitch(
+                    id='institution_f',
+                    on=bool(institution_f),
+                    color='green',
+                    className='my_checkbox'
+                ),
 
-            dcc.Input(id='city', type='text', value=city, placeholder='City', className='my_inputs', style={'marginBottom': '10px'}),
-            daq.BooleanSwitch(
-                id='city_f',
-                on=bool(city_f),
-                color='green',
-                className='my_checkbox'
-            ),
+                dcc.Input(id='city', type='text', value=city, placeholder='City', className='my_inputs', style={'marginBottom': '10px'}),
+                daq.BooleanSwitch(
+                    id='city_f',
+                    on=bool(city_f),
+                    color='green',
+                    className='my_checkbox'
+                ),
 
-            dcc.Input(id='country', type='text', value=country, placeholder='Country', className='my_inputs', style={'marginBottom': '10px'}),
-            daq.BooleanSwitch(
-                id='country_f',
-                on=bool(country_f),
-                color='green',
-                className='my_checkbox'
-            ),
+                dcc.Input(id='country', type='text', value=country, placeholder='Country', className='my_inputs', style={'marginBottom': '10px'}),
+                daq.BooleanSwitch(
+                    id='country_f',
+                    on=bool(country_f),
+                    color='green',
+                    className='my_checkbox'
+                ),
 
-            dcc.Input(id='email', type='text', value=email, placeholder='email', className='my_inputs', style={'marginBottom': '10px'}),
-            daq.BooleanSwitch(
-                id='email_f',
-                on=bool(email_f),
-                color='green',
-                className='my_checkbox'
-            ),
+                dcc.Input(id='email', type='text', value=email, placeholder='email', className='my_inputs', style={'marginBottom': '10px'}),
+                daq.BooleanSwitch(
+                    id='email_f',
+                    on=bool(email_f),
+                    color='green',
+                    className='my_checkbox'
+                ),
 
-            dcc.Input(id='phone', type='text', value=phone, placeholder='+00 0000 000 000 phone', className='my_inputs', style={'marginBottom': '10px'}),
-            daq.BooleanSwitch(
-                id='phone_f',
-                on=bool(phone_f),
-                color='green',
-                className='my_checkbox'
-            ),
+                dcc.Input(id='phone', type='text', value=phone, placeholder='+00 0000 000 000 phone', className='my_inputs', style={'marginBottom': '10px'}),
+                daq.BooleanSwitch(
+                    id='phone_f',
+                    on=bool(phone_f),
+                    color='green',
+                    className='my_checkbox'
+                ),
 
-            dcc.Input(id='website', type='text', value=website, placeholder='www.domain.com', className='my_inputs', style={'marginBottom': '10px'}),
-            daq.BooleanSwitch(
-                id='website_f',
-                on=bool(website_f),
-                color='green',
-                className='my_checkbox'
-            ),
+                dcc.Input(id='website', type='text', value=website, placeholder='www.domain.com', className='my_inputs', style={'marginBottom': '10px'}),
+                daq.BooleanSwitch(
+                    id='website_f',
+                    on=bool(website_f),
+                    color='green',
+                    className='my_checkbox'
+                ),
 
-            dcc.Input(id='social_url', type='text', value=social_url, placeholder='social_url', className='my_inputs', style={'marginBottom': '10px'}),
-            daq.BooleanSwitch(
-                id='social_url_f',
-                on=bool(social_url_f),
-                color='green',
-                className='my_checkbox'
-            ),
+                dcc.Input(id='social_url', type='text', value=social_url, placeholder='social_url', className='my_inputs', style={'marginBottom': '10px'}),
+                daq.BooleanSwitch(
+                    id='social_url_f',
+                    on=bool(social_url_f),
+                    color='green',
+                    className='my_checkbox'
+                ),
 
-            dcc.Textarea(id='notes', value=notes, placeholder='notes', className='my_inputs'),
-            daq.BooleanSwitch(
-                id='notes_f',
-                on=bool(notes_f),
-                color='green',
-                className='my_checkbox',
-            ),
-            html.Hr(),
-            dcc.Input(id='api_key', type='text', value=api_key, placeholder='api_key', className='my_inputs', style={'marginBottom': '10px', 'fontSize':'8px', 'width':'80%'}),
-            html.Button('Request API', id='get_api', style={'marginLeft':'10px'}),
-            html.Div(id='get_api_output', children=''),
-            html.Hr(),
-            html.Div(id='output-div'),
-            html.Button('Update my spectra', id='update_my_spectra', style={'visibility':'hidden'}),
-            html.P(id='delete_output', children=''),
+                dcc.Textarea(id='notes', value=notes, placeholder='notes', className='my_inputs'),
+                daq.BooleanSwitch(
+                    id='notes_f',
+                    on=bool(notes_f),
+                    color='green',
+                    className='my_checkbox',
+                ),
+                html.Hr(),
+                dcc.Input(id='api_key', type='text', value=api_key, placeholder='api_key', className='my_inputs', style={'marginBottom': '10px', 'fontSize':'8px', 'width':'80%'}),
+                html.Button('Request API', id='get_api', style={'marginLeft':'10px'}),
+                html.Div(id='get_api_output', children=''),
+                html.Hr(),
+                html.Div(id='output-div'),
+                html.Button('Update my spectra', id='update_my_spectra', style={'visibility':'hidden'}),
+                html.P(id='delete_output', children=''),
 
-            ]),
-        
-        # Box to disply My Published spectra.
-        html.Div(id='tab0_box_2', children= [
+                ]),
             
-            ]),
-            
+            # Box to disply My Published spectra.
+            html.Div(id='tab0_box_2', children= [
+                
+                ]),
+            ]), #end of frame
+                
         html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
+
+
     ]) # end of page html_tab0 --------------------------------------------------
 
     return html_tab0
