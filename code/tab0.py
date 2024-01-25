@@ -21,7 +21,7 @@ n_clicks = None
 
 def show_tab0():
 
-    database     = fn.get_path(f'{data_directory}/.data.db')
+    database     = fn.get_path(f'{data_directory}/.data_v2.db')
     conn         = sql.connect(database)
     c             = conn.cursor()
     query         = "SELECT * FROM user "
@@ -195,7 +195,7 @@ def update_output(first_name, first_name_f, last_name, last_name_f,
                 api_key):
 
 
-    database    = fn.get_path(f'{data_directory}/.data.db')
+    database    = fn.get_path(f'{data_directory}/.data_v2.db')
     conn        = sql.connect(database)
     c            = conn.cursor()
 

@@ -30,7 +30,8 @@ def show_tab6():
     # Sort the options alphabetically by label
     options_sorted = sorted(options, key=lambda x: x['label'])
 
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
+
     conn = sql.connect(database)
     c = conn.cursor()
     query = "SELECT theme FROM settings "
@@ -230,7 +231,7 @@ def theme_change(value):
     if value is None:
         raise PreventUpdate
 
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
     conn = sql.connect(database)
     c = conn.cursor()
     query = f"UPDATE settings SET theme='{value}' WHERE id=0;"

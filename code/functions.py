@@ -204,7 +204,7 @@ def clear_global_cps_list():
 # This function loads settings from sqli database
 def load_settings():
 
-    database = get_path(f'{data_directory}/.data.db')
+    database = get_path(f'{data_directory}/.data_v2.db')
     settings        = []
     conn            = sql.connect(database)
     c               = conn.cursor()
@@ -472,7 +472,7 @@ def cleanup_serial_options(options):
 def get_api_key(): # Fetch api_key from table user
 
     try:
-        database    = get_path(f'{data_directory}/.data.db')
+        database    = get_path(f'{data_directory}/.data_v2.db')
         conn        = sql.connect(database)
         c           = conn.cursor()
         query       = "SELECT api_key FROM user LIMIT 1"

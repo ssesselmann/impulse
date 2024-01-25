@@ -53,7 +53,7 @@ def show_tab3():
         file['label'] = file['label'].replace('.json', '')
         file['value'] = file['value'].replace('.json', '')
 
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
     conn            = sql.connect(database)
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
@@ -413,7 +413,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
 
 def save_settings(bins, bin_size, max_counts, max_seconds, t_interval, filename, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
     
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
 
     conn = sql.connect(database)
     c = conn.cursor()

@@ -63,7 +63,8 @@ def show_tab2():
         file['label'] = file['label'].replace('.json', '')
         file['value'] = file['value'].replace('.json', '')
 
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
+
     conn            = sql.connect(database)
     c               = conn.cursor()
     query           = "SELECT * FROM settings "

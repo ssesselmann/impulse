@@ -20,7 +20,7 @@ data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 def show_tab1():
     
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
 
     conn = sql.connect(database)
     c = conn.cursor()
@@ -251,7 +251,7 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
         length      = value5
         peakshift   = value6
 
-        database    = fn.get_path(f'{data_directory}/.data.db')
+        database    = fn.get_path(f'{data_directory}/.data_v2.db')
         conn        = sql.connect(database)
         c           = conn.cursor()
         query       = f'''
