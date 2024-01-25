@@ -15,3 +15,4 @@ scipy
 threading
 dash_bootstrap_components
 paramiko
+chardet

@@ -16,3 +16,4 @@ threading
 wave
 dash_bootstrap_components
 paramiko
+chardet
