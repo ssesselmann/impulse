@@ -25,7 +25,7 @@ logger.info(f'Logging has been configured')
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 try:
-	database 	= fn.get_path(f'{data_directory}/.data.db')
+	database 	= fn.get_path(f'{data_directory}/.data_v2.db')
 	conn 		= sql.connect(database)
 	c 			= conn.cursor()
 	query 		= "SELECT theme FROM settings "
