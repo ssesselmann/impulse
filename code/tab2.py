@@ -39,6 +39,7 @@ global_cps      = 0
 stop_event      = threading.Event()
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 sdl             = fn.get_serial_device_list()
+spec_notes = ''
 
 def show_tab2():
     global global_counts
@@ -97,6 +98,8 @@ def show_tab2():
     max_seconds     = settings[26]
     t_interval      = settings[27]
     compression     = settings[29]
+
+    spec_notes      = fn.get_spec_notes(filename)
 
     if device >= 100:
         serial          = 'block'
@@ -291,10 +294,13 @@ def show_tab2():
             html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3, className='input')),
             html.Div('Gaussian corr. (sigma)'),
             html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
+            html.Div(id='specNoteDiv', children=[
+                dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='Spectrum notes', cols=20, rows=6)]),
+                html.Div(id='spec-notes-output', children=''),
             
             ]),
 
-        html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
+        html.Div(children=[ html.Img(id='footer_tab2', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
         
         html.Div(id='subfooter', children=[
             ]),
@@ -464,7 +470,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 y=y, 
                 mode='lines+markers', 
                 fill='tozeroy' ,  
-                marker={'color': 'darkblue', 'size':3}, 
+                marker={'color': 'darkblue', 'size':1}, 
                 line={'width':1})
 
   #-------------------annotations-----------------------------------------------          
@@ -609,7 +615,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                             y=y3, 
                             mode='lines+markers', 
                             fill='tozeroy',  
-                            marker={'color': 'green', 'size':3}, 
+                            marker={'color': 'green', 'size':1}, 
                             line={'width':1}
                             )
 
@@ -876,3 +882,19 @@ def display_confirmation_result(confirm_button_clicks, cancel_button_clicks, fil
     else:
 
         return ""
+
+# ---------------------- Update Spectrum Notes ------------------
+
+@app.callback(
+    Output('spec-notes-output', 'children'),
+    [Input('spec-notes-input', 'value'),
+     Input('filename', 'value')],
+    prevent_initial_call=True
+)
+def update_spectrum_notes(spec_notes, filename):
+    
+    fn.update_json_notes(filename, spec_notes)
+    logger.info(f'Spectrum notes updated {spec_notes}')
+
+    return 'writing to json...'
+

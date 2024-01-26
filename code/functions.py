@@ -528,3 +528,31 @@ def publish_spectrum(filename):
     except Exception as e:
         return f'code/functions/publish_spectrum {e}'
 
+def update_json_notes(filename, spec_notes):
+
+    with open(f'{data_directory}/{filename}.json') as f:
+        data = json.load(f)
+
+    if data["schemaVersion"]  == "NPESv2":
+        data["data"][0]["sampleInfo"]["note"] = spec_notes
+
+    else:
+        return "Wrong file format"    
+        
+
+    with open(f'{data_directory}/{filename}.json', 'w') as f:
+        json.dump(data, f, indent=4)
+
+
+    return "Spec notes Written"
+
+
+def get_spec_notes(filename):
+
+    with open(f'{data_directory}/{filename}.json') as f:
+        data = json.load(f)
+
+    if data["schemaVersion"]  == "NPESv2":
+        spec_notes = data["data"][0]["sampleInfo"]["note"]
+
+    return spec_notes

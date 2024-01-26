@@ -30,22 +30,22 @@ def show_tab5():
     return html.Div([
 
         html.Div(id='t5_heading', children=[  
-            # Search input
-            dcc.Input(
-                id='tab5_search', 
-                type='text', 
-                placeholder='Search spectra', 
-                autoFocus=True,
-                style={'float': 'right', 'width':'200px', 'textAlign':'left', 'marginBottom':'20px', 'backgroundColor':'#D1E9F9', 'fontSize':18, 'padding':5}),
             
-            html.H1("Public Spectrum Repository", style={'textAlign': 'center'}),
-            html.H3('Contribute to Scientific Discovery: Share Your Calibrated Spectra!'),
-            html.P("Welcome to our dynamic, searchable database of calibrated spectra. By uploading your high-quality spectral data, you're not only contributing to a rich scientific resource but also fostering collaboration and exploration within the community."),
-            html.H3('Give Your Spectrum a Descriptive Name:'),
-            html.P('Help others easily find and understand your data by choosing clear, informative names for your spectra.  Don\'t hesitate to upload your spectra, even if similar ones already exist. Every contribution enriches our database, offering more insights and opportunities for discovery. Explore the Unknown: Got a mystery mineral source? Share it! Let\'s dive into exciting discussions and unravel the mysteries together.'),
-            html.H3('Let\'s Collaborate and Discover!'),
-            html.P('Note: Calibration on thumb nail spectra may be out due to data compression', style={'fontSize':'10px', 'textAlign': 'right', 'paddingRight':'10%'}),
+            html.H1("Public Spectrum Repository"),
+            html.H3('Record a great spectrum,'),
+            html.H3('Give it a descriptive name,'),
+            
+            # Search input
+            dcc.Input(id='tab5_search', 
+                    type='text', 
+                    placeholder='Search spectra', 
+                    autoFocus=True,
+                    style={'float': 'right', 'width':'200px', 'marginRight':'10%','backgroundColor':'#e6f2ff', 'fontSize':18, 'padding':5}),
+            html.H3('Publish it for the world to see !'),
+            
+            html.P('Note: Calibration on thumb nail spectra may be out due to data compression', style={'fontSize':'10px'}),
             html.Hr(),
+            
         ], style={'width':'90%', 'margin':'auto', 'textAlign':'left'}),
 
         # Container for the data rows
@@ -58,9 +58,7 @@ def show_tab5():
 
         html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
 
-    ], style={'width':'95%', 'padding':30,'height':'100%','margin':'auto', 'backgroundColor':'white', 'textAlign':'center'})
-
-
+    ], style={'width':'96%', 'padding':30,'height':'100%','margin':'auto', 'backgroundColor':'white', 'textAlign':'center'})
 
     return html_tab5
 
@@ -119,6 +117,7 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
             specnote    = record['npes']['data'][0]['sampleInfo']['note']
             coefficients= record['npes']['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients']
             channels_l  = record['npes']['data'][0]['resultData']['energySpectrum']['numberOfChannels']
+            spec_notes  = record['npes']['data'][0]["sampleInfo"]["note"]
             
             channels_s  = len(spectrum)
             x_factor    = channels_l/channels_s
@@ -145,16 +144,16 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
             fig         = []
 
             # Format file information
-            file_info_div = html.Div([
+            file_info_div = html.Div(id='tab5_col_1', children=[
                 html.H3(f"File #  {id}"),
                 html.P(filename),
                 html.P(f"Date: {date}"),
-                html.P(f"Channels: "),
+                html.P(f"Channels: {channels_l}"),
                 html.A("Download", href=download, target='_blank')
             ], style={'width': '130px', 'padding': '10px'})
 
             # Format client information
-            client_info_div = html.Div([
+            client_info_div = html.Div(id='tab5_col_2', children=[
                 html.P(f"Contributor: {first_name} {last_name}"),
                 html.P(f"Institution: {institution}", style={'height':10}),
                 html.P(f"City: {city}, {country}", style={'height':10}),
@@ -163,19 +162,20 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                 html.P(html.A(social, href=social, target="_blank"), style={'height':10}),
                 html.P(f"Notes: {notes}"),
                 # Include other client details as needed
-            ], style={'width': '380px', 'padding': '10px'})
+            ], style={'width': '250px', 'padding':'10px'})
 
-            # Plot div - placeholder for now, replace with actual plot code as needed
-            plot_div = html.Div([
+            notes_div = html.Div(id='tab5_col_3', children=[
+                html.P(id='spec_notes', children =[spec_notes]),
+                ], style={'width':'200px', 'height':'160px', 'padding':'5px', 'marginTop':'30px', 'backgroundColor':'#e6f2ff'})
+
+            plot_div = html.Div(id='tab5_col_4', children=[
                 dcc.Graph(
                     figure=fig,
-                    #style={'height': '100%', 'width': '100%'}
                 )
-            ], style={'width': '450px'})
+            ], style={'width': '450px'}),
 
             # Combine the divs into a single row
-            row_div = html.Div([file_info_div, client_info_div, plot_div], 
-              )
+            row_div = html.Div([file_info_div, client_info_div, notes_div, plot_div])
 
             # Generate a basic plot
             fig = go.Figure(data=[go.Scatter(
@@ -191,6 +191,7 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                 title_font_size=14,
                 height=225,
                 width=450,
+                plot_bgcolor='#e6f2ff',
                 margin=dict(l=5, r=5, t=30, b=5), 
                 xaxis={'visible': True}, 
                 yaxis={'visible': False}
@@ -205,7 +206,7 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
             ], style={'width': '40%'})
 
             # Combine the divs into a single row
-            row_div = html.Div([file_info_div, client_info_div, plot_div], 
+            row_div = html.Div([file_info_div, client_info_div, notes_div, plot_div], 
                 style={
                     'display':'flex',
                     'flex-wrap':'wrap',
