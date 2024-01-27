@@ -889,12 +889,13 @@ def display_confirmation_result(confirm_button_clicks, cancel_button_clicks, fil
     Output('spec-notes-output', 'children'),
     [Input('spec-notes-input', 'value'),
      Input('filename', 'value')],
-    prevent_initial_call=True
+    #prevent_initial_call=True
 )
 def update_spectrum_notes(spec_notes, filename):
     
     fn.update_json_notes(filename, spec_notes)
+
     logger.info(f'Spectrum notes updated {spec_notes}')
 
-    return 'writing to json...'
+    return f'writing notes to..\n{filename}.json'
 

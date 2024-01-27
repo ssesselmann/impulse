@@ -164,6 +164,11 @@ def show_tab6():
                 html.H4('Gaussian Correlation'),
                 html.P('This function identifies peaks which are hard to see with the naked eye, it takes the normalised spectrum and calculates the dot product of the gaussian shape with a standard deviation dependant bin number, the slider adjusts sigma, which determines how many bins to avertage the gaussian function.'),
 
+                html.H4('Spectrum Notes'),
+                html.P('This is an input where you can update the notes field on a spectrum after it has been recordered. Function may not work before the file exists, I suggest notating the file after it has been recorded'),
+
+
+
                 html.H2('3D Histogram tab'),
                 html.P('This page functions much the same way as the regular 2D histogram, with the added time axis. You can control the time interval between each update. NOTE: Because this spectrum writes a lot of data to the browser it is advisable to keep the number of channels and time intervals to a minimum'), 
 

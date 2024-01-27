@@ -113,7 +113,7 @@ def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1
                 }
 
     with open(jsonfile, "w+") as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
 
 
 # This function writes a 2D histogram to JSON file according to NPESv1 schema.
@@ -152,7 +152,7 @@ def write_histogram_npesv2(t0, t1, bins, counts, elapsed, name, histogram, coeff
             }
 
     with open(jsonfile, "w+") as f:
-        json.dump(data, f)        
+        json.dump(data, f, indent=4)        
 
 # This function writes 3D intervals to NPESv1 JSON
 def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_number, coeff_1, coeff_2, coeff_3):
@@ -187,7 +187,7 @@ def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_nu
     data["resultData"]["energySpectrum"]["spectrum"].extend([interval_number])  # Wrap intervals in a list
 
     with open(jsonfile, "w") as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
 
 def write_cps_json(filename, cps):
     global cps_list
@@ -195,7 +195,7 @@ def write_cps_json(filename, cps):
     cps_list.append(cps)
     data     = {'cps': cps_list }
     with open(jsonfile, "w+") as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
   
 def clear_global_cps_list():
     global cps_list
@@ -549,10 +549,14 @@ def update_json_notes(filename, spec_notes):
 
 def get_spec_notes(filename):
 
-    with open(f'{data_directory}/{filename}.json') as f:
-        data = json.load(f)
+    try:
+        with open(f'{data_directory}/{filename}.json') as f:
+            data = json.load(f)
 
-    if data["schemaVersion"]  == "NPESv2":
-        spec_notes = data["data"][0]["sampleInfo"]["note"]
+        if data["schemaVersion"]  == "NPESv2":
+            spec_notes = data["data"][0]["sampleInfo"]["note"]
 
-    return spec_notes
+        return spec_notes
+
+    except:
+        return 'Not writing'    
