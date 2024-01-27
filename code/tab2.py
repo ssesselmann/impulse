@@ -10,6 +10,7 @@ import time
 import numpy as np
 import sqlite3 as sql
 import dash_daq as daq
+import dash_bootstrap_components as dbc
 import audio_spectrum as asp
 
 import subprocess
@@ -26,7 +27,6 @@ from dash.exceptions import PreventUpdate
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 path            = None
 n_clicks        = None
@@ -39,6 +39,7 @@ global_cps      = 0
 stop_event      = threading.Event()
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 sdl             = fn.get_serial_device_list()
+spec_notes = ''
 
 def show_tab2():
     global global_counts
@@ -63,7 +64,8 @@ def show_tab2():
         file['label'] = file['label'].replace('.json', '')
         file['value'] = file['value'].replace('.json', '')
 
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
+
     conn            = sql.connect(database)
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
@@ -96,6 +98,8 @@ def show_tab2():
     max_seconds     = settings[26]
     t_interval      = settings[27]
     compression     = settings[29]
+
+    spec_notes      = fn.get_spec_notes(filename)
 
     if device >= 100:
         serial          = 'block'
@@ -248,7 +252,30 @@ def show_tab2():
             html.Button('Gaussian sound <)' , id='soundbyte'),
             html.Div(id='audio', children=''),
             html.Button('Update calibration', id='update_calib_button'),
-            html.Div(id='update_calib_message', children='')
+            html.Div(id='update_calib_message', children=''),
+            dbc.Button("Publish Spectrum", id="publish_button", color="primary", className="mb-3"),
+            
+            dbc.Modal(
+                children=[
+                    #dbc.ModalHeader("Confirmation"),
+
+                    dbc.ModalBody(f"Are you sure you want to publish \"{filename}\" spectrum?"),
+
+                    dbc.ModalFooter([
+                        dbc.Button("Confirm", id="confirm-button", className="ml-auto", color="primary"),
+
+                        dbc.Button("Cancel", id="cancel-button", className="mr-auto", color="secondary"),
+                        ],
+                    ),
+                ],
+                id="confirmation-modal",
+                centered=True,
+                size="md",
+                className="custom-modal",  # Apply the custom class here
+            ),
+
+            html.Div(id="confirmation-output", children= ''),
+
         ]),
 
         html.Div(id='t2_setting_div8', children=[
@@ -267,10 +294,13 @@ def show_tab2():
             html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3, className='input')),
             html.Div('Gaussian corr. (sigma)'),
             html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
+            html.Div(id='specNoteDiv', children=[
+                dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='Spectrum notes', cols=20, rows=6)]),
+                html.Div(id='spec-notes-output', children=''),
             
             ]),
 
-        html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
+        html.Div(children=[ html.Img(id='footer_tab2', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
         
         html.Div(id='subfooter', children=[
             ]),
@@ -292,14 +322,10 @@ def update_output(n_clicks, filename, compression):
     if n_clicks == None:
         raise PreventUpdate
 
-    logger.debug('Start on tab2 clicked')
-
     sdl = fn.get_serial_device_list()
 
     if sdl:
         try:
-            logger.debug('Serial ports discovered')
-
             shproto.dispatcher.spec_stopflag = 0
             dispatcher = threading.Thread(target=shproto.dispatcher.start)
             dispatcher.start()
@@ -309,29 +335,30 @@ def update_output(n_clicks, filename, compression):
             # Reset spectrum
             command = '-rst'
             shproto.dispatcher.process_03(command)
-            logger.debug(f'tab2 sends command {command}')
+            logger.info(f'tab2 sends command {command}')
 
             time.sleep(1)
 
             # Start multichannel analyser
             command = '-sta'
             shproto.dispatcher.process_03(command)
-            logger.debug(f'tab2 sends command {command}')
+            logger.info(f'tab2 sends command {command}')
 
             time.sleep(1)
 
             shproto.dispatcher.process_01(filename, compression, "GS-MAX or ATOM-NANO")
-            logger.debug(f'dispatcher.process_01 Started')
+            logger.info(f'dispatcher.process_01 Started')
 
             time.sleep(1)
 
         except Exception as e:
+            logger.error(f'update_output() error {e}')
             return f"Error: {str(e)}"
     else:
         
         fn.start_recording(2)
 
-        logger.debug('Audio Codec Recording Started')
+        logger.info('Audio Codec Recording Started')
 
     return 
 #----STOP------------------------------------------------------------
@@ -355,13 +382,13 @@ def update_output(n_clicks, filename):
 
         time.sleep(0.1)
 
-        logger.debug('Stop command sent from (tab2)')
+        logger.info('Stop command sent from (tab2)')
 
     else:
 
         fn.stop_recording()
 
-        logger.debug('Audio Codec Recording Stopped')
+        logger.info('Audio Codec Recording Stopped')
 
         return 
 
@@ -443,7 +470,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 y=y, 
                 mode='lines+markers', 
                 fill='tozeroy' ,  
-                marker={'color': 'darkblue', 'size':3}, 
+                marker={'color': 'darkblue', 'size':1}, 
                 line={'width':1})
 
   #-------------------annotations-----------------------------------------------          
@@ -502,7 +529,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     )
                 )
 
-            title_text = "<b>{}</b><br><span style='font-size: 12px'>{}</span>".format(filename, time)
+            title_text = "<b>{}</b><br><span style='fontSize: 12px'>{}</span>".format(filename, time)
 
             layout = go.Layout(
                 paper_bgcolor = 'white', 
@@ -588,7 +615,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                             y=y3, 
                             mode='lines+markers', 
                             fill='tozeroy',  
-                            marker={'color': 'green', 'size':3}, 
+                            marker={'color': 'green', 'size':1}, 
                             line={'width':1}
                             )
 
@@ -672,12 +699,6 @@ def save_settings(*args):
             # Calulate energies to insert into database
             x_energies      = [polynomial_fn(x_bins_default[0]), polynomial_fn(x_bins_default[1]), polynomial_fn(x_bins_default[2])]
 
-            #-----------------------------------------------------
-            # This section needs improving: C
-            # Changes calibration don't appear to be working
-            # unless the spectrum is stopped and restarted. 
-            # While loop does not load the new polynomial function
-            #-----------------------------------------------------
 
     else:
         x_bins          = [args[8], args[9], args[10]]
@@ -685,7 +706,7 @@ def save_settings(*args):
 
     coefficients    = np.polyfit(x_bins, x_energies, 2)
     polynomial_fn   = np.poly1d(coefficients)
-    database        = fn.get_path(f'{data_directory}/.data.db')
+    database        = fn.get_path(f'{data_directory}/.data_v2.db')
     conn            = sql.connect(database)
     c               = conn.cursor()
 
@@ -716,7 +737,7 @@ def save_settings(*args):
     c.execute(query)
     conn.commit()
 
-    logger.debug(f'Settings Saved (tab2) {query}')
+    logger.info(f'Settings saved tab2')
 
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
 
@@ -746,7 +767,7 @@ def play_sound(n_clicks, filename2):
 
         asp.play_wav_file(filename2)
 
-    logger.debug(f'Play Gaussian Sound: {filename2}')
+    logger.info(f'Play Gaussian Sound')
         
     return
 
@@ -771,7 +792,7 @@ def update_current_calibration(n_clicks, filename):
         # Update the calibration coefficients using the specified values
         fn.update_coeff(filename, coeff_1, coeff_2, coeff_3)
 
-        logger.debug(f'Calibration updated (tab2): {filename, coeff_1, coeff_2, coeff_3}')
+        logger.info(f'Calibration updated tab2: {filename, coeff_1, coeff_2, coeff_3}')
 
         # Return a message indicating that the update was successful
         return f"Update {n_clicks}"
@@ -788,7 +809,8 @@ def update_output(selected_cmd, active_tab):
 
     if active_tab != 'tab_2':  # only update the chart when "tab4" is active
         raise PreventUpdate
-    logger.debug(f'Command selected (tab2): {selected_cmd}')
+
+    logger.info(f'Command selected tab2: {selected_cmd}')
 
     try:
         shproto.dispatcher.process_03(selected_cmd)
@@ -797,6 +819,83 @@ def update_output(selected_cmd, active_tab):
 
     except Exception as e:
 
-        logging.exception(f"Error in update_output: {e}")
+        logging.error(f"Error in update_output tab2: {e}")
 
         return "An error occurred."
+
+
+# -----Callback to publish spectrum to web with confirm message ---------------------------------------------
+@app.callback(
+    Output("confirmation-modal", "is_open"),
+    [Input("publish_button", "n_clicks"),
+     Input("confirm-button", "n_clicks"),
+     Input("cancel-button", "n_clicks")],
+    [State("confirmation-modal", "is_open")]
+)
+def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_button_clicks, is_open):
+
+    ctx = dash.callback_context
+
+    if not ctx.triggered_id:
+        button_id = None
+
+    else:
+        button_id = ctx.triggered_id.split(".")[0]
+
+    if button_id == "publish_button" and open_button_clicks:
+        return not is_open
+
+    elif button_id in ["confirm-button", "cancel-button"]:
+        return not is_open
+
+    else:
+        return is_open
+
+@app.callback(
+    Output("confirmation-output", "children"),
+    [Input("confirm-button", "n_clicks"),
+     Input("cancel-button", "n_clicks"),
+     State("filename", "value")],
+)
+def display_confirmation_result(confirm_button_clicks, cancel_button_clicks, filename):
+
+    ctx = dash.callback_context
+
+    if not ctx.triggered_id:
+        button_id = None
+
+    else:
+        button_id = ctx.triggered_id.split(".")[0]
+
+    if button_id == "confirm-button" and confirm_button_clicks:
+        # function to upload spectrum here
+        response_message = fn.publish_spectrum(filename)
+
+        logger.info(f'User published spectrum {filename}')
+
+        return f'{filename} \nPublished'
+        
+    elif button_id == "cancel-button" and cancel_button_clicks:
+
+        return "You canceled!"
+
+    else:
+
+        return ""
+
+# ---------------------- Update Spectrum Notes ------------------
+
+@app.callback(
+    Output('spec-notes-output', 'children'),
+    [Input('spec-notes-input', 'value'),
+     Input('filename', 'value')],
+    #prevent_initial_call=True
+)
+def update_spectrum_notes(spec_notes, filename):
+    
+    fn.update_json_notes(filename, spec_notes)
+
+    logger.info(f'Spectrum notes updated {spec_notes}')
+
+    return f'writing notes to..\n{filename}.json'
+

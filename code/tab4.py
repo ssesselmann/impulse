@@ -15,7 +15,6 @@ from dash.dependencies import Input, Output, State
 from server import app
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
@@ -24,7 +23,7 @@ t_interval = 1
 def show_tab4():
 
     # Get some settings from database----------
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
     conn            = sql.connect(database)
     c               = conn.cursor()
     c.execute("SELECT * FROM settings ") 

@@ -17,6 +17,7 @@ from tab2 import show_tab2
 from tab3 import show_tab3
 from tab4 import show_tab4
 from tab5 import show_tab5
+from tab6 import show_tab6
 
 from dash import dcc, html, Input, Output, State, callback, callback_context
 
@@ -34,7 +35,8 @@ app.layout = html.Div([
         dcc.Tab(label='2D Histogram'    , value='tab_2'), 
         dcc.Tab(label='3D Histogram'    , value='tab_3'), 
         dcc.Tab(label='Count Rate'      , value='tab_4'), 
-        dcc.Tab(label='Manual & Exit'   , value='tab_5'),
+        dcc.Tab(label='Repository'      , value='tab_5'),
+        dcc.Tab(label='Manual & Exit'   , value='tab_6'),
         ]),
 
     html.Div(id = 'tab-content')]) # Empty Div for tab content
@@ -59,6 +61,8 @@ def render_content(tab):
         content = show_tab4()
     if tab == 'tab_5': 
         content = show_tab5()
+    if tab == 'tab_6': 
+        content = show_tab6()    
 
     return content
 

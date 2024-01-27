@@ -3,7 +3,6 @@ dash_daq
 datetime
 flask
 jason
-logging
 numpy
 pandas
 pathlib
@@ -14,4 +13,6 @@ pyaudio
 requests
 scipy
 threading
-
+dash_bootstrap_components
+paramiko
+chardet

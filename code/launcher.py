@@ -8,13 +8,24 @@ import functions as fn
 import sqlite3 as sql
 from server import app
 
-
-
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
-database = fn.get_path(f'{data_directory}/.data.db')
+
+database = fn.get_path(f'{data_directory}/.data_v2.db')
+old_db = fn.get_path(f'{data_directory}/.data.db')
+
+logger.info('Created a new database .data_v2.db')
+
+if os.path.exists(old_db):
+        # Create a new name for the old database
+        backup_db_filename = "old_data.db"
+        backup_db = os.path.join(data_directory, backup_db_filename)
+        # Rename the old database
+        os.rename(old_db, backup_db)
+        logger.info(f"Old database renamed to {backup_db}")
+
+
 shapecsv = fn.get_path(f'{data_directory}/shape.csv')
 
 try:
@@ -24,7 +35,7 @@ except:
     pass
 
 try:
-    if not os.path.exists(filename):
+    if not os.path.exists(shapecsv):
         fn.create_dummy_csv(shapecsv)
 except:
     pass
@@ -96,6 +107,7 @@ query3 = """CREATE TABLE IF NOT EXISTS user (
     api_key         TEXT    DEFAULT 'xyz'
     );"""
 
+# This query inserts the first record in settings with defaults
 query4  =  f'INSERT INTO user (id, first_name) SELECT 0, "first_name" WHERE NOT EXISTS (SELECT 1 FROM user WHERE id = 0);'
 
 # This excecutes the sqli query

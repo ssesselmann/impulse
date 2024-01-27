@@ -17,7 +17,8 @@ import sqlite3 as sql
 import pandas as pd
 import pulsecatcher as pc
 import logging
-
+import paramiko
+import requests as req
 from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
 from datetime import datetime
@@ -25,17 +26,17 @@ from urllib.request import urlopen
 import serial.tools.list_ports
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 cps_list        = []
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 run_flag_lock   = threading.Lock()
 run_flag        = threading.Event()  # Using Event instead of a simple flag
 
+
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
     samples =[]
-    pulses = []
+    pulses  = []
     for i in range(len(left_channel) - 51):
         samples = left_channel[i:i+51]  # Get the first 51 samples
         if samples[25] >= max(samples) and (max(samples)-min(samples)) > 100 and samples[25] < 32768:
@@ -112,7 +113,7 @@ def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1
                 }
 
     with open(jsonfile, "w+") as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
 
 
 # This function writes a 2D histogram to JSON file according to NPESv1 schema.
@@ -151,7 +152,7 @@ def write_histogram_npesv2(t0, t1, bins, counts, elapsed, name, histogram, coeff
             }
 
     with open(jsonfile, "w+") as f:
-        json.dump(data, f)        
+        json.dump(data, f, indent=4)        
 
 # This function writes 3D intervals to NPESv1 JSON
 def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_number, coeff_1, coeff_2, coeff_3):
@@ -186,7 +187,7 @@ def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_nu
     data["resultData"]["energySpectrum"]["spectrum"].extend([interval_number])  # Wrap intervals in a list
 
     with open(jsonfile, "w") as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
 
 def write_cps_json(filename, cps):
     global cps_list
@@ -194,7 +195,7 @@ def write_cps_json(filename, cps):
     cps_list.append(cps)
     data     = {'cps': cps_list }
     with open(jsonfile, "w+") as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
   
 def clear_global_cps_list():
     global cps_list
@@ -203,7 +204,7 @@ def clear_global_cps_list():
 # This function loads settings from sqli database
 def load_settings():
 
-    database = get_path(f'{data_directory}/.data.db')
+    database = get_path(f'{data_directory}/.data_v2.db')
     settings        = []
     conn            = sql.connect(database)
     c               = conn.cursor()
@@ -403,7 +404,6 @@ def stop_recording():
     global run_flag
     with run_flag_lock:
         run_flag.clear() 
-
     return    
 
 def export_csv(filename):
@@ -468,3 +468,96 @@ def cleanup_serial_options(options):
             item['label'] = 'Serial # ' + item['label'][len(prefix_to_remove):]
 
     return options    
+
+def get_api_key(): # Fetch api_key from table user
+
+    try:
+        database    = get_path(f'{data_directory}/.data_v2.db')
+        conn        = sql.connect(database)
+        c           = conn.cursor()
+        query       = "SELECT api_key FROM user LIMIT 1"
+        # Carry out query
+        c.execute(query)
+        # assign api_key
+        api_key = c.fetchone() 
+        # return result
+        return api_key[0] if api_key else None
+
+    except Exception as e:
+        print(f"code/functions/get_api_key() failed: {e}")
+        return None
+
+    finally:
+        conn.close()
+
+def publish_spectrum(filename):
+    # routing address
+    url = "https://gammaspectacular.com/spectra/publish_spectrum"
+
+    # gets client api
+    api_key = get_api_key()
+
+    # local file directory
+    spectrum_file_path = f'{data_directory}/{filename}.json'
+
+    # Prepare the file and data payload for the POST request
+    try:
+        with open(spectrum_file_path, 'rb') as file:
+            files = {'file': (filename, file)}
+            data  = {'api_key': api_key}
+            
+            # Sending a POST request to the server
+            response = req.post(url, files=files, data=data)
+
+            # Handle successful response
+            if response.status_code == 200:
+                return f'{filename}\npublished:\n{response}'
+
+            # Handle error in response
+            else:
+                print(f'code/functions/publish_spectrum {response.text}')
+                return f'code/functions/publish_spectrum {response.text}'
+
+    # Handle request exception
+    except req.exceptions.RequestException as e:
+        return f'code/functions/publish_spectrum: {e}'
+
+    except FileNotFoundError:
+        return f'code/functions/publish_spectrum: {spectrum_file_path}'
+
+    except Exception as e:
+        return f'code/functions/publish_spectrum {e}'
+
+def update_json_notes(filename, spec_notes):
+
+    with open(f'{data_directory}/{filename}.json') as f:
+        data = json.load(f)
+
+    if data["schemaVersion"]  == "NPESv2":
+        data["data"][0]["sampleInfo"]["note"] = spec_notes
+
+    else:
+        return "Wrong file format"    
+        
+
+    with open(f'{data_directory}/{filename}.json', 'w') as f:
+        json.dump(data, f, indent=4)
+
+
+    return "Spec notes Written"
+
+
+def get_spec_notes(filename):
+
+    try:
+        with open(f'{data_directory}/{filename}.json') as f:
+            data = json.load(f)
+
+        if data["schemaVersion"]  == "NPESv2":
+            spec_notes = data["data"][0]["sampleInfo"]["note"]
+
+        return spec_notes
+
+    except:
+        return 'Not writing'    
+

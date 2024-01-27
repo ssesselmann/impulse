@@ -130,6 +130,7 @@ Change log
 56) Major update for use with GS-MAX 
 57) Bug fix - Start button fixed
 58) Added user table to local database for later use in publishing spectra
+60) Added functionality for publishing spectra to a public repository.
 
 
 Things to do

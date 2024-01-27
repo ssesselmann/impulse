@@ -42,7 +42,6 @@ calibration_lock    = threading.Lock()
 inf_str             = ''
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 # This function communicates with the device
 def start(sn=None):
@@ -88,13 +87,13 @@ def start(sn=None):
                     if re.search('^VERSION', resp_decoded):
                         shproto.dispatcher.inf_str = resp_decoded
                         shproto.dispatcher.inf_str = re.sub(r'\[[^]]*\]', '...', shproto.dispatcher.inf_str, count = 2)
-                        logger.debug("Got nano-pro settings: {}".format(shproto.dispatcher.inf_str))
+                        logger.info("Got nano-pro settings: {}".format(shproto.dispatcher.inf_str))
                 except UnicodeDecodeError:
                     print("Unknown non-text response.")
                 #print("<< {}".format(resp_decoded))
                 if len(resp_lines) == 40:
                     shproto.dispatcher.serial_number = " s/n: {}".format(resp_lines[39]);
-                    logger.debug("Found nano-pro detector serial num: {}".format(shproto.dispatcher.serial_number))
+                    logger.info("Found nano-pro detector serial num: {}".format(shproto.dispatcher.serial_number))
                     b_str =  ''
                     for b in resp_lines[0:10]:
                         b_str += b
@@ -107,9 +106,9 @@ def start(sn=None):
                             shproto.dispatcher.calibration[3] = unpack('d', int((resp_lines[6] + resp_lines[7]),16).to_bytes(8, 'little'))[0]
                             shproto.dispatcher.calibration[4] = unpack('d', int((resp_lines[8] + resp_lines[9]),16).to_bytes(8, 'little'))[0]
                             shproto.dispatcher.calibration_updated = 1
-                        logger.debug("Got calibration: {}".format(shproto.dispatcher.calibration))
+                        logger.info("Got calibration: {}".format(shproto.dispatcher.calibration))
                     else:
-                        logger.debug("Wrong crc for calibration values got: {:08x} expected: {:08x}".format(int(resp_lines[10],16), crc))
+                        logger.info("Wrong crc for calibration values got: {:08x} expected: {:08x}".format(int(resp_lines[10],16), crc))
 	
                 response.clear()
             elif response.cmd == shproto.MODE_HISTOGRAM:
@@ -262,7 +261,7 @@ def process_01(filename, compression, device):  # Compression reduces the number
 # This function writes the 3D spectrum to a JSON file
 
 def process_02(filename, compression, t_interval):
-    logger.debug(f'dispatcher.process_01({filename})')
+    logger.info(f'dispatcher.process_01({filename})')
 
     # print(f'process_02(): {filename}, {compression}, {t_interval}')
 
@@ -374,19 +373,19 @@ def load_existing_data(file_path):
 def process_03(_command):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = _command
-        logger.debug(f'Command received (dispatcher):{_command}')
+        logger.info(f'Command received (dispatcher):{_command}')
         #print('process03:', _command)    
 
 
 def stop():
     with shproto.dispatcher.stopflag_lock:
         shproto.dispatcher.stopflag = 1
-        logger.debug('Stop flag set(dispatcher)')
+        logger.info('Stop flag set(dispatcher)')
 
 def spec_stop():
     with shproto.dispatcher.spec_stopflag_lock:
         shproto.dispatcher.spec_stopflag = 1
-        logger.debug('Stop flag set(dispatcher)')
+        logger.info('Stop flag set(dispatcher)')
         #print('Stop function')
 
 def clear():

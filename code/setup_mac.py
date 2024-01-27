@@ -35,8 +35,7 @@ setup(
                 'wave',
                 'pyaudio',
                 'scipy',
-                'requests'
-                'logging',
+                'requests',
                 'threading',
                 'platform'
             ],

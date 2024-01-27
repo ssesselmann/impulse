@@ -13,7 +13,6 @@ from dash.dependencies import Input, Output
 from server import app
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 
@@ -21,7 +20,7 @@ data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 def show_tab1():
     
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
 
     conn = sql.connect(database)
     c = conn.cursor()
@@ -101,7 +100,7 @@ def show_tab1():
         ),
 
         html.Div(id='tab1_settings3', children=[
-            html.Div(children='Sample size', style={'text-align': 'left'}),
+            html.Div(children='Sample size', style={'textAlign': 'left'}),
             html.Div(dcc.Dropdown(id='sample_length',
                 options=[
                     {'label': '11 dots', 'value': '11'},
@@ -193,7 +192,7 @@ def show_tab1():
                         html.Div(id='showplot', children=[
                             dcc.Graph(id='plot', figure={'data': [{}], 'layout': {}})]),
 
-                            html.Div('Peak shifter', style= { 'margin-left':'20px'}),
+                            html.Div('Peak shifter', style= { 'marginLeft':'20px'}),
                             html.Div(dcc.Slider(
                                 id  ='peakshifter', 
                                 min   = -20 ,
@@ -202,21 +201,21 @@ def show_tab1():
                                 value = peakshift, 
                                 marks = {-20:'-20', -15:'-15', -10:'-10', -5:'-5', 0:'0', 5:'5', 10:'10', 15:'15',20:'20'}
                                 ),
-                                style = {'width': '85%', 'margin-left': 'auto', 'margin-right': '0'}
+                                style = {'width': '85%', 'marginLeft': 'auto', 'marginRight': '0'}
                                 ),
 
-                        html.Button('Capture Pulse Shape', id='get_shape_btn', n_clicks=0, style={'background-color':'purple','border-radius':'6px','color':'white','font-weight':'bold','margin-top':'10px'}),
+                        html.Button('Capture Pulse Shape', id='get_shape_btn', n_clicks=0, style={'backgroundColor':'purple','borderRadius':'6px','color':'white','fontWeight':'bold','marginTop':'10px'}),
                     ], style={  'display':audio }),
 
                     html.Div(id='distortion_div', children=[
                         html.Div(id='showcurve', children=[
                             dcc.Graph(id='curve', figure={'data': [{}], 'layout': {}}),
                             html.Div('', style= { 'height':'50px'}),
-                            html.Button('Get Distortion Curve', id='get_curve_btn', n_clicks=0, style={'background-color':'purple','border-radius':'6px','color':'white','font-weight':'bold','margin-top':'10px'}),
+                            html.Button('Get Distortion Curve', id='get_curve_btn', n_clicks=0, style={'backgroundColor':'purple','borderRadius':'6px','color':'white','fontWeight':'bold','marginTop':'10px'}),
                         ]),
                     ], style={'display':audio}),
 
-                ],style={'background-color':'white', 'width':'100%', 'height': '500px', 'float':'left'}),
+                ],style={'backgroundColor':'white', 'width':'100%', 'height': '500px', 'float':'left'}),
 
 
             ]),
@@ -252,7 +251,7 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
         length      = value5
         peakshift   = value6
 
-        database    = fn.get_path(f'{data_directory}/.data.db')
+        database    = fn.get_path(f'{data_directory}/.data_v2.db')
         conn        = sql.connect(database)
         c           = conn.cursor()
         query       = f'''
@@ -274,9 +273,9 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
         if pulse_length >= 334:
             warning = 'WARNING LONG'
 
-        logger.debug(f'Settings Saved tab1 ({query})')
+        logger.info(f'Settings saved to database tab1')
 
-        return f'Device ({device}) selected', f'{warning} Dead time ~ {pulse_length} µs'
+        return f'Device: {device} (Refresh page after change!)', f'{warning} Dead time ~ {pulse_length} µs'
 
 #-------- Callback to capture and save mean pulse shape ----------
 

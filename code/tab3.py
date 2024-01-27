@@ -27,7 +27,6 @@ from dash.exceptions import PreventUpdate
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 path = None
 n_clicks = None
@@ -54,7 +53,7 @@ def show_tab3():
         file['label'] = file['label'].replace('.json', '')
         file['value'] = file['value'].replace('.json', '')
 
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
     conn            = sql.connect(database)
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
@@ -103,14 +102,14 @@ def show_tab3():
             ]),
 
         html.Div(id='t2_filler_div', children=''),
-        html.Div(id='t2_setting_div', children=[
+        html.Div(id='t2_setting_div1', children=[
             html.Button('START', id='start_3d'),    #Start button
             html.Div(id='counts_3d', children= ''),
             html.Div(id='start_text_3d' , children =''),
             html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1000, readOnly=False, value=max_counts )]),
             ]),
 
-        html.Div(id='t2_setting_div', children=[            
+        html.Div(id='t2_setting_div2', children=[            
             html.Button('STOP', id='stop_3d'),
             html.Div(id='elapsed_3d', children= '' ),
             html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=60,  readOnly=False, value=max_seconds )]),
@@ -198,13 +197,10 @@ def update_output(n_clicks, filename, compression, t_interval):
     if n_clicks == None:
         raise PreventUpdate
 
-    logger.debug(f'Start on tab2 clicked: {n_clicks}, {filename}, {compression}, {t_interval}')
-
     sdl = fn.get_serial_device_list()
 
     if sdl:
         try:
-            logger.debug('Serial ports discovered')
 
             shproto.dispatcher.spec_stopflag = 0
             dispatcher = threading.Thread(target=shproto.dispatcher.start)
@@ -215,29 +211,31 @@ def update_output(n_clicks, filename, compression, t_interval):
             # Reset spectrum
             command = '-rst'
             shproto.dispatcher.process_03(command)
-            logger.debug(f'tab2 sends command {command}')
+            logger.info(f'tab2 sends command {command}')
 
             time.sleep(1)
 
             # Start multichannel analyser
             command = '-sta'
             shproto.dispatcher.process_03(command)
-            logger.debug(f'tab2 sends command {command}')
+            logger.info(f'tab2 sends command {command}')
 
             time.sleep(1)
 
             shproto.dispatcher.process_02(filename, compression, t_interval)
-            logger.debug(f'dispatcher.process_01 Started')
+            logger.info(f'dispatcher.process_01 Started')
 
             time.sleep(1)
 
         except Exception as e:
+
+            logger.error(f'update_output() on tab3 failed: {e}')
             return f"Error: {str(e)}"
     else:
         
         fn.start_recording(3)
 
-        logger.debug('Audio Codec Recording Started')
+        logger.info('Audio Codec Recording Started')
 
         return 
 #----STOP------------------------------------------------------------
@@ -259,7 +257,7 @@ def update_output(n_clicks):
 
         time.sleep(0.1)
 
-        logger.debug('Stop command sent from (tab2)')
+        logger.info('Stop command sent from (tab2)')
 
     else:
         fn.stop_recording()
@@ -298,7 +296,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
     now = datetime.now()
     time = now.strftime("%A %d %B %Y")
 
-    title_text = "<b>{}</b><br><span style='font-size: 12px'>{}</span>".format(filename, time)
+    title_text = "<b>{}</b><br><span style='fontSize: 12px'>{}</span>".format(filename, time)
 
     layout = go.Layout(
             uirevision='nochange',
@@ -415,7 +413,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
 
 def save_settings(bins, bin_size, max_counts, max_seconds, t_interval, filename, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
     
-    database = fn.get_path(f'{data_directory}/.data.db')
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
 
     conn = sql.connect(database)
     c = conn.cursor()
