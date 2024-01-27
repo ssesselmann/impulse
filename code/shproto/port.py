@@ -1,6 +1,7 @@
 import serial
 import serial.tools.list_ports
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -8,7 +9,7 @@ def getallports():
     allports = serial.tools.list_ports.comports()
     nanoports = []
     for port in allports:
-        if port.manufacturer == "FTDI":
+        if port.manufacturer == "FTDI" or re.search("^/dev/ttyUSB.*", port.device):
             nanoports.append(port)
     return nanoports
 
