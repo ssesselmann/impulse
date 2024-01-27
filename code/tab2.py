@@ -38,7 +38,6 @@ global_counts   = 0
 global_cps      = 0
 stop_event      = threading.Event()
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
-sdl             = fn.get_serial_device_list()
 spec_notes = ''
 
 def show_tab2():
@@ -64,7 +63,7 @@ def show_tab2():
         file['label'] = file['label'].replace('.json', '')
         file['value'] = file['value'].replace('.json', '')
 
-    database = fn.get_path(f'{data_directory}/.data_v2.db')
+    database        = fn.get_path(f'{data_directory}/.data_v2.db')
 
     conn            = sql.connect(database)
     c               = conn.cursor()
@@ -322,9 +321,10 @@ def update_output(n_clicks, filename, compression):
     if n_clicks == None:
         raise PreventUpdate
 
-    sdl = fn.get_serial_device_list()
+    dn = fn.get_device_number()
 
-    if sdl:
+
+    if dn >= 100:
         try:
             shproto.dispatcher.spec_stopflag = 0
             dispatcher = threading.Thread(target=shproto.dispatcher.start)
@@ -373,13 +373,12 @@ def update_output(n_clicks, filename):
     if n_clicks is None:
         raise PreventUpdate
 
-    sdl = fn.get_serial_device_list()
+    dn = fn.get_device_number()
 
-    if sdl:
+    if dn >= 100:
         # Stop Spectrum 
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
-
         time.sleep(0.1)
 
         logger.info('Stop command sent from (tab2)')

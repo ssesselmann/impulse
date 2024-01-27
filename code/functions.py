@@ -244,6 +244,20 @@ def refresh_audio_device_list():
     except:
         return
 
+def get_device_number():
+
+    database = get_path(f'{data_directory}/.data_v2.db')
+    conn            = sql.connect(database)
+    c               = conn.cursor()
+    query           = "SELECT * FROM settings "
+
+    c.execute(query) 
+
+    settings        = c.fetchall()[0]
+    device          = settings[2]
+
+    return device
+
 # This function gets a list of audio device_list connected to the computer           
 def get_device_list():
     refresh_audio_device_list()
@@ -397,13 +411,14 @@ def start_recording(mode):
     audio_record = threading.Thread(target=pc.pulsecatcher, args=(mode, run_flag, run_flag_lock))
     audio_record.start()
     clear_global_cps_list()
-
+    logger.info(f'Recording started in mode {mode}')
     return
 
 def stop_recording():
     global run_flag
     with run_flag_lock:
         run_flag.clear() 
+    logger.info('Recording stopped')    
     return    
 
 def export_csv(filename):
@@ -530,22 +545,23 @@ def publish_spectrum(filename):
 
 def update_json_notes(filename, spec_notes):
 
-    with open(f'{data_directory}/{filename}.json') as f:
-        data = json.load(f)
+    try:
+        with open(f'{data_directory}/{filename}.json') as f:
+            data = json.load(f)
 
-    if data["schemaVersion"]  == "NPESv2":
-        data["data"][0]["sampleInfo"]["note"] = spec_notes
+        if data["schemaVersion"]  == "NPESv2":
+            data["data"][0]["sampleInfo"]["note"] = spec_notes
 
-    else:
-        return "Wrong file format"    
-        
+        else:
+            return "Wrong file format"    
+            
+        with open(f'{data_directory}/{filename}.json', 'w') as f:
+            json.dump(data, f, indent=4)
 
-    with open(f'{data_directory}/{filename}.json', 'w') as f:
-        json.dump(data, f, indent=4)
+        return "Spec notes Written"
 
-
-    return "Spec notes Written"
-
+    except:
+        logger.info(f'File does not exist:{e}')
 
 def get_spec_notes(filename):
 

@@ -197,9 +197,9 @@ def update_output(n_clicks, filename, compression, t_interval):
     if n_clicks == None:
         raise PreventUpdate
 
-    sdl = fn.get_serial_device_list()
+    dn = fn.get_device_number()
 
-    if sdl:
+    if dn >= 100:
         try:
 
             shproto.dispatcher.spec_stopflag = 0
@@ -248,9 +248,9 @@ def update_output(n_clicks):
     if n_clicks is None:
         raise PreventUpdate
 
-    sdl = fn.get_serial_device_list()
+    dn = fn.get_device_number()
 
-    if sdl:
+    if dn >= 100:
         # Stop Spectrum 
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
@@ -261,6 +261,7 @@ def update_output(n_clicks):
 
     else:
         fn.stop_recording()
+        
         return " "
 
 #----RENDER CHART-----------------------------------------------------------
