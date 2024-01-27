@@ -289,7 +289,7 @@ def get_serial_device_list():
     # Filter and assign unique integer indexes to selected serial devices starting from 100
     serial_index = 100
     for port in all_ports:
-        if port.manufacturer == manufacturer_criteria:
+        if 1 or port.manufacturer == manufacturer_criteria:
             serial_device_list.append((port.device, serial_index))
             serial_index += 1
     return serial_device_list
@@ -575,4 +575,5 @@ def get_spec_notes(filename):
         return spec_notes
 
     except:
+        
         return 'Not writing'    
