@@ -560,7 +560,7 @@ def update_json_notes(filename, spec_notes):
 
         return "Spec notes Written"
 
-    except:
+    except Exception as e:
         logger.info(f'File does not exist:{e}')
 
 def get_spec_notes(filename):

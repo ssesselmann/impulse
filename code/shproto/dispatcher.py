@@ -189,14 +189,17 @@ def process_01(filename, compression, device):  # Compression reduces the number
     compressed_bins = int(max_bins / compression)
 
     settings        = fn.load_settings()
+    max_counts      = settings[9]
     coeff_1         = settings[18]
     coeff_2         = settings[19]
     coeff_3         = settings[20]
+    max_seconds     = settings[26]
+
 
     # Define the histogram list
     hst             = [0] * max_bins  # Initialize the original histogram list
 
-    while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag):
+    while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag) and (counts < max_counts and dt <= max_seconds):
 
         time.sleep(1)
 

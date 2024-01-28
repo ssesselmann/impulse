@@ -313,16 +313,16 @@ def show_tab2():
 @app.callback(Output('start_text'   , 'children'),
               [Input('start'        , 'n_clicks')], 
               [State('filename'     , 'value'),
-                State('compression' , 'value')
-                ])
+                State('compression' , 'value')])
 
-def update_output(n_clicks, filename, compression):
+def start_button(n_clicks, filename, compression):
 
     if n_clicks == None:
         raise PreventUpdate
 
-    dn = fn.get_device_number()
+    time.sleep(1)
 
+    dn = fn.get_device_number()
 
     if dn >= 100:
         try:
@@ -330,45 +330,45 @@ def update_output(n_clicks, filename, compression):
             dispatcher = threading.Thread(target=shproto.dispatcher.start)
             dispatcher.start()
 
-            time.sleep(1)
+            time.sleep(0.1)
 
             # Reset spectrum
             command = '-rst'
             shproto.dispatcher.process_03(command)
             logger.info(f'tab2 sends command {command}')
 
-            time.sleep(1)
+            time.sleep(0.1)
 
             # Start multichannel analyser
             command = '-sta'
             shproto.dispatcher.process_03(command)
             logger.info(f'tab2 sends command {command}')
 
-            time.sleep(1)
+            time.sleep(0.1)
 
             shproto.dispatcher.process_01(filename, compression, "GS-MAX or ATOM-NANO")
-            logger.info(f'dispatcher.process_01 Started')
+            logger.info(f'Serial recording started')
 
-            time.sleep(1)
+            time.sleep(0.1)
 
         except Exception as e:
-            logger.error(f'update_output() error {e}')
+            logger.error(f'tab 2 update_output() error {e}')
             return f"Error: {str(e)}"
     else:
         
         fn.start_recording(2)
 
-        logger.info('Audio Codec Recording Started')
+        logger.info('Audio Recording Started')
 
     return 
 #----STOP------------------------------------------------------------
 
 @app.callback( Output('stop_text'  ,'children'),
-                [Input('stop'      ,'n_clicks'),
-                Input('filename'   , 'value'),
-                ])
+                [Input('stop'      ,'n_clicks')],
+                [State('filename'   , 'value')]
+                )
 
-def update_output(n_clicks, filename):
+def stop_button(n_clicks, filename):
 
     if n_clicks is None:
         raise PreventUpdate
@@ -380,14 +380,13 @@ def update_output(n_clicks, filename):
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
         time.sleep(0.1)
-
-        logger.info('Stop command sent from (tab2)')
+        logger.info('Stop button(tab2) serial device')
 
     else:
 
         fn.stop_recording()
 
-        logger.info('Audio Codec Recording Stopped')
+        logger.info('Stop button(tab2) audio device')
 
         return 
 
@@ -397,21 +396,23 @@ def update_output(n_clicks, filename):
                 Output('counts'             ,'children'),
                 Output('elapsed'            ,'children'),
                 Output('cps'                ,'children')],
-               [Input('interval-component'  ,'n_intervals'), 
-                Input('filename'            ,'value'), 
-                Input('epb_switch'          ,'on'),
-                Input('log_switch'          ,'on'),
-                Input('cal_switch'          ,'on'),
-                Input('filename2'           ,'value'),
-                Input('compare_switch'      ,'on'),
-                Input('difference_switch'   ,'on'),
-                Input('peakfinder'          ,'value'),
-                Input('sigma'               ,'value')
-                ])
+               [Input('interval-component'  ,'n_intervals')], 
+                [State('filename'            ,'value'), 
+                State('epb_switch'          ,'on'),
+                State('log_switch'          ,'on'),
+                State('cal_switch'          ,'on'),
+                State('filename2'           ,'value'),
+                State('compare_switch'      ,'on'),
+                State('difference_switch'   ,'on'),
+                State('peakfinder'          ,'value'),
+                State('sigma'               ,'value'),
+                State('max_seconds'        ,'value'),
+                State('max_counts'          ,'value')])
 
-def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma):
+def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts):
 
     global global_counts
+
     histogram1 = fn.get_path(f'{data_directory}/{filename}.json')
     histogram2 = fn.get_path(f'{data_directory}/{filename2}.json')
 

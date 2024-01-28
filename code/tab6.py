@@ -243,7 +243,7 @@ def theme_change(value):
     c.execute(query) 
     conn.commit()
 
-    logger.info('User changed theme')
+    logger.info('User clicked Exit')
 
     return 'Restart to see new theme'
 
