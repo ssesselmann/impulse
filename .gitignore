@@ -12,7 +12,7 @@ __pycache__/
 /code/.*
 /code/impulse.log
 /code/impulse_last_run.log
-/Impulse.dmg
+/code/Impulse.dmg
 codesign.txt
 codesign.log
 codesign.py
