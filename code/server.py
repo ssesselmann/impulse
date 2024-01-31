@@ -4,6 +4,7 @@ import os
 import sqlite3 as sql
 import functions as fn
 import logging
+import dash_bootstrap_components as dbc
 
 # Set up the logger
 logging.basicConfig(
@@ -38,7 +39,7 @@ except:
 	theme = 'lightgray'	
 
 # external CSS stylesheets
-external_stylesheets = [f'https://www.gammaspectacular.com/steven/impulse/styles_{theme}.css']
+external_stylesheets = [dbc.themes.BOOTSTRAP, f'https://www.gammaspectacular.com/steven/impulse/styles_{theme}.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 

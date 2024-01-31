@@ -2,14 +2,17 @@
 import dash
 import os
 import logging
+import json
 import requests
-import dash_core_components as dcc
 import plotly.graph_objs as go
+import dash_bootstrap_components as dbc
+import numpy as np
 
-from dash import html
-from dash.dependencies import Input, Output, State
+from dash import html, dcc
+from dash.dependencies import Input, Output, State, ALL
 from dash.exceptions import PreventUpdate
 from server import app
+from functions import fetch_json
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +20,17 @@ data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 total_pages = 1
 
+
 def show_tab5():
+
+    modal = dbc.Modal([
+            dbc.ModalHeader(dbc.ModalTitle("Full Resolution Histogram")),
+            dbc.ModalBody(dcc.Graph(id='detailed-histogram')),
+            dbc.ModalFooter(dbc.Button("Close", id="close-modal", className="ml-auto"))],
+                id="modal",
+                size="xl",  # xtra large modal
+                is_open=False,  # Initially closed
+            )
 
     # Pagination buttons
     pagination_div = html.Div([
@@ -58,6 +71,8 @@ def show_tab5():
 
         html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
 
+        modal,
+
     ], style={'width':'96%', 'padding':30,'height':'100%','margin':'auto', 'backgroundColor':'white', 'textAlign':'center'})
 
     return html_tab5
@@ -79,6 +94,9 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
 
     total_pages  = '0'
     current_page = '1'
+    i            = 0
+    value_list   = []
+    buttons      = []
 
     # Determine the current page based on button clicks
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
@@ -101,14 +119,16 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
         spectra_data    = response_data['data']
         total_pages     = response_data['total_pages']
 
-        
-
         # Creating a list of html.Div elements for each record
         data_divs       = []
+        
 
         for record in spectra_data:
-
+            
             id          = record['id']
+
+            value_list.append(id)
+            
             filename    = record['filename']
             date        = record['date']
             client_info = record['client']
@@ -143,14 +163,24 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
 
             fig         = []
 
+            button = html.Button(
+                'zoom', 
+                id={'type': 'zoom-button', 'value': str(id)},
+                n_clicks=0,
+                style={'margin': '5px', 'backgroundColor':'lightblue', 'borderRadius':10}
+            )
+            buttons.append(button)
+
             # Format file information
             file_info_div = html.Div(id='tab5_col_1', children=[
-                html.H3(f"File #  {id}"),
+                html.H4(f"#  {id}"),
                 html.P(filename),
-                html.P(f"Date: {date}"),
+                html.P(f"{date}"),
                 html.P(f"Channels: {channels_l}"),
-                html.A("Download", href=download, target='_blank')
-            ], style={'width': '130px', 'padding': '10px'})
+                html.A("Download", href=download, target='_blank'),
+            ], style={'textAlign':'left','width': '130px', 'padding': '10px'})
+
+            
 
             # Format client information
             client_info_div = html.Div(id='tab5_col_2', children=[
@@ -166,16 +196,20 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
 
             notes_div = html.Div(id='tab5_col_3', children=[
                 html.P(id='spec_notes', children =[spec_notes]),
-                ], style={'width':'200px', 'height':'160px', 'padding':'5px', 'marginTop':'30px', 'backgroundColor':'#e6f2ff'})
 
-            plot_div = html.Div(id='tab5_col_4', children=[
-                dcc.Graph(
-                    figure=fig,
-                )
-            ], style={'width': '450px'}),
+                ], style={'width':'200px', 'height':'175px', 'marginRight':10, 'padding':'5px', 'marginTop':'30px', 'backgroundColor':'#e6f2ff'})
 
-            # Combine the divs into a single row
-            row_div = html.Div([file_info_div, client_info_div, notes_div, plot_div])
+
+            plot_div = html.Div(id='tab5_col_4', children=[dcc.Graph(figure=fig)]),
+
+            button_div = html.Div(id='tab5_col_5', children=[button], style={
+                'width': '70px',  # Ensure units are specified for width and height
+                'height': '200px',
+                'display': 'flex',  # Make the div a flex container
+                'flex-direction': 'column',  # Stack children vertically
+                'justify-content': 'flex-end',  # Align children to the end (bottom) of the container
+                })
+
 
             # Generate a basic plot
             fig = go.Figure(data=[go.Scatter(
@@ -190,7 +224,7 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                 title=filename,
                 title_font_size=14,
                 height=225,
-                width=450,
+                width=400,
                 plot_bgcolor='#e6f2ff',
                 margin=dict(l=5, r=5, t=30, b=5), 
                 xaxis={'visible': True}, 
@@ -203,24 +237,120 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                     figure=fig,
                     style={'height': '100%', 'width': '100%'}
                 )
-            ], style={'width': '40%'})
+            ])
+
+            i = i+1
 
             # Combine the divs into a single row
-            row_div = html.Div([file_info_div, client_info_div, notes_div, plot_div], 
+            row_div = html.Div([file_info_div, client_info_div, notes_div, plot_div, button_div], 
                 style={
                     'display':'flex',
                     'flex-wrap':'wrap',
-                    'align-items': 'flex-start',  # Adjusts items alignment on the cross axis
-                    'justify-content': 'space-between',  # Adjusts spacing between items
+                    'align-items': 'flex-start',  
+                    'justify-content': 'center',  
                     'width':'100%',
-                    'clear': 'both'})
+                    'clear': 'both',
+                    })
 
             data_divs.append(row_div)
 
         new_page_info = f"Page {current_page} of {total_pages}"
 
+        
         return data_divs, total_pages, current_page, new_page_info
 
     else:
 
-        return [], '0', '1', 'Page 1 of 0' 
+        return [], '0', '1', 'Page 1 of 0'
+
+# ------------- zoom functions below here------------------
+
+
+@app.callback(
+    [Output('modal', 'is_open'),  # This output toggles the modal
+     Output('detailed-histogram', 'figure')],  # This output updates the figure in the graph within the modal
+    [Input({'type': 'zoom-button', 'value': ALL}, 'n_clicks'),
+     Input('close-modal', 'n_clicks')],
+    [State('modal', 'is_open')]
+)
+def toggle_modal(zoom_clicks, close_clicks, is_open):
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+
+        raise PreventUpdate
+
+    triggered_id, triggered_prop = ctx.triggered[0]['prop_id'].split('.')
+
+    if 'close-modal' in triggered_id:
+
+        return False, dash.no_update  # Ensure the modal is closed
+
+    try:
+        # Attempt to parse the triggered_id if it's expected to be in JSON format
+        if 'zoom-button' in triggered_id:
+            parsed_id = json.loads(triggered_id.replace('zoom-button.', ''))
+            filename = parsed_id['value']
+
+            if any(click > 0 for click in zoom_clicks):
+
+                file = fetch_json(filename)
+
+                if file:
+                    y_values        = file['data'][0]['resultData']['energySpectrum']['spectrum']
+                    x_values        = list(range(len(y_values)))
+                    coefficients    = file['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients']
+                    title           = file['data'][0]['sampleInfo']['name']
+
+                    # Ensure x_values is a NumPy array
+                    x_values_np = np.array(x_values)
+
+                    # Calculate new x_values using the second-order polynomial
+                    calibrated_x = coefficients[2] * x_values_np**2 + coefficients[1] * x_values_np + coefficients[0]
+
+
+                    figure = go.Figure(
+                        data=[go.Scatter(
+                            y=y_values, 
+                            x=calibrated_x,
+                            mode='markers',
+                            marker=dict(color='lightgreen', size=1, 
+                            line=dict( color='yellow', width=1),
+                        ))])
+
+                    # Customize the layout
+                    figure.update_layout(
+                        title=title,
+                        title_x=0.5,  # Center the title
+                        xaxis=dict(showgrid=True, gridcolor='gray', gridwidth=1 ),
+                        xaxis_title='energy',
+                        yaxis=dict(showgrid=True, gridcolor='gray', gridwidth=1 ),
+                        yaxis_title='counts',
+                        font=dict(family="Arial, Bold", size=16, color="#ffffff"),
+                        margin=dict(l=10, r=100, t=40, b=60),
+                        plot_bgcolor='black',
+                        paper_bgcolor='black',  
+                    
+
+                        shapes=[  # Add shapes for horizontal and vertical lines
+                            # Horizontal line
+                            go.layout.Shape(
+                                type="line",
+                                x0=min(x_values),
+                                x1=max(x_values),
+                            ),
+                            # Vertical line
+                            go.layout.Shape(
+                                type="line",
+                                y0=min(y_values),
+                                y1=max(y_values),
+                            )]
+                        )
+
+                    return not is_open, figure  # Toggle the modal state and update the figure
+
+    except json.JSONDecodeError:
+
+        raise PreventUpdate
+
+    return is_open, dash.no_update  # Default action if no conditions are met

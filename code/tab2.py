@@ -295,7 +295,7 @@ def show_tab2():
             html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
             html.Div(id='specNoteDiv', children=[
                 dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='Spectrum notes', cols=20, rows=6)]),
-                html.Div(id='spec-notes-output', children=''),
+                html.Div(id='spec-notes-output', children='', style={'visibility':'hidden'}),
             
             ]),
 
@@ -542,8 +542,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 'yanchor': 'top',
                 'font': {'family': 'Arial', 'size': 24, 'color': 'black'},
                 },
-                height  =450, 
-                margin_t=40,
+                height  =430, 
+                margin_t=0,
                 margin_b=0,
                 margin_l=0,
                 margin_r=0,
@@ -643,7 +643,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 'yanchor': 'top',
                 'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
                 },
-                height  =450, 
+                height  =430, 
                 autosize=True,
                 #xaxis=dict(dtick=50, tickangle = 90, range =[0, 100]),
                 xaxis=dict(autorange=True),

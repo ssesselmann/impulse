@@ -301,7 +301,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
 
     layout = go.Layout(
             uirevision='nochange',
-            height=550,
+            height=500,
             margin=dict(l=0, r=0, b=0, t=0),
             scene=dict(
                 xaxis=dict(title='Energy(x)'),

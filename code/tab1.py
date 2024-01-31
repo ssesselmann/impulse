@@ -275,7 +275,7 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
 
         logger.info(f'Settings saved to database tab1')
 
-        return f'Device: {device} (Refresh page after change!)', f'{warning} Dead time ~ {pulse_length} µs'
+        return f'Device: {device} (Refresh)', f'{warning} Dead time ~ {pulse_length} µs'
 
 #-------- Callback to capture and save mean pulse shape ----------
 

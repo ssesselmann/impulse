@@ -577,3 +577,19 @@ def get_spec_notes(filename):
     except:
         
         return 'Not writing'    
+
+
+def fetch_json(file_id):
+    url = f'https://www.gammaspectacular.com/spectra/files/{file_id}.json'
+    
+    try:
+        response = req.get(url)
+        response.raise_for_status()  # Raise an exception for HTTP errors (e.g., 404, 500)
+        
+        if response.status_code == 200:
+            return response.json()  # Returns the JSON content of the response
+        else:
+            return None  # Handle unexpected status codes as needed
+    except req.exceptions.RequestException as e:
+        print(f"Error fetching JSON: {e}")
+        return None  # Handle network or request-related errors      
