@@ -24,13 +24,23 @@ total_pages = 1
 def show_tab5():
 
     modal = dbc.Modal([
-            dbc.ModalHeader(dbc.ModalTitle("Full Resolution Histogram")),
-            dbc.ModalBody(dcc.Graph(id='detailed-histogram')),
-            dbc.ModalFooter(dbc.Button("Close", id="close-modal", className="ml-auto"))],
-                id="modal",
-                size="xl",  # xtra large modal
-                is_open=False,  # Initially closed
-            )
+        dbc.ModalHeader(dbc.ModalTitle("Full Resolution Histogram")),
+        dbc.ModalBody([
+            dcc.Graph(id='detailed-histogram'),
+            html.Div([
+                dcc.Checklist(id='linlog',
+                    options=[{'label': ' Log Scale', 'value': 'log'}],
+                    value=[], 
+                    inline=True,
+                ),
+            ]),
+        ]),
+        dbc.ModalFooter(dbc.Button("Close", id="close-modal", className="ml-auto")),
+    ],
+    id="modal",
+    size="xl",  # xtra large modal
+    is_open=False,  # Initially closed
+)
 
     # Pagination buttons
     pagination_div = html.Div([
@@ -92,8 +102,8 @@ def show_tab5():
 )
 def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_page):
 
+
     total_pages  = '0'
-    current_page = '1'
     i            = 0
     value_list   = []
     buttons      = []
@@ -118,6 +128,7 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
         response_data   = response.json()
         spectra_data    = response_data['data']
         total_pages     = response_data['total_pages']
+        current_page    = response_data['current_page']
 
         # Creating a list of html.Div elements for each record
         data_divs       = []
@@ -184,13 +195,14 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
 
             # Format client information
             client_info_div = html.Div(id='tab5_col_2', children=[
-                html.P(f"Contributor: {first_name} {last_name}"),
-                html.P(f"Institution: {institution}", style={'height':10}),
-                html.P(f"City: {city}, {country}", style={'height':10}),
-                html.P(f"email: {email} Phone: {phone}", style={'height':10}),
-                html.P(html.A(web, href=web, target="_blank"), style={'height':10}),
-                html.P(html.A(social, href=social, target="_blank"), style={'height':10}),
-                html.P(f"Notes: {notes}"),
+                html.P(f"{first_name} {last_name}"),
+                html.P(f"{institution}", style={'height':10}),
+                html.P(f"{city} - {country}", style={'height':10}),
+                html.P(f"e: {email}", style={'height':10, 'fontSize':10}),
+                html.P(f"p: {phone}", style={'height':10}),
+                html.P(html.A(web, href=web, target="_blank"), style={'height':10, 'fontSize':10}),
+                html.P(html.A(social, href=social, target="_blank"), style={'height':10, 'fontSize':10}),
+                html.P(f"Note: {notes}"),
                 # Include other client details as needed
             ], style={'width': '250px', 'padding':'10px'})
 
@@ -270,10 +282,12 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
     [Output('modal', 'is_open'),  # This output toggles the modal
      Output('detailed-histogram', 'figure')],  # This output updates the figure in the graph within the modal
     [Input({'type': 'zoom-button', 'value': ALL}, 'n_clicks'),
-     Input('close-modal', 'n_clicks')],
-    [State('modal', 'is_open')]
+     Input('close-modal', 'n_clicks'),
+     Input('linlog', 'value')],
+    [State('modal', 'is_open'), 
+    State('detailed-histogram', 'figure')]
 )
-def toggle_modal(zoom_clicks, close_clicks, is_open):
+def toggle_modal(zoom_clicks, close_clicks, linlog, is_open, current_figure):
     ctx = dash.callback_context
 
     if not ctx.triggered:
@@ -286,9 +300,17 @@ def toggle_modal(zoom_clicks, close_clicks, is_open):
 
         return False, dash.no_update  # Ensure the modal is closed
 
+    scale = 'log' if 'log' in linlog else 'linear'
+
+    # Check if the scale toggle was the trigger
+    if 'linlog' in triggered_id:
+        if current_figure:
+            # Update only the y-axis scale of the current figure
+            current_figure['layout']['yaxis']['type'] = scale
+            return is_open, current_figure
     try:
         # Attempt to parse the triggered_id if it's expected to be in JSON format
-        if 'zoom-button' in triggered_id:
+         if any(click and 'zoom-button' in triggered_id for click in zoom_clicks):
             parsed_id = json.loads(triggered_id.replace('zoom-button.', ''))
             filename = parsed_id['value']
 
@@ -308,11 +330,13 @@ def toggle_modal(zoom_clicks, close_clicks, is_open):
                     # Calculate new x_values using the second-order polynomial
                     calibrated_x = coefficients[2] * x_values_np**2 + coefficients[1] * x_values_np + coefficients[0]
 
+                    
 
                     figure = go.Figure(
                         data=[go.Scatter(
                             y=y_values, 
                             x=calibrated_x,
+
                             mode='markers',
                             marker=dict(color='lightgreen', size=1, 
                             line=dict( color='yellow', width=1),
@@ -324,7 +348,7 @@ def toggle_modal(zoom_clicks, close_clicks, is_open):
                         title_x=0.5,  # Center the title
                         xaxis=dict(showgrid=True, gridcolor='gray', gridwidth=1 ),
                         xaxis_title='energy',
-                        yaxis=dict(showgrid=True, gridcolor='gray', gridwidth=1 ),
+                        yaxis=dict(showgrid=True, gridcolor='gray', gridwidth=1, type=scale),
                         yaxis_title='counts',
                         font=dict(family="Arial, Bold", size=16, color="#ffffff"),
                         margin=dict(l=10, r=100, t=40, b=60),
