@@ -39,7 +39,7 @@ pip3 install -r requirements_mac.txt
 ```
 Linux
 ```
-pip install -r requirements.txt
+pip install -r requirements_pc.txt
 ```
 
 Step 6)
