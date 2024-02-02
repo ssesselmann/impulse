@@ -67,6 +67,7 @@ def show_tab1():
     tab1 = html.Div(id='tab1', children=[
         html.Div(id='firstrow'),
         html.Div(id='news', children=[dcc.Markdown(news)]),
+        html.Div(id='sampling_time_output', children=''),
         html.Div(id='heading', children=[html.H1('Device Selection and Settings')]),
         html.Div(id='tab1_settings1', children=[
             
@@ -116,7 +117,7 @@ def show_tab1():
                 style={'display':audio}
                 )),
 
-            html.Div(id='sampling_time_output', children=''),
+            
             ],style={'display':audio}),
 
         html.Div(id='tab1_settings4', children=[
