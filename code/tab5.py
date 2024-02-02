@@ -178,7 +178,6 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                 'zoom', 
                 id={'type': 'zoom-button', 'value': str(id)},
                 n_clicks=0,
-                style={'margin': '5px', 'backgroundColor':'lightblue', 'borderRadius':10}
             )
             buttons.append(button)
 
