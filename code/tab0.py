@@ -6,11 +6,10 @@ import sqlite3 as sql
 import shapecatcher as sc
 import os
 import logging
-import dash_table
 import requests as req
 import dash_daq as daq
 from server import app
-from dash import dcc, html
+from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output, State
 
 logger = logging.getLogger(__name__)
