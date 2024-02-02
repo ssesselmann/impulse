@@ -40,7 +40,7 @@ def show_tab6():
 
     html_tab6 = html.Div([ 
         html.Div(id='exit', children=[
-            html.H1(children='Thanks for using impulse, see you back soon!'),
+            #html.H1(children='Thanks for using impulse, see you back soon!'),
             html.Button(id='exit-button', children=''),
             html.Div(dcc.Dropdown(id="theme",
                     options=[
@@ -70,7 +70,7 @@ def show_tab6():
         html.Div(id='tab6_text_div', children=[
             html.Hr(),
             html.Div(id='manual', children=[
-                html.H2('Impulse Manual'),
+                html.H1('Impulse Manual'),
                 html.P('Thank you for downloading and installing Impulse gamma spectrometry, this open source software is written in Python with the intention that users may modify and adapt it to their own experiments.'),
                 html.P('In the following text I shall describe how the software works and what each setting parameter does.'),
                 
