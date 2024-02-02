@@ -227,7 +227,7 @@ def show_tab2():
         # ------------------------------------------------------
         
         html.Div(id='t2_setting_div5', children=[
-            html.Div('Select Comparison'),
+            html.Div('Comparison'),
             html.Div(dcc.Dropdown(
                     id='filename2',
                     options=options_sorted,
@@ -248,21 +248,18 @@ def show_tab2():
             ]), 
 
         html.Div(id='t2_setting_div7', children=[
-            html.Button('Gaussian sound <)' , id='soundbyte'),
+            html.Button('Sound <)' , id='soundbyte'),
             html.Div(id='audio', children=''),
-            html.Button('Update calibration', id='update_calib_button'),
+            html.Button('Update calib.', id='update_calib_button'),
             html.Div(id='update_calib_message', children=''),
             dbc.Button("Publish Spectrum", id="publish_button", color="primary", className="mb-3"),
             
             dbc.Modal(
                 children=[
                     #dbc.ModalHeader("Confirmation"),
-
                     dbc.ModalBody(f"Are you sure you want to publish \"{filename}\" spectrum?"),
-
                     dbc.ModalFooter([
                         dbc.Button("Confirm", id="confirm-button", className="ml-auto", color="primary"),
-
                         dbc.Button("Cancel", id="cancel-button", className="mr-auto", color="secondary"),
                         ],
                     ),
@@ -358,7 +355,7 @@ def start_button(n_clicks, filename, compression):
         
         fn.start_recording(2)
 
-        logger.info('Audio Recording Started')
+        logger.info('Tab2 fn.startrecording(2) passed.')
 
     return 
 #----STOP------------------------------------------------------------
@@ -433,7 +430,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             coefficients        = coefficients[::-1] # Revese order   
 
             now = datetime.now()
-            time = now.strftime("%A %d %B %Y")
+            time = now.strftime('%d/%m/%Y')
 
             mu = 0
             prominence = 0.5
@@ -529,7 +526,9 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     )
                 )
 
-            title_text = "<b>{}</b><br><span style='fontSize: 12px'>{}</span>".format(filename, time)
+            
+            
+            title_text = "{}<br>{}".format(filename, time)
 
             layout = go.Layout(
                 paper_bgcolor = 'white', 
@@ -540,7 +539,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 'y': 0.9,
                 'xanchor': 'center',
                 'yanchor': 'top',
-                'font': {'family': 'Arial', 'size': 24, 'color': 'black'},
+                'font': {'family': 'Arial', 'size': 20, 'color': 'black'},
                 },
                 height  =430, 
                 margin_t=0,
@@ -641,7 +640,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 'y': 0.9,
                 'xanchor': 'center',
                 'yanchor': 'top',
-                'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+                'font': {'family': 'Arial', 'size': 20, 'color': 'black'}
                 },
                 height  =430, 
                 autosize=True,
