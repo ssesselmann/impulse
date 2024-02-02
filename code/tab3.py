@@ -295,9 +295,9 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
     histogram3 = fn.get_path(f'{data_directory}/{filename}_3d.json')
 
     now = datetime.now()
-    time = now.strftime("%A %d %B %Y")
+    time = now.strftime('%d/%m/%Y')
 
-    title_text = "<b>{}</b><br><span style='fontSize: 12px'>{}</span>".format(filename, time)
+    title_text = "{}<br>{}".format(filename, time)
 
     layout = go.Layout(
             uirevision='nochange',
