@@ -541,7 +541,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 'yanchor': 'top',
                 'font': {'family': 'Arial', 'size': 20, 'color': 'black'},
                 },
-                height  =430, 
+                height  =480, 
                 margin_t=0,
                 margin_b=0,
                 margin_l=0,
@@ -642,7 +642,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 'yanchor': 'top',
                 'font': {'family': 'Arial', 'size': 20, 'color': 'black'}
                 },
-                height  =430, 
+                height  =480, 
                 autosize=True,
                 #xaxis=dict(dtick=50, tickangle = 90, range =[0, 100]),
                 xaxis=dict(autorange=True),

@@ -63,85 +63,99 @@ def show_tab0():
                 html.Hr(),
                 html.Div(id='publish_label', children='Publish'),
 
-                dcc.Input(id='first_name', type='text', value=first_name, placeholder='Firstname', className='my_inputs', style={'marginBottom': '10px'}),
-                daq.BooleanSwitch(
-                    id='first_name_f',
-                    on= bool(first_name_f),
-                    color='green',
-                    className='my_checkbox'
-                ),
+                html.Div(className='tab0row', children=[
+                    dcc.Input(id='first_name', type='text', value=first_name, placeholder='Firstname', className='my_inputs', style={'marginBottom': '10px'}),
+                    daq.BooleanSwitch(
+                        id='first_name_f',
+                        on= bool(first_name_f),
+                        color='green',
+                        className='my_checkbox'
+                    )]),
                 
-                dcc.Input(id='last_name', type='text', value=last_name, placeholder='Lastname', className='my_inputs', style={'marginBottom': '10px'}),
-                daq.BooleanSwitch(
-                    id='last_name_f',
-                    on=bool(last_name_f),
-                    color='green',
-                    className='my_checkbox'
-                ),
+                html.Div(className='tab0row', children=[
+                    dcc.Input(id='last_name', type='text', value=last_name, placeholder='Lastname', className='my_inputs', style={'marginBottom': '10px'}),
+                    daq.BooleanSwitch(
+                        id='last_name_f',
+                        on=bool(last_name_f),
+                        color='green',
+                        className='my_checkbox'
+                    )]),
 
-                dcc.Input(id='institution', type='text', value=institution, placeholder='Institution', className='my_inputs', style={'marginBottom': '10px'}),
-                daq.BooleanSwitch(
-                    id='institution_f',
-                    on=bool(institution_f),
-                    color='green',
-                    className='my_checkbox'
-                ),
+                html.Div(className='tab0row', children=[
+                    dcc.Input(id='institution', type='text', value=institution, placeholder='Institution', className='my_inputs', style={'marginBottom': '10px'}),
+                    daq.BooleanSwitch(
+                        id='institution_f',
+                        on=bool(institution_f),
+                        color='green',
+                        className='my_checkbox'
+                    )]),
 
-                dcc.Input(id='city', type='text', value=city, placeholder='City', className='my_inputs', style={'marginBottom': '10px'}),
-                daq.BooleanSwitch(
-                    id='city_f',
-                    on=bool(city_f),
-                    color='green',
-                    className='my_checkbox'
-                ),
+                html.Div(className='tab0row', children=[
+                    dcc.Input(id='city', type='text', value=city, placeholder='City', className='my_inputs', style={'marginBottom': '10px'}),
+                    daq.BooleanSwitch(
+                        id='city_f',
+                        on=bool(city_f),
+                        color='green',
+                        className='my_checkbox'
+                    )]),
 
-                dcc.Input(id='country', type='text', value=country, placeholder='Country', className='my_inputs', style={'marginBottom': '10px'}),
-                daq.BooleanSwitch(
-                    id='country_f',
-                    on=bool(country_f),
-                    color='green',
-                    className='my_checkbox'
-                ),
 
-                dcc.Input(id='email', type='text', value=email, placeholder='email', className='my_inputs', style={'marginBottom': '10px'}),
-                daq.BooleanSwitch(
-                    id='email_f',
-                    on=bool(email_f),
-                    color='green',
-                    className='my_checkbox'
-                ),
+                html.Div(className='tab0row', children=[
+                    dcc.Input(id='country', type='text', value=country, placeholder='Country', className='my_inputs', style={'marginBottom': '10px'}),
+                    daq.BooleanSwitch(
+                        id='country_f',
+                        on=bool(country_f),
+                        color='green',
+                        className='my_checkbox'
+                    )]),
 
-                dcc.Input(id='phone', type='text', value=phone, placeholder='+00 0000 000 000 phone', className='my_inputs', style={'marginBottom': '10px'}),
-                daq.BooleanSwitch(
-                    id='phone_f',
-                    on=bool(phone_f),
-                    color='green',
-                    className='my_checkbox'
-                ),
+                html.Div(className='tab0row', children=[
+                    dcc.Input(id='email', type='text', value=email, placeholder='email', className='my_inputs', style={'marginBottom': '10px'}),
+                    daq.BooleanSwitch(
+                        id='email_f',
+                        on=bool(email_f),
+                        color='green',
+                        className='my_checkbox'
+                    )]),
 
-                dcc.Input(id='website', type='text', value=website, placeholder='www.domain.com', className='my_inputs', style={'marginBottom': '10px'}),
-                daq.BooleanSwitch(
-                    id='website_f',
-                    on=bool(website_f),
-                    color='green',
-                    className='my_checkbox'
-                ),
+                html.Div(className='tab0row', children=[
+                    dcc.Input(id='phone', type='text', value=phone, placeholder='+00 0000 000 000 phone', className='my_inputs', style={'marginBottom': '10px'}),
+                    daq.BooleanSwitch(
+                        id='phone_f',
+                        on=bool(phone_f),
+                        color='green',
+                        className='my_checkbox'
+                    )]),
 
-                dcc.Input(id='social_url', type='text', value=social_url, placeholder='social_url', className='my_inputs', style={'marginBottom': '10px'}),
-                daq.BooleanSwitch(
-                    id='social_url_f',
-                    on=bool(social_url_f),
-                    color='green',
-                    className='my_checkbox'
-                ),
+                html.Div(className='tab0row', children=[
+                    dcc.Input(id='website', type='text', value=website, placeholder='www.domain.com', className='my_inputs', style={'marginBottom': '10px'}),
+                    daq.BooleanSwitch(
+                        id='website_f',
+                        on=bool(website_f),
+                        color='green',
+                        className='my_checkbox'
+                    )]),
 
-                dcc.Textarea(id='notes', value=notes, placeholder='notes', className='my_inputs'),
-                daq.BooleanSwitch(
-                    id='notes_f',
-                    on=bool(notes_f),
-                    color='green',
-                    className='my_checkbox',
-                ),
+                html.Div(className='tab0row', children=[
+                    dcc.Input(id='social_url', type='text', value=social_url, placeholder='social_url', className='my_inputs', style={'marginBottom': '10px'}),
+                    daq.BooleanSwitch(
+                        id='social_url_f',
+                        on=bool(social_url_f),
+                        color='green',
+                        className='my_checkbox'
+                    )]),
+
+
+                html.Div(className='tab0row', children=[
+                    dcc.Textarea(id='notes', value=notes, placeholder='notes', className='my_inputs'),
+                    daq.BooleanSwitch(
+                        id='notes_f',
+                        on=bool(notes_f),
+                        color='green',
+                        className='my_checkbox',
+                    )]),
+
+
                 html.Hr(),
                 dcc.Input(id='api_key', type='text', value=api_key, placeholder='api_key', className='my_inputs', style={'marginBottom': '10px', 'fontSize':'8px', 'width':'80%'}),
                 html.Button('Request API', id='get_api', style={'marginLeft':'10px'}),
