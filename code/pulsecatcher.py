@@ -19,6 +19,7 @@ global_cps      = 0
 global_counts	= 0
 run_flag 		= True
 run_flag_lock 	= threading.Lock()
+write_lock      = threading.Lock()
 
 logger = logging.getLogger(__name__)
 
@@ -141,16 +142,19 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 			note 			= ""
 			
 			if mode == 2:
-				fn.write_histogram_npesv2(t0, t1, bins, global_counts, int(elapsed), filename, histogram, coeff_1, coeff_2, coeff_3, device, location, note )
-				tla = time.time()
+				with write_lock:
+					fn.write_histogram_npesv2(t0, t1, bins, global_counts, int(elapsed), filename, histogram, coeff_1, coeff_2, coeff_3, device, location, note )											
+					tla = time.time()
 
 			if mode == 3:
-				fn.write_3D_intervals_json(t0, t1, bins, global_counts, int(elapsed), filename, histogram_3d, coeff_1, coeff_2, coeff_3)
-				histogram_3d = [0] * bins
-				tla = time.time()
+				with write_lock:
+					fn.write_3D_intervals_json(t0, t1, bins, global_counts, int(elapsed), filename, histogram_3d, coeff_1, coeff_2, coeff_3)
+					histogram_3d = [0] * bins
+					tla = time.time()
 
-			fn.write_cps_json(filename, global_cps)
-			global_cps = 0
+			with write_lock:
+				fn.write_cps_json(filename, global_cps)
+				global_cps = 0
 	
 	p.terminate() # closes stream when done
 	return						
