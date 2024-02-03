@@ -318,8 +318,9 @@ def toggle_modal(zoom_clicks, close_clicks, linlog, is_open, current_figure):
                 file = fetch_json(filename)
 
                 if file:
+                    channels        = file['data'][0]['resultData']['energySpectrum']['numberOfChannels']
                     y_values        = file['data'][0]['resultData']['energySpectrum']['spectrum']
-                    x_values        = list(range(len(y_values)))
+                    x_values        = list(range(channels))
                     coefficients    = file['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients']
                     title           = file['data'][0]['sampleInfo']['name']
 
@@ -328,8 +329,6 @@ def toggle_modal(zoom_clicks, close_clicks, linlog, is_open, current_figure):
 
                     # Calculate new x_values using the second-order polynomial
                     calibrated_x = coefficients[2] * x_values_np**2 + coefficients[1] * x_values_np + coefficients[0]
-
-                    
 
                     figure = go.Figure(
                         data=[go.Scatter(
@@ -359,8 +358,8 @@ def toggle_modal(zoom_clicks, close_clicks, linlog, is_open, current_figure):
                             # Horizontal line
                             go.layout.Shape(
                                 type="line",
-                                x0=min(x_values),
-                                x1=max(x_values),
+                                x0=min(calibrated_x),
+                                x1=max(calibrated_x),
                             ),
                             # Vertical line
                             go.layout.Shape(
