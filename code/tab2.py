@@ -38,7 +38,8 @@ global_counts   = 0
 global_cps      = 0
 stop_event      = threading.Event()
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
-spec_notes = ''
+spec_notes      = ''
+write_lock      = threading.Lock()
 
 def show_tab2():
     global global_counts
@@ -165,7 +166,6 @@ def show_tab2():
                 html.Div(['Bin size:', dcc.Input(id='bin_size', type='number', value=bin_size)], className='input', style={'display': audio}),
             ]),
         ]),
-
 
         # this part switches depending which device is connected ---------------
 
@@ -340,6 +340,12 @@ def start_button(n_clicks, filename, compression):
     if n_clicks == None:
         raise PreventUpdate
 
+    file_exists = os.path.exists(f'{data_directory}/{filename}.json')
+
+    if file_exists:
+        #do something here to warn about overwrite
+       return "File already exists"
+  
     time.sleep(1)
 
     dn = fn.get_device_number()
@@ -439,7 +445,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
     if os.path.exists(histogram1):
         with open(histogram1, "r") as f:
 
-            data = json.load(f)
+            with write_lock:
+                data = json.load(f)
 
             if data["schemaVersion"]  == "NPESv2":
                 data = data["data"][0] # This makes it backwards compatible
@@ -532,7 +539,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                             ay=-40
                         )
                     )
-
 
                 lines.append(
                     dict(
@@ -675,7 +681,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
         return go.Figure(data=[], layout=layout), 0, 0, 0
 
 #--------UPDATE SETTINGS------------------------------------------------------------------------------------------
-@app.callback( Output('polynomial'      ,'children'),
+@app.callback(
+                Output('polynomial'      ,'children'),
                 [
                 Input('bins'            ,'value'), # [0]
                 Input('bin_size'        ,'value'), # [1]
@@ -700,7 +707,9 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 def save_settings(*args):
 
     n_clicks = args[0]
+
     if n_clicks is None and not shproto.dispatcher.calibration_updated:
+        
         raise PreventUpdate
 
     if shproto.dispatcher.calibration_updated:
@@ -720,7 +729,6 @@ def save_settings(*args):
 
             # Calulate energies to insert into database
             x_energies      = [polynomial_fn(x_bins_default[0]), polynomial_fn(x_bins_default[1]), polynomial_fn(x_bins_default[2])]
-
 
     else:
         x_bins          = [args[8], args[9], args[10]]
@@ -769,7 +777,6 @@ def save_settings(*args):
                 [Input('soundbyte'  ,'n_clicks'),
                 Input('filename2'   ,'value')])    
 
-
 def play_sound(n_clicks, filename2):
 
     if n_clicks is None:
@@ -812,7 +819,8 @@ def update_current_calibration(n_clicks, filename):
         coeff_3         = round(settings[20],6)
 
         # Update the calibration coefficients using the specified values
-        fn.update_coeff(filename, coeff_1, coeff_2, coeff_3)
+        with write_lock:
+            fn.update_coeff(filename, coeff_1, coeff_2, coeff_3)
 
         logger.info(f'Calibration updated tab2: {filename, coeff_1, coeff_2, coeff_3}')
 
@@ -844,7 +852,6 @@ def update_output(selected_cmd, active_tab):
         logging.error(f"Error in update_output tab2: {e}")
 
         return "An error occurred."
-
 
 # -----Callback to publish spectrum to web with confirm message ---------------------------------------------
 @app.callback(
@@ -915,9 +922,10 @@ def display_confirmation_result(confirm_button_clicks, cancel_button_clicks, fil
 )
 def update_spectrum_notes(spec_notes, filename):
     
-    fn.update_json_notes(filename, spec_notes)
+    with write_lock:
+        fn.update_json_notes(filename, spec_notes)
 
     logger.info(f'Spectrum notes updated {spec_notes}')
 
-    return f'writing notes to..\n{filename}.json'
+    return spec_notes
 
