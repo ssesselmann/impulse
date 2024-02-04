@@ -197,6 +197,12 @@ def update_output(n_clicks, filename, compression, t_interval):
     if n_clicks == None:
         raise PreventUpdate
 
+    file_exists = os.path.exists(f'{data_directory}/{filename}_3d.json')
+
+    if file_exists:
+        #do something here to warn about overwrite
+       return "File already exists"    
+
     dn = fn.get_device_number()
 
     if dn >= 100:
