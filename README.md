@@ -138,7 +138,7 @@ Things to do
 * Build functionality for right channel recording and coincidence counting
 * Build interval histogram with Dead time calculation 
 * Show Subtraction in spectrum name
-* Add functionality for publishing spectra to and reading spectra from an online database.
+* Save background subtracted spectra
 
 
 If anyone has requests for additional features please contact me via the "Contact us" link at gammaspectacular.com
