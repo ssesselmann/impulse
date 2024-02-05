@@ -174,6 +174,41 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
 
             fig         = []
 
+            if institution == None or institution.strip() == "":
+                institution_show = 'none'
+            else: 
+                institution_show = 'block'
+
+            if (city == None or city.strip() == "") and (country == None or country.strip() == ""): 
+                cc_show = 'none'
+            else:
+                cc_show = 'block'
+            
+            if email == None or email.strip() == "": 
+                email_show = 'none'
+            else:
+                email_show = 'block'
+
+            if phone == None or phone.strip() == "": 
+                phone_show = 'none'
+            else:
+                phone_show = 'block'    
+
+            if web == None or web.strip() == "": 
+                web_show = 'none'
+            else:
+                web_show = 'block'
+
+            if social == None or social.strip() == "": 
+                social_show = 'none'
+            else:
+                social_show = 'block'    
+
+            if notes == None or notes.strip() == "": 
+                notes_show = 'none'
+            else:
+                notes_show = 'block' 
+
             button = html.Button(
                 'zoom', 
                 id={'type': 'zoom-button', 'value': str(id)},
@@ -184,9 +219,8 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
             # Format file information
             file_info_div = html.Div(id='tab5_col_1', children=[
                 html.H4(f"#  {id}"),
-                html.P(filename),
                 html.P(f"{date}"),
-                html.P(f"Channels: {channels_l}"),
+                html.P(f"Bins:{channels_l}"),
                 html.A("Download", href=download, target='_blank'),
             ], style={'textAlign':'left','width': '130px', 'padding': '10px'})
 
@@ -195,13 +229,13 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
             # Format client information
             client_info_div = html.Div(id='tab5_col_2', children=[
                 html.P(f"{first_name} {last_name}"),
-                html.P(f"{institution}", style={'height':10}),
-                html.P(f"{city} - {country}", style={'height':10}),
-                html.P(f"e: {email}", style={'height':10, 'fontSize':10}),
-                html.P(f"p: {phone}", style={'height':10}),
-                html.P(html.A(web, href=web, target="_blank"), style={'height':10, 'fontSize':10}),
-                html.P(html.A(social, href=social, target="_blank"), style={'height':10, 'fontSize':10}),
-                html.P(f"Note: {notes}"),
+                html.P(f"{institution}", style={'display':institution_show}),
+                html.P(f"{city} - {country}", style={'display':cc_show}),
+                html.P(f"e: {email}", style={'fontSize':11, 'display':email_show}),
+                html.P(f"p: {phone}", style={'fontSize':11, 'display':phone_show}),
+                html.P(html.A(web, href=web, target="_blank"), style={'height':10, 'fontSize':10, 'display':web_show}),
+                html.P(html.A(social, href=social, target="_blank"), style={'height':10, 'fontSize':10, 'display':social_show}),
+                html.P(f"Note: {notes}", style={'display':notes_show}),
                 # Include other client details as needed
             ], style={'width': '250px', 'padding':'10px'})
 
