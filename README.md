@@ -31,11 +31,7 @@ Impulse requires some additional python libraries installed, so copy and paste t
 
 First you will need to install or upgrade pip, pip is a catalogue of available python extensions.
 
-Installing pip for the first time..
-```
-python -m ensurepip --default-pip
-```
-Upgrading to the latest version of pip..
+Install or upgrade to the latest version of pip..
 ```
 python -m pip install --upgrade pip
 ```
