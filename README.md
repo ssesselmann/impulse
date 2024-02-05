@@ -19,32 +19,39 @@ Download Impulse from the Github repository here https://github.com/ssesselmann/
 
 Step 3)
 -------
-Unzip the package to the preferred location on your drive
+Unzip the package to the preferred location on your drive, something like ~/python/ for all your python scripts.
 
 Step 4)
 -------
-Open your terminal to the command line and navigate to the folder ~/impulse-main
+Open your terminal to the command line and navigate to the folder ~/python/impulse-main
 
 Step 5)
 ------- 
 Impulse requires some additional python libraries installed, so copy and paste the following into your terminal;
 
-Windows
+First you will need to install or upgrade pip, pip is a catalogue of available python extensions.
+
+Installing pip for the first time..
 ```
-pip install -r requirements.txt
+python -m ensurepip --default-pip
+```
+Upgrading to the latest version of pip..
+```
+python -m pip install --upgrade pip
+```
+Windows or Linux
+```
+pip install -r requirements_pc.txt
 ```
 Mac
 ```
 pip3 install -r requirements_mac.txt
 ```
-Linux
-```
-pip install -r requirements_pc.txt
-```
+
 
 Step 6)
 ------- 
-Now run the program by typing 
+Now from the impulse-main directory run the program by typing 
 ```
 python code/impulse.py
 ```
