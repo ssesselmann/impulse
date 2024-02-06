@@ -315,6 +315,7 @@ def show_tab2():
             html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
             html.Div(id='specNoteDiv', children=[
                 dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='Spectrum notes', cols=20, rows=6)]),
+                html.Div(id='notes-warning', children=['! Stop recording before writing notes !']),
                 html.Div(id='spec-notes-output', children='', style={'visibility':'hidden'}),
             
             ]),
