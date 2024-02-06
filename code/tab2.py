@@ -488,6 +488,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
             if cal_switch == True:
                 x = np.polyval(np.poly1d(coefficients), x)
 
+
+
             if epb_switch == True:
                 y = [i * count for i, count in enumerate(spectrum)]
                 gc= [i * count for i, count in enumerate(gc)]
@@ -598,6 +600,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     numberOfChannels_2    = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
                     elapsed_2             = data_2["resultData"]["energySpectrum"]["measurementTime"]
                     spectrum_2            = data_2["resultData"]["energySpectrum"]["spectrum"]
+                    coefficients_2        = data_2["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
  
                     if elapsed > 0:
                         steps = (elapsed/elapsed_2)
@@ -608,7 +611,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                     y2 = [int(n * steps) for n in spectrum_2]
 
                     if cal_switch == True:
-                        x2 = np.polyval(np.poly1d(coefficients), x2)
+                        x2 = np.polyval(np.poly1d(coefficients_2), x2)
 
                     if epb_switch == True:
                         y2 = [i * n * steps for i, n in enumerate(spectrum_2)]
