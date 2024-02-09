@@ -271,11 +271,11 @@ def show_tab2():
             ]), 
 
         html.Div(id='t2_setting_div7', children=[
-            html.Button('Sound <)' , id='soundbyte'),
+            html.Button('Sound <)' , id='soundbyte', className='action_button'),
             html.Div(id='audio', children=''),
-            html.Button('Update calib.', id='update_calib_button'),
+            html.Button('Update calib.', id='update_calib_button', className='action_button'),
             html.Div(id='update_calib_message', children=''),
-            dbc.Button("Publish Spectrum", id="publish_button", color="primary", className="mb-3"),
+            dbc.Button("Publish Spectrum", id="publish_button", color="primary", className="action_button"),
             
             dbc.Modal(
                 children=[

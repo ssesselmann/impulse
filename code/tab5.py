@@ -44,9 +44,18 @@ def show_tab5():
 
     # Pagination buttons
     pagination_div = html.Div([
-        html.Button('Previous', id='prev-page-button', n_clicks=0, style={'marginRight': '10px'}),
+        html.Button('Previous', 
+            id='prev-page-button', 
+            n_clicks=0, 
+            className='action_button',
+            style={'width':'75px','marginRight': '10px'}),
         html.Div(id='page-info', children=f'Page 1 of {total_pages}', style={'display': 'inline-block', 'marginRight': '10px'}),
-        html.Button('Next', id='next-page-button', n_clicks=0),
+        html.Button('Next', 
+            id='next-page-button', 
+            n_clicks=0,
+            className='action_button',
+            style={'width':'75px'},
+            ),
         html.Div(id='current-page', style={'display': 'none'}, children='1')
     ], style={'textAlign': 'center', 'marginTop': '20px', 'marginBottom': '20px', 'width': '300px', 'margin': 'auto'})
 
@@ -213,6 +222,7 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                 'zoom', 
                 id={'type': 'zoom-button', 'value': str(id)},
                 n_clicks=0,
+                className='action_button',
             )
             buttons.append(button)
 

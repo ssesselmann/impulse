@@ -158,7 +158,11 @@ def show_tab0():
 
                 html.Hr(),
                 dcc.Input(id='api_key', type='text', value=api_key, placeholder='api_key', className='my_inputs', style={'marginBottom': '10px', 'fontSize':'8px', 'width':'80%'}),
-                html.Button('Request API', id='get_api', style={'marginLeft':'10px'}),
+                html.Button('Request API', 
+                    id='get_api', 
+                    className='action_button', 
+                    style={'width':100, 'marginLeft':'10px'}
+                    ),
                 html.Div(id='get_api_output', children=''),
                 html.Hr(),
                 html.Div(id='output-div'),

@@ -77,12 +77,14 @@ def show_tab1():
             options=options,
             value=device,  # pre-selected option
             clearable=False,
+            className='dropdown',
         ),
         ]),
         html.Div(id='tab1_settings2', children=[
             html.Div(children='Sample rate'),
             dcc.Dropdown(
                 id='sample_rate',
+                className='dropdown',
                 options=[
 
                     {'label': '44.1 kHz', 'value': '44100'},
@@ -102,7 +104,9 @@ def show_tab1():
 
         html.Div(id='tab1_settings3', children=[
             html.Div(children='Sample size', style={'textAlign': 'left'}),
-            html.Div(dcc.Dropdown(id='sample_length',
+            html.Div(dcc.Dropdown(
+                id='sample_length',
+                className='dropdown',
                 options=[
                     {'label': '11 dots', 'value': '11'},
                     {'label': '16 dots', 'value': '16'},
@@ -124,6 +128,7 @@ def show_tab1():
             html.Div(children='Pulses to sample'),
             html.Div(dcc.Dropdown(
                 id='catch',
+                className='dropdown',
                 options=[
                     {'label': '10', 'value': '10'},
                     {'label': '50', 'value': '50'},
@@ -143,17 +148,19 @@ def show_tab1():
 
         html.Div(id='tab1_settings5', children=[
             html.Div(children='Buffer Size'),
-            html.Div(dcc.Dropdown(id='chunk_size',
-                                  options=[
-                                      {'label': '516', 'value': '516'},
-                                      {'label': '1024', 'value': '1024'},
-                                      {'label': '2048', 'value': '2048'},
-                                      {'label': '4096', 'value': '4096'}
-                                  ],
-                                  value=chunk_size,
-                                  clearable=False,
-                                  style={'display':audio}
-                                  )),
+            html.Div(dcc.Dropdown(
+                id='chunk_size',
+                className='dropdown',
+                options=[
+                  {'label': '516', 'value': '516'},
+                  {'label': '1024', 'value': '1024'},
+                  {'label': '2048', 'value': '2048'},
+                  {'label': '4096', 'value': '4096'}
+                ],
+                value=chunk_size,
+                clearable=False,
+                style={'display':audio}
+                )),
             html.Div(id='output_chunk_text', children=''),
         ], style={'display':audio}),
 
@@ -205,14 +212,24 @@ def show_tab1():
                                 style = {'width': '85%', 'marginLeft': 'auto', 'marginRight': '0'}
                                 ),
 
-                        html.Button('Capture Pulse Shape', id='get_shape_btn', n_clicks=0, style={'backgroundColor':'purple','borderRadius':'6px','color':'white','fontWeight':'bold','marginTop':'10px'}),
-                    ], style={  'display':audio }),
+                        html.Button('Capture Pulse Shape', 
+                            id='get_shape_btn', 
+                            n_clicks=0, 
+                            className='action_button',
+                            style={'marginLeft':'20%'},
+                            ),
+                            ], style={'display':audio}),
 
                     html.Div(id='distortion_div', children=[
                         html.Div(id='showcurve', children=[
                             dcc.Graph(id='curve', figure={'data': [{}], 'layout': {}}),
                             html.Div('', style= { 'height':'50px'}),
-                            html.Button('Get Distortion Curve', id='get_curve_btn', n_clicks=0, style={'backgroundColor':'purple','borderRadius':'6px','color':'white','fontWeight':'bold','marginTop':'10px'}),
+                            html.Button('Get Distortion Curve', 
+                                id='get_curve_btn', 
+                                n_clicks=0, 
+                                className='action_button',
+                                style={'marginLeft':'20%', 'marginTop':'20px'},
+                                ),
                         ]),
                     ], style={'display':audio}),
 
