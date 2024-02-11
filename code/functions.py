@@ -356,52 +356,30 @@ def peakfinder(y_values, prominence, min_width):
         fwhm.append(w[0])
     return filtered_peaks, fwhm
 
-def get_gps_loc():
-    # load data into array
-    data = json.load(urlopen("https://ipinfo.io/json"))
-    # extract lattitude
-    lat = data['loc'].split(',')[0]
-    # extract longitude
-    lon = data['loc'].split(',')[1]
-    return lat, lon
 
 def gaussian_correl(data, sigma):
-    # Initialize an empty list to hold the correlation values
     correl_values = []
-    # Iterate over each index in the input data array
-    for index in range(len(data)):
-        # Compute the standard deviation of the Gaussian kernel
-        std = math.sqrt(len(data))
-        # Compute the range of indices to include in the Gaussian kernel
-        x_min = -round(sigma * std)
-        x_max = round(sigma * std)
-        # Compute the Gaussian kernel values
-        gauss_values = []
-        for k in range(x_min, x_max):
-            # Compute the Gaussian kernel value for the current index
-            gauss_values.append(math.exp(-(k**2) / (2 * std**2)))
-        # Compute the average of the Gaussian kernel values
-        avg = sum(gauss_values) / (x_max - x_min) if (x_max - x_min) > 0 else 0
-        # Compute the squared sum of the difference between the Gaussian kernel values and the average
-        squared_sum = 0
-        for value in gauss_values:
-            squared_sum += (value - avg)**2
-        # Compute the correlation value for the current index
+    data_len = len(data)
+    std = math.sqrt(data_len)
+    x_max = round(sigma * std)
+    gauss_values = [math.exp(-(k**2) / (2 * std**2)) for k in range(-x_max, x_max)]
+    avg = sum(gauss_values) / len(gauss_values)
+
+    for index in range(data_len):
         result_val = 0
-        for k in range(x_min, x_max):
-            # Check that the index is within bounds of the data array
-            if index + k < 0 or index + k >= len(data):
-                continue
-            # Compute the contribution of the data at the current index and the Gaussian kernel value to the correlation value
-            result_val += data[index + k] * (gauss_values[k - x_min] - avg) / squared_sum
-        # Set the correlation value to the computed result value if it is positive, otherwise set it to zero
-        value = result_val if result_val and result_val > 0 else 0
-        # Append the correlation value to the list of correlation values
-        correl_values.append(value)
-    # Scale the correlation values based on the maximum value in the input data array
-    scaling_factor = 0.8 * max(data) / max(correl_values)
-    correl_values = [value * scaling_factor for value in correl_values]
-    # Return the list of correlation values
+        for k in range(-x_max, x_max):
+            idx = index + k
+            if 0 <= idx < data_len:
+                result_val += data[idx] * (gauss_values[k + x_max] - avg)
+
+        value = max(0, result_val)
+        correl_values.append(int(value))
+
+    max_data = max(data)
+    max_correl_value = max(correl_values)
+    scaling_factor = 0.8 * max_data / max_correl_value
+    correl_values = [int(value * scaling_factor) for value in correl_values]
+
     return correl_values
 
 def start_recording(mode):

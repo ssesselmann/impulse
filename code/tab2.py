@@ -821,31 +821,38 @@ def save_settings(*args):
 #-------PLAY SOUND ---------------------------------------------
 
 @app.callback( Output('audio'       ,'children'),
-                [Input('soundbyte'  ,'n_clicks'),
-                Input('filename2'   ,'value')])    
+                [Input('soundbyte'  ,'n_clicks')],
+                [State('filename'   ,'value')])    
 
-def play_sound(n_clicks, filename2):
+def play_sound(n_clicks, filename):
 
     if n_clicks is None:
         raise PreventUpdate
+
+    if os.path.exists( f'{data_directory}/{filename}.wav'):
+        asp.play_wav_file(filename)
+        logger.info(f'Playing existing wav file: {filename}.wav')
+        return
+
     else:
-        spectrum_2 = []
-        histogram2 = fn.get_path(f'{data_directory}/{filename2}.json')
+        spectrum = []
+        histogram = fn.get_path(f'{data_directory}/{filename}.json')
 
-        if os.path.exists(histogram2):
-                with open(histogram2, "r") as f:
-                    data_2     = json.load(f)
-                    spectrum_2 = data_2["data"][0]["resultData"]["energySpectrum"]["spectrum"]
+        if os.path.exists(histogram):
+                with open(histogram, "r") as f:
+                    data     = json.load(f)
+                    spectrum = data["data"][0]["resultData"]["energySpectrum"]["spectrum"]
 
-        gc = fn.gaussian_correl(spectrum_2, 1)
+        gc = fn.gaussian_correl(spectrum, 1)
+        logger.info('calculating gaussian correlation')
 
-        asp.make_wav_file(filename2, gc)
+        asp.make_wav_file(filename, gc)
+        logger.info('Converting gaussian correlation to wav file')
 
-        asp.play_wav_file(filename2)
-
-    logger.info(f'Play Gaussian Sound')
+        asp.play_wav_file(filename)
+        logger.info(f'Playing soundfile {filename}.wav')
         
-    return
+        return
 
 #------UPDATE CALIBRATION OF EXISTING SPECTRUM-------------------
 

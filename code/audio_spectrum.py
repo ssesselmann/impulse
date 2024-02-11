@@ -19,7 +19,7 @@ def make_wav_file(filename, numbers):
     frequency_array = base_frequency * 2 ** (np.arange(len(numbers)) / octave_size)
 
     # Generate the time and signal arrays for a 3-second sound
-    duration = 3  # duration of the sound in seconds
+    duration = 2  # duration of the sound in seconds
     sampling_rate = 48000  # number of samples taken per second
     time_array = np.arange(duration * sampling_rate) / sampling_rate
     signal_array = np.sin(2 * np.pi * np.outer(frequency_array, time_array))
@@ -35,7 +35,6 @@ def make_wav_file(filename, numbers):
     wavfile.write(f'{data_directory}/{filename}.wav', sampling_rate, scaled_signal)
 
     return
-
 
 def play_wav_file(filename):
     filename = f'{data_directory}/{filename}.wav'
