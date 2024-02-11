@@ -161,6 +161,22 @@ def show_tab2():
                      ),
 
                 html.Div(['File name:', dcc.Input(id='filename', type='text', value=filename, className='input')]),
+                
+                # Overwrite confirmation modal
+                dbc.Modal([
+                    dbc.ModalBody("Overwrite existing file ?"),
+                    dbc.ModalFooter([
+                        dbc.Button("Overwrite", id="confirm-overwrite", className="ml-auto", n_clicks=0),
+                        dbc.Button("Cancel", id="cancel-overwrite", className="ml-auto", n_clicks=0),
+                    ]),
+                    ], 
+                    id='modal-overwrite', 
+                    is_open=False,
+                    centered=True,
+                    size="md",
+                    className="custom-modal",
+                    ),
+                html.Div(id='start_process_flag', style={'display': 'none'}),
                 html.Div(['Number of bins:', dcc.Input(id='bins', type='number', value=bins)], className='input', style={'display': audio}),
                 html.Div(['Bin size:', dcc.Input(id='bin_size', type='number', value=bin_size)], className='input', style={'display': audio}),
             ]),
@@ -289,7 +305,7 @@ def show_tab2():
                 id="confirmation-modal",
                 centered=True,
                 size="md",
-                className="custom-modal",  # Apply the custom class here
+                className="custom-modal", 
             ),
 
             html.Div(id="confirmation-output", children= ''),
@@ -328,66 +344,102 @@ def show_tab2():
 
     return html_tab2
 
-#----START---------------------------------
+#----START BUTTON ---------------------------------------------------
 
-@app.callback(Output('start_text'   , 'children'),
-              [Input('start'        , 'n_clicks')], 
-              [State('filename'     , 'value'),
-               State('compression' , 'value')])
+# - pop up warning ------------------
+@app.callback(
+    Output('modal-overwrite', 'is_open'),
+    [Input('start', 'n_clicks'), 
+     Input('confirm-overwrite', 'n_clicks'), 
+     Input('cancel-overwrite', 'n_clicks')],
+    [State('filename', 'value'),
+     State('modal-overwrite', 'is_open')]
+)
+def confirm_with_user(start_clicks, confirm_clicks, cancel_clicks, filename, is_open):
+    ctx = dash.callback_context
 
-def start_button(n_clicks, filename, compression):
-
-    if n_clicks == None:
+    if not ctx.triggered:
         raise PreventUpdate
 
-    file_exists = os.path.exists(f'{data_directory}/{filename}.json')
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    if file_exists:
-        #do something here to warn about overwrite
-       return "File already exists"
-  
-    time.sleep(1)
+    if button_id == "start":
+        file_exists = os.path.exists(f'{data_directory}/{filename}.json')
+        # Open the modal only if the file exists
+        return file_exists
 
-    dn = fn.get_device_number()
+    # Close the modal if either "confirm-overwrite" or "cancel-overwrite" is clicked
+    elif button_id in ["confirm-overwrite", "cancel-overwrite"]:
+        return False
 
-    if dn >= 100:
-        try:
-            shproto.dispatcher.spec_stopflag = 0
-            dispatcher = threading.Thread(target=shproto.dispatcher.start)
-            dispatcher.start()
+    return False  # Default case to ensure modal is closed if no conditions above are met
 
-            time.sleep(0.1)
+#- Conditional Start function -----
+@app.callback(
+    Output('start_text'         , 'children'),
+    [Input('confirm-overwrite'  , 'n_clicks'),
+     Input('start'              , 'n_clicks')], 
+    [State('filename'           , 'value'),
+     State('compression'        , 'value')]  
+)
+def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression):
+    ctx = dash.callback_context
 
-            # Reset spectrum
-            command = '-rst'
-            shproto.dispatcher.process_03(command)
-            logger.info(f'tab2 sends command {command}')
+    if not ctx.triggered:
+        raise PreventUpdate
 
-            time.sleep(0.1)
+    trigger_id      = ctx.triggered[0]['prop_id'].split('.')[0]
+    trigger_value   = ctx.triggered[0]['value']
+    file_exists     = os.path.exists(f'{data_directory}/{filename}.json')
 
-            # Start multichannel analyser
-            command = '-sta'
-            shproto.dispatcher.process_03(command)
-            logger.info(f'tab2 sends command {command}')
+    if trigger_value == 0:
+        raise PreventUpdate
 
-            time.sleep(0.1)
+    if (trigger_id == 'confirm-overwrite') or (trigger_id == 'start' and not file_exists):
 
-            shproto.dispatcher.process_01(filename, compression, "GS-MAX or ATOM-NANO")
-            logger.info(f'Serial recording started')
+        dn = fn.get_device_number()
 
-            time.sleep(0.1)
+        if dn >= 100:
+            try:
+                shproto.dispatcher.spec_stopflag = 0
+                dispatcher = threading.Thread(target=shproto.dispatcher.start)
+                dispatcher.start()
 
-        except Exception as e:
-            logger.error(f'tab 2 update_output() error {e}')
-            return f"Error: {str(e)}"
-    else:
-        
-        fn.start_recording(2)
+                time.sleep(0.1)
 
-        logger.info('Tab2 fn.startrecording(2) passed.')
+                # Reset spectrum
+                command = '-rst'
+                shproto.dispatcher.process_03(command)
+                logger.info(f'tab2 sends command {command}')
 
-    return 
-#----STOP------------------------------------------------------------
+                time.sleep(0.1)
+
+                # Start multichannel analyser
+                command = '-sta'
+                shproto.dispatcher.process_03(command)
+                logger.info(f'tab2 sends command {command}')
+
+                time.sleep(0.1)
+
+                shproto.dispatcher.process_01(filename, compression, "GS-MAX or ATOM-NANO")
+                logger.info(f'Serial recording started')
+
+                time.sleep(0.1)
+
+            except Exception as e:
+                logger.error(f'tab 2 update_output() error {e}')
+                return f"Error: {str(e)}"
+        else:
+            
+            fn.start_recording(2)
+
+            logger.info('Tab2 fn.startrecording(2) passed.') 
+
+        return
+
+    raise PreventUpdate
+
+#----STOP BUTTON ----------------------------------------------------
 
 @app.callback( Output('stop_text'  ,'children'),
                 [Input('stop'      ,'n_clicks')],
@@ -550,8 +602,6 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                         )
                     )
                 )
-
-            
             
             title_text = "{}<br>{}".format(filename, time)
 
@@ -879,8 +929,8 @@ def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_button_clicks
 
 @app.callback(
     Output("confirmation-output", "children"),
-    [Input("confirm-button", "n_clicks"),
-     Input("cancel-button", "n_clicks"),
+    [Input("confirm-overwrite-button", "n_clicks"),
+     Input("cancel-overwrite-button", "n_clicks"),
      State("filename", "value")],
 )
 def display_confirmation_result(confirm_button_clicks, cancel_button_clicks, filename):
@@ -925,4 +975,5 @@ def update_spectrum_notes(spec_notes, filename):
     logger.info(f'Spectrum notes updated {spec_notes}')
 
     return spec_notes
+
 
