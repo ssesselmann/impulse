@@ -164,7 +164,7 @@ def show_tab2():
                 
                 # Overwrite confirmation modal
                 dbc.Modal([
-                    dbc.ModalBody("Overwrite existing file ?"),
+                    dbc.ModalBody(f'Overwrite \"{filename}\" ?'),
                     dbc.ModalFooter([
                         dbc.Button("Overwrite", id="confirm-overwrite", className="ml-auto", n_clicks=0),
                         dbc.Button("Cancel", id="cancel-overwrite", className="ml-auto", n_clicks=0),
