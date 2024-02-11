@@ -290,6 +290,8 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
     if n is None:
         raise PreventUpdate
 
+    from pulsecatcher import mean_cps
+
     if log_switch == True:
         axis_type = 'log'
 
@@ -336,12 +338,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
             spectra = data["resultData"]["energySpectrum"]["spectrum"]
             coefficients = coefficients[::-1]  # Reverse order
 
-        if elapsed == 0:
-            global_cps = 0  
-
-        else:
-            global_cps = int((validPulseCount - global_counts)/t_interval)
-            global_counts = validPulseCount 
+        global_counts = validPulseCount 
 
         x = list(range(numberOfChannels))
         y = spectra
@@ -379,7 +376,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
 
         fig = go.Figure(data=traces, layout=layout)
 
-        return fig, f'{validPulseCount}', f'{elapsed}', f'cps {global_cps}'
+        return fig, f'{validPulseCount}', f'{elapsed}', f'cps {mean_cps}'
 
     else:
         
