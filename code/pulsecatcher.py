@@ -16,6 +16,7 @@ from collections import defaultdict
 data 			= None
 left_channel 	= None
 global_cps      = 0
+mean_cps 		= 0
 global_counts	= 0
 run_flag 		= True
 run_flag_lock 	= threading.Lock()
@@ -73,7 +74,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
 	p = pyaudio.PyAudio()
 
-	global global_cps
+	global mean_cps
 	global global_counts  
 
 	global_cps 		= 0
@@ -136,10 +137,10 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 			coeff_1			= settings[18]
 			coeff_2			= settings[19]
 			coeff_3			= settings[20]
-
 			global_cps 		= int(global_cps/t_interval)
 			location 		= ""
 			note 			= ""
+			mean_cps		= global_cps
 			
 			if mode == 2:
 				with write_lock:

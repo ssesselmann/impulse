@@ -43,7 +43,6 @@ write_lock      = threading.Lock()
 
 def show_tab2():
     global global_counts
-    global global_cps
     global cps_list
     global device
 
@@ -334,7 +333,7 @@ def show_tab2():
 @app.callback(Output('start_text'   , 'children'),
               [Input('start'        , 'n_clicks')], 
               [State('filename'     , 'value'),
-                State('compression' , 'value')])
+               State('compression' , 'value')])
 
 def start_button(n_clicks, filename, compression):
 
@@ -433,12 +432,13 @@ def stop_button(n_clicks, filename):
                 State('difference_switch'   ,'on'),
                 State('peakfinder'          ,'value'),
                 State('sigma'               ,'value'),
-                State('max_seconds'        ,'value'),
+                State('max_seconds'         ,'value'),
                 State('max_counts'          ,'value')])
 
 def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts):
 
     global global_counts
+    from pulsecatcher import mean_cps
 
     histogram1 = fn.get_path(f'{data_directory}/{filename}.json')
     histogram2 = fn.get_path(f'{data_directory}/{filename2}.json')
@@ -470,14 +470,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
                 gc = []
             else:    
                 gc = fn.gaussian_correl(spectrum, sigma)
-            
 
-            if elapsed == 0:
-                cps = 0  
-            else:
-                cps = validPulseCount - global_counts
-                global_counts = validPulseCount  
-     
             x               = list(range(numberOfChannels))
             y               = spectrum
             max_value       = np.max(y)
@@ -661,7 +654,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
         if log_switch == True:
             fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0, max_log_value+0.3])) 
 
-        return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}'
+        return fig, f'{validPulseCount}', f'{elapsed}', f'cps {mean_cps}'
 
     else:
         layout = go.Layout(
