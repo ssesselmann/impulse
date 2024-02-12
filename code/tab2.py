@@ -160,7 +160,9 @@ def show_tab2():
                      style={'display': serial}
                      ),
 
-                html.Div(['File name:', dcc.Input(id='filename', type='text', value=filename, className='input')]),
+                html.Div(['File name:', 
+                    dcc.Input(id='filename', type='text', value=filename, className='input'),
+                    ]),
                 
                 # Overwrite confirmation modal
                 dbc.Modal([
@@ -492,241 +494,277 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
     global global_counts
     from pulsecatcher import mean_cps
 
-    histogram1 = fn.get_path(f'{data_directory}/{filename}.json')
-    histogram2 = fn.get_path(f'{data_directory}/{filename2}.json')
+    annotations = []
+    lines       = []
+    title_text  = ''
+    now         = datetime.now()
+    time        = now.strftime('%d/%m/%Y')
+    histogram1  = fn.get_path(f'{data_directory}/{filename}.json')
+
+    if not os.path.exists(histogram1):
+
+        filename = ''
+
+    layout = go.Layout(
+        paper_bgcolor = 'white', 
+        plot_bgcolor = '#f0f0f0',
+        showlegend=True,
+        title={
+            'text': f'{filename}<br>{time}',
+            'x': 0.8,
+            'y': 0.9,
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font': {'family': 'Arial', 'size': 20, 'color': 'black'},
+            },
+        height  =480, 
+        margin_t=0,
+        margin_b=0,
+        margin_l=0,
+        margin_r=0,
+        autosize=True,
+        yaxis=dict(range=[0, 'auto']),
+        xaxis=dict(range=[0, 'auto']),
+        annotations=annotations,
+        shapes=lines,
+        uirevision="Don't change",
+        )
+
+    fig = go.Figure(layout=layout)
 
     if os.path.exists(histogram1):
+
         with open(histogram1, "r") as f:
 
             with write_lock:
                 data = json.load(f)
 
-            if data["schemaVersion"]  == "NPESv2":
-                data = data["data"][0] # This makes it backwards compatible
+        if data["schemaVersion"]  == "NPESv2":
+            data = data["data"][0] # This makes it backwards compatible
 
-            numberOfChannels    = data["resultData"]["energySpectrum"]["numberOfChannels"]
-            validPulseCount     = data["resultData"]["energySpectrum"]["validPulseCount"]
-            elapsed             = data["resultData"]["energySpectrum"]["measurementTime"]
-            polynomialOrder     = data["resultData"]["energySpectrum"]["energyCalibration"]["polynomialOrder"]
-            coefficients        = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-            spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
-            coefficients        = coefficients[::-1] # Revese order   
-
-            now = datetime.now()
-            time = now.strftime('%d/%m/%Y')
-
-            mu = 0
-            prominence = 0.5
-
-            if sigma == 0:
-                gc = []
-            else:    
-                gc = fn.gaussian_correl(spectrum, sigma)
-
-            x               = list(range(numberOfChannels))
-            y               = spectrum
-            max_value       = np.max(y)
-            if max_value    == 0:
-                max_value   = 10
-            
-            max_log_value   = np.log10(max_value)
-
-            if cal_switch == True:
-                x = np.polyval(np.poly1d(coefficients), x)
-
-
-
-            if epb_switch == True:
-                y = [i * count for i, count in enumerate(spectrum)]
-                gc= [i * count for i, count in enumerate(gc)]
-
-            trace1 = go.Scatter(
-                x=x, 
-                y=y, 
-                mode='lines+markers', 
-                fill='tozeroy' ,  
-                marker={'color': 'darkblue', 'size':1}, 
-                line={'width':1})
-
-  #-------------------annotations-----------------------------------------------          
-            peaks, fwhm = fn.peakfinder(y, prominence, peakfinder)
-            num_peaks   = len(peaks)
-            annotations = []
-            lines       = []
-
-            for i in range(num_peaks):
-                peak_value  = peaks[i]
-                counts      = y[peaks[i]]
-                x_pos       = peaks[i]
-                y_pos       = y[peaks[i]]
-                y_pos_ann   = y_pos + 10
-                resolution  = (fwhm[i]/peaks[i])*100
-
-                if y_pos_ann > (max_value * 0.9):
-                    y_pos_ann = int(y_pos_ann - max_value * 0.03)
-
-                if cal_switch == True:
-                    peak_value  = np.polyval(np.poly1d(coefficients), peak_value)
-                    x_pos       = peak_value
-
-                if log_switch == True:
-                    y_pos = np.log10(y_pos)
-                    y_pos_ann = y_pos + 0.02
-
-                if peakfinder != 0:
-                    annotations.append(
-                        dict(
-                            x= x_pos,
-                            y= y_pos_ann,
-                            xref='x',
-                            yref='y',
-                            text=f'cts: {counts}<br>bin: {peak_value:.1f}<br>{resolution:.1f}%',
-                            showarrow=True,
-                            arrowhead=1,
-                            ax=0,
-                            ay=-40
-                        )
-                    )
-
-                lines.append(
-                    dict(
-                        type='line',
-                        x0=x_pos,
-                        y0=0,
-                        x1=x_pos,
-                        y1=y_pos,
-                        line=dict(
-                            color='white',
-                            width=1,
-                            dash='dot'
-                        )
-                    )
-                )
-            
-            title_text = "{}<br>{}".format(filename, time)
-
-            layout = go.Layout(
-                paper_bgcolor = 'white', 
-                plot_bgcolor = 'white',
-                title={
-                'text': title_text,
-                'x': 0.9,
-                'y': 0.9,
-                'xanchor': 'center',
-                'yanchor': 'top',
-                'font': {'family': 'Arial', 'size': 20, 'color': 'black'},
-                },
-                height  =480, 
-                margin_t=0,
-                margin_b=0,
-                margin_l=0,
-                margin_r=0,
-                autosize=True,
-                #xaxis=dict(dtick=50, tickangle = 90, range =[0, max(x)]),
-                yaxis=dict(autorange=True),
-                annotations=annotations,
-                shapes=lines,
-                uirevision="Don't change",
-                )
-#---------------Histrogram2 ---------------------------------------------------------------------------
-
-            if os.path.exists(histogram2):
-                with open(histogram2, "r") as f:
-
-                    data_2 = json.load(f)
-
-                    schema_version = data_2["schemaVersion"]
-
-                    if schema_version  == "NPESv2":
-
-                        data_2 = data_2["data"][0] # This makes it backwards compatible
-
-                    numberOfChannels_2    = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
-                    elapsed_2             = data_2["resultData"]["energySpectrum"]["measurementTime"]
-                    spectrum_2            = data_2["resultData"]["energySpectrum"]["spectrum"]
-                    coefficients_2        = data_2["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
- 
-                    if elapsed > 0:
-                        steps = (elapsed/elapsed_2)
-                    else:
-                        steps = 0.1    
-
-                    x2 = list(range(numberOfChannels_2))
-                    y2 = [int(n * steps) for n in spectrum_2]
-
-                    if cal_switch == True:
-                        x2 = np.polyval(np.poly1d(coefficients_2), x2)
-
-                    if epb_switch == True:
-                        y2 = [i * n * steps for i, n in enumerate(spectrum_2)]
-
-                    trace2 = go.Scatter(
-                        x=x2, 
-                        y=y2, 
-                        mode='lines+markers',  
-                        marker={'color': 'red', 'size':1}, 
-                        line={'width':2})
+        numberOfChannels    = data["resultData"]["energySpectrum"]["numberOfChannels"]
+        validPulseCount     = data["resultData"]["energySpectrum"]["validPulseCount"]
+        elapsed             = data["resultData"]["energySpectrum"]["measurementTime"]
+        polynomialOrder     = data["resultData"]["energySpectrum"]["energyCalibration"]["polynomialOrder"]
+        coefficients        = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+        spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
+        coefficients        = coefficients[::-1] # Revese order   
+        mu                  = 0
+        prominence          = 0.5
 
         if sigma == 0:
-            trace4 = {}
-        else:    
-            trace4 = go.Scatter(
-                x=x, 
-                y=gc, 
-                mode='lines+markers',  
-                marker={'color': 'yellow', 'size':1}, 
-                line={'width':2})
-    
-        if compare_switch == False:
-            fig = go.Figure(data=[trace1, trace4], layout=layout)
 
-        if compare_switch == True: 
-            fig = go.Figure(data=[trace1, trace2], layout=layout) 
+            gc = []
 
-        if difference_switch == True:
-            y3 = [a - b for a, b in zip(y, y2)]
-            trace3 = go.Scatter(
-                            x=x, 
-                            y=y3, 
-                            mode='lines+markers', 
-                            fill='tozeroy',  
-                            marker={'color': 'green', 'size':1}, 
-                            line={'width':1}
-                            )
+        else:  
 
-            fig = go.Figure(data=[trace3], layout=layout)
+            gc = fn.gaussian_correl(spectrum, sigma)
 
-            fig.update_layout(yaxis=dict(autorange=True, range=[min(y3),max(y3)]))
+        x           = list(range(numberOfChannels))
+        y           = spectrum
+        max_value   = np.max(y)
 
-        if difference_switch == False:
-            fig.update_layout(yaxis=dict(autorange=True))
+        if max_value    == 0:
 
-        if log_switch == True:
-            fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0, max_log_value+0.3])) 
+            max_value   = 10
+        
+        max_log_value   = np.log10(max_value)
 
-        return fig, f'{validPulseCount}', f'{elapsed}', f'cps {mean_cps}'
+        if cal_switch == True:
+
+            x = np.polyval(np.poly1d(coefficients), x)
+
+        if epb_switch == True:
+
+            y = [i * count for i, count in enumerate(spectrum)]
+            gc= [i * count for i, count in enumerate(gc)]
+
+        trace1 = go.Scatter(
+            x=x, 
+            y=y, 
+            mode='lines+markers', 
+            fill='tozerox' ,  
+            marker={'color': 'darkblue', 'size':1}, 
+            line={'width':1})  
+
+        fig.add_trace(trace1)      
 
     else:
-        layout = go.Layout(
-                paper_bgcolor = 'white', 
-                plot_bgcolor = 'white',
-                title={
-                'text': filename,
-                'x': 0.9,
-                'y': 0.9,
-                'xanchor': 'center',
-                'yanchor': 'top',
-                'font': {'family': 'Arial', 'size': 20, 'color': 'black'}
-                },
-                height  =480, 
-                autosize=True,
-                #xaxis=dict(dtick=50, tickangle = 90, range =[0, 100]),
-                xaxis=dict(autorange=True),
-                yaxis=dict(autorange=True),
-                uirevision="Don't change",
-                )
-        return go.Figure(data=[], layout=layout), 0, 0, 0
+        
+        filename    = 'no filename'
+        prominence  = 0
+        elapsed     = 0
+        validPulseCount = 0
 
+        y = [0]
+        x = [0]
+
+        trace1 = go.Scatter(
+            x=[0],  # Minimal data for the dummy trace
+            y=[0],
+            mode='markers+text',  # Use both markers and text
+            marker=dict(size=10, color='rgba(255,0,0,0.5)'),  # Semi-transparent red marker
+            text=['No Data for Histogram1'],  # Text to display
+            textposition='top right'  # Position the text above the marker
+        )  
+
+  #-------------------annotations-----------------------------------------------       
+
+    peaks, fwhm = fn.peakfinder(y, prominence, peakfinder)
+    num_peaks   = len(peaks)
+    annotations = []
+    lines       = []
+
+    for i in range(num_peaks):
+        peak_value  = peaks[i]
+        counts      = y[peaks[i]]
+        x_pos       = peaks[i]
+        y_pos       = y[peaks[i]]
+        y_pos_ann   = y_pos + 10
+        resolution  = (fwhm[i]/peaks[i])*100
+
+        if y_pos_ann > (max_value * 0.9):
+            y_pos_ann = int(y_pos_ann - max_value * 0.03)
+
+        if cal_switch == True:
+            peak_value  = np.polyval(np.poly1d(coefficients), peak_value)
+            x_pos       = peak_value
+
+        if log_switch == True:
+            y_pos = np.log10(y_pos)
+            y_pos_ann = y_pos + 0.02
+
+        if peakfinder > 0:
+            annotations.append(
+                dict(
+                    x= x_pos,
+                    y= y_pos_ann,
+                    xref='x',
+                    yref='y',
+                    text=f'y {counts}<br>x {peak_value:.1f}<br>fwhm<br>{resolution:.1f}%',
+                    showarrow=True,
+                    arrowhead=1,
+                    ax=0,
+                    ay=-60
+                )
+            )
+
+        lines.append(
+            dict(
+                type='line',
+                x0=x_pos,
+                y0=0,
+                x1=x_pos,
+                y1=y_pos,
+                line=dict(
+                    color='white',
+                    width=1,
+                    dash='dot'
+                )
+            )
+        )
+            
+        # Add annotations to the figure
+    fig.update_layout(annotations=annotations)
+
+    # Add lines (shapes) to the figure
+    fig.update_layout(shapes=lines)     
+#---------------Histrogram2 ---------------------------------------------------------------------------
+    
+  
+    histogram2 = fn.get_path(f'{data_directory}/{filename2}.json')
+
+    if os.path.exists(histogram2):
+        with open(histogram2, "r") as f:
+
+            data_2 = json.load(f)
+
+            schema_version = data_2["schemaVersion"]
+
+            if schema_version  == "NPESv2":
+
+                data_2 = data_2["data"][0] # This makes it backwards compatible
+
+            numberOfChannels_2    = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
+            elapsed_2             = data_2["resultData"]["energySpectrum"]["measurementTime"]
+            spectrum_2            = data_2["resultData"]["energySpectrum"]["spectrum"]
+            coefficients_2        = data_2["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+
+            if elapsed > 0 and elapsed_2 > 0:
+
+                steps = (elapsed/elapsed_2)
+
+            else:
+
+                steps = 0.1    
+
+            x2 = list(range(numberOfChannels_2))
+            y2 = [int(n * steps) for n in spectrum_2]
+
+            if cal_switch == True:
+
+                x2 = np.polyval(np.poly1d(coefficients_2), x2)
+
+            if epb_switch == True:
+
+                y2 = [i * n * steps for i, n in enumerate(spectrum_2)]
+
+            trace2 = go.Scatter(
+                x=x2, 
+                y=y2, 
+                mode='lines+markers',  
+                marker={'color': 'red', 'size':1}, 
+                line={'width':1})
+
+    if sigma == 0:
+
+        trace4 = {}
+
+    else:    
+
+        trace4 = go.Scatter(
+            x=x, 
+            y=gc, 
+            mode='lines+markers',  
+            marker={'color': 'yellow', 'size':1}, 
+            line={'width':2})
+
+        fig.add_trace(trace4)
+
+    if compare_switch and os.path.exists(histogram2): 
+
+        fig.add_trace(trace2)
+
+        fig.update_layout(xaxis=dict(autorange=False))
+
+    if difference_switch:
+
+        y3 = [a - b for a, b in zip(y, y2)]
+
+        trace3 = go.Scatter(
+                        x=x, 
+                        y=y3, 
+                        mode='lines+markers', 
+                        fill='tozeroy',  
+                        marker={'color': 'green', 'size':1}, 
+                        line={'width':1}
+                        )
+
+        fig = go.Figure(data=[trace3], layout=layout)
+
+        fig.update_layout(yaxis=dict(autorange=True, range=[min(y3),max(y3)]))
+
+    if difference_switch == False:
+
+        fig.update_layout(yaxis=dict(autorange=True))
+
+    if log_switch:
+
+        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0, max_log_value+0.3])) 
+
+    return fig, f'{validPulseCount}', f'{elapsed}', f'cps {mean_cps}'
+
+    
 #--------UPDATE SETTINGS------------------------------------------------------------------------------------------
 @app.callback(
                 Output('polynomial'      ,'children'),
