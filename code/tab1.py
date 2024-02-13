@@ -40,11 +40,15 @@ def show_tab1():
     shapecatches    = settings[10]
     sample_length   = settings[11]
     peakshift       = settings[28]
-    response        = req.get('https://www.gammaspectacular.com/steven/impulse/news.html', verify=False)
-    news            = response.text
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
     shape           = fn.load_shape()
+
+    try:
+        response    = req.get('https://www.gammaspectacular.com/steven/impulse/news.html', verify=False)
+        news        = response.text
+    except:
+        news        = "No internet connection, version information temporarily unavailable."    
 
     try:
         adl         = fn.get_device_list()          # audio device list
