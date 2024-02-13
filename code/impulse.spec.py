@@ -1,25 +1,24 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
-block_cipher = None
-
-
 a = Analysis(
     ['impulse.py'],
     pathex=[],
     binaries=[],
-    datas=[('C:\\Users\\steve\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\dash_daq\\__init__.py', 'dash_daq')],
+    datas=[
+    ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\package-info.json', 'dash_daq'),
+    ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\metadata.json', 'dash_daq'),
+    ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\dash_daq.min.js', 'dash_daq'),
+    ],
+
     hiddenimports=['dash_daq'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
     noarchive=False,
 )
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure)
 
 exe = EXE(
     pyz,
@@ -41,7 +40,6 @@ exe = EXE(
 coll = COLLECT(
     exe,
     a.binaries,
-    a.zipfiles,
     a.datas,
     strip=False,
     upx=True,
