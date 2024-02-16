@@ -8,35 +8,32 @@ import functions as fn
 import sqlite3 as sql
 from server import app
 
-logger = logging.getLogger(__name__)
+logger              = logging.getLogger(__name__)
+data_directory      = os.path.join(os.path.expanduser("~"), "impulse_data")
+database            = fn.get_path(f'{data_directory}/.data_v2.db')
+backup_db_filename  = "old_data.db"
+backup_db           = os.path.join(data_directory, backup_db_filename)
+old_db              = fn.get_path(f'{data_directory}/.data.db')
+shapecsv            = fn.get_path(f'{data_directory}/shape.csv')
 
-data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
-
-database = fn.get_path(f'{data_directory}/.data_v2.db')
-old_db = fn.get_path(f'{data_directory}/.data.db')
-
-logger.info('Created a new database .data_v2.db')
 
 if os.path.exists(old_db):
-        # Create a new name for the old database
-        backup_db_filename = "old_data.db"
-        backup_db = os.path.join(data_directory, backup_db_filename)
         # Rename the old database
         os.rename(old_db, backup_db)
         logger.info(f"Old database renamed to {backup_db}")
 
-
-shapecsv = fn.get_path(f'{data_directory}/shape.csv')
-
 try:
     if not os.path.exists(data_directory):
         os.makedirs(data_directory)
+        logger.info(f'Created new data directory {data_directory}')
+
 except:
     pass
 
 try:
     if not os.path.exists(shapecsv):
         fn.create_dummy_csv(shapecsv)
+        logger.info(f'Created a blank shape.csv file')
 except:
     pass
 
@@ -114,6 +111,7 @@ query4  =  f'INSERT INTO user (id, first_name) SELECT 0, "first_name" WHERE NOT 
 with conn:
     c.execute(query).execute(query2).execute(query3).execute(query4)
     conn.commit()
+    logger.info(f'Created new database tables if required')
 
 # This script places the isotope sample spectra into the data directory when the program is run the first time
 isotopes = "i"

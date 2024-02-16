@@ -292,15 +292,15 @@ def show_tab2():
             html.Div(id='audio', children=''),
             html.Button('Update calib.', id='update_calib_button', className='action_button'),
             html.Div(id='update_calib_message', children=''),
-            dbc.Button("Publish Spectrum", id="publish_button", color="primary", className="action_button"),
+            dbc.Button("Publish Spectrum", id="publish-button", color="primary", className="action_button"),
             
             dbc.Modal(
                 children=[
                     #dbc.ModalHeader("Confirmation"),
                     dbc.ModalBody(f"Are you sure you want to publish \"{filename}\" spectrum?"),
                     dbc.ModalFooter([
-                        dbc.Button("Confirm", id="confirm-button", className="ml-auto", color="primary"),
-                        dbc.Button("Cancel", id="cancel-button", className="mr-auto", color="secondary"),
+                        dbc.Button("Confirm", id="confirm-publish", className="ml-auto", color="primary"),
+                        dbc.Button("Cancel", id="cancel-publish", className="mr-auto", color="secondary"),
                         ],
                     ),
                 ],
@@ -953,12 +953,14 @@ def update_output(selected_cmd, active_tab):
 # -----Callback to publish spectrum to web with confirm message ---------------------------------------------
 @app.callback(
     Output("confirmation-modal", "is_open"),
-    [Input("publish_button", "n_clicks"),
-     Input("confirm-button", "n_clicks"),
-     Input("cancel-button", "n_clicks")],
+    [Input("publish-button", "n_clicks"),
+     Input("confirm-publish", "n_clicks"),
+     Input("cancel-publish", "n_clicks")],
     [State("confirmation-modal", "is_open")]
 )
-def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_button_clicks, is_open):
+def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_publish_clicks, is_open):
+
+
 
     ctx = dash.callback_context
 
@@ -968,10 +970,10 @@ def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_button_clicks
     else:
         button_id = ctx.triggered_id.split(".")[0]
 
-    if button_id == "publish_button" and open_button_clicks:
+    if button_id == "publish-button" and open_button_clicks:
         return not is_open
 
-    elif button_id in ["confirm-button", "cancel-button"]:
+    elif button_id in ["confirm-publish", "cancel-publish"]:
         return not is_open
 
     else:
@@ -979,11 +981,11 @@ def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_button_clicks
 
 @app.callback(
     Output("confirmation-output", "children"),
-    [Input("confirm-overwrite-button", "n_clicks"),
-     Input("cancel-overwrite-button", "n_clicks"),
+    [Input("confirm-publish", "n_clicks"),
+     Input("cancel-publish", "n_clicks"),
      State("filename", "value")],
 )
-def display_confirmation_result(confirm_button_clicks, cancel_button_clicks, filename):
+def display_confirmation_result(confirm_publish_clicks, cancel_publish_clicks, filename):
 
     ctx = dash.callback_context
 
@@ -993,15 +995,20 @@ def display_confirmation_result(confirm_button_clicks, cancel_button_clicks, fil
     else:
         button_id = ctx.triggered_id.split(".")[0]
 
-    if button_id == "confirm-button" and confirm_button_clicks:
+    if button_id == "confirm-publish" and confirm_publish_clicks:
+
+        logger.info(f'Confirm publish for: {filename}')
+
         # function to upload spectrum here
         response_message = fn.publish_spectrum(filename)
 
-        logger.info(f'User published spectrum {filename}')
+        logger.info(f'{filename} published')
 
         return f'{filename} \nPublished'
         
-    elif button_id == "cancel-button" and cancel_button_clicks:
+    elif button_id == "cancel-button" and cancel_publish_clicks:
+
+        logger.info(f'Publish cancelled')
 
         return "You canceled!"
 

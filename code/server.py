@@ -6,9 +6,12 @@ import functions as fn
 import logging
 import dash_bootstrap_components as dbc
 
+data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
+
+
 # Set up the logger
 logging.basicConfig(
-	filename='impulse_last_run.log', 
+	filename=f'{data_directory}/_last_run.log', 
 	level=logging.INFO, 
 	filemode='w', 
 	format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,7 +26,6 @@ console_handler.setLevel(logging.DEBUG)
 logger.addHandler(console_handler)
 logger.info(f'Logging has been configured')
 
-data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 try:
 	database 	= fn.get_path(f'{data_directory}/.data_v2.db')

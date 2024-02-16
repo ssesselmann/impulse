@@ -484,11 +484,15 @@ def get_api_key(): # Fetch api_key from table user
         conn.close()
 
 def publish_spectrum(filename):
+
+    logger.info(f'Publish button clicked for {filename}')
     # routing address
     url = "https://gammaspectacular.com/spectra/publish_spectrum"
 
     # gets client api
     api_key = get_api_key()
+
+    logger.info(f'Api key obtained {api_key}')
 
     # local file directory
     spectrum_file_path = f'{data_directory}/{filename}.json'
@@ -496,6 +500,7 @@ def publish_spectrum(filename):
     # Prepare the file and data payload for the POST request
     try:
         with open(spectrum_file_path, 'rb') as file:
+
             files = {'file': (filename, file)}
             data  = {'api_key': api_key}
             
@@ -504,22 +509,27 @@ def publish_spectrum(filename):
 
             # Handle successful response
             if response.status_code == 200:
+
+                logger.info(f'{filename} Published ok')
+
                 return f'{filename}\npublished:\n{response}'
 
             # Handle error in response
             else:
-                print(f'code/functions/publish_spectrum {response.text}')
-                return f'code/functions/publish_spectrum {response.text}'
+                logger.info(f'code/functions/publish_spectrum {response.text}')
+                return f'Error from /code/functions/publish_spectrum: {response.text}'
 
     # Handle request exception
     except req.exceptions.RequestException as e:
         return f'code/functions/publish_spectrum: {e}'
 
     except FileNotFoundError:
-        return f'code/functions/publish_spectrum: {spectrum_file_path}'
+        logger.info(f'Error from /code/functions/publish_spectrum: {spectrum_file_path}')
+        return f'Error from /code/functions/publish_spectrum: {spectrum_file_path}'
 
     except Exception as e:
-        return f'code/functions/publish_spectrum {e}'
+        logger.info(f'Error from /code/functions/publish_spectrum: {e}')
+        return f'Error from /code/functions/publish_spectrum: {e}'
 
 def update_json_notes(filename, spec_notes):
 
@@ -528,6 +538,7 @@ def update_json_notes(filename, spec_notes):
             data = json.load(f)
 
         if data["schemaVersion"]  == "NPESv2":
+            
             data["data"][0]["sampleInfo"]["note"] = spec_notes
 
         else:
@@ -539,7 +550,8 @@ def update_json_notes(filename, spec_notes):
         return "Spec notes Written"
 
     except Exception as e:
-        logger.info(f'File does not exist:{e}')
+
+        logger.info(f'Error in /code/functions.update_json_notes {e}')
 
 def get_spec_notes(filename):
 
