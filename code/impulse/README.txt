@@ -1,10 +1,8 @@
-This application will not run from the dmg file because it
-needs to create a data folder in your home directory
-~/impulse_data 
+NOTE + NOTE + NOTE + NOTE + NOTE + NOTE + NOTE + NOTE +
 
-Drag the app to your mac before launching.
+* Impulse will not run from the disc image
+* Drag the app to your applications folder before running.
 
 Steven Sesselmann
 
 steven@gammaspectacular.com
-
