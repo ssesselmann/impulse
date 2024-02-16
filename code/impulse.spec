@@ -1,4 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
+# This file is used for creating a Windows executable package impulse.exe
+# From the command line enter >> pyinstaller impulse.spec
 
 
 a = Analysis(
