@@ -90,7 +90,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab):
                 },
                 xaxis=dict(
                     title='Seconds',
-                    dtick=10,
+                    tickmode='auto',
                     tickangle=90,
                     range=[0, 300],
                     tickfont=dict(family='Arial', size=14, color='black'),
