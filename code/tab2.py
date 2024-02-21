@@ -786,8 +786,8 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
             showarrow=False,
             font=dict(size=14),
             align="center",
-            bgcolor="yellow",
-            bordercolor="black",
+            bgcolor="white",
+            bordercolor="lightgray",
             borderwidth=1
         )    
 
