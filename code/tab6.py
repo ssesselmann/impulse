@@ -40,17 +40,17 @@ def show_tab6():
 
     html_tab6 = html.Div([ 
         html.Div(id='exit', children=[
-            #html.H1(children='Thanks for using impulse, see you back soon!'),
             html.Button(id='exit-button', children=''),
-            html.Div(dcc.Dropdown(id="theme",
+            html.Div(dcc.Dropdown(
+                    id="theme",
+                    className='dropdown',
                     options=[
                         {"label": "Boring theme (lightgray)", "value": "lightgray"},
                         {"label": "Orange"   , "value": "orange"},
                         {"label": "Pink"     , "value": "pink"},
                         {"label": "Sunburst" , "value": "sunburst"},
                         {"label": "Potassium", "value": "potassium"},
-                        {"label": "Developer", "value": "developer"}
-
+                        {"label": "Developer", "value": "developer"},
                     ], 
                     value=theme,  # pre-selected option
                     clearable=False,
@@ -58,6 +58,7 @@ def show_tab6():
             html.Div(id='theme_output', children=' '),
             html.Div(dcc.Dropdown(
                     id='export_histogram',
+                    className='dropdown',
                     options=options_sorted,
                     placeholder='Export spectrum to csv file',
                     value=None

@@ -8,7 +8,9 @@ import dash_bootstrap_components as dbc
 
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
-
+if not os.path.exists(data_directory):
+	os.makedirs(data_directory)
+	
 # Set up the logger
 logging.basicConfig(
 	filename=f'{data_directory}/_last_run.log', 
