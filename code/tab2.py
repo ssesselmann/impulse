@@ -774,6 +774,9 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         
         # Filter the data based on the visible range
         visible_counts = sum(count for count, bin in zip(y, x) if x0 <= bin <= x1)
+
+        if difference_switch:
+            visible_counts = sum(count for count, bin in zip(y3, x) if x0 <= bin <= x1)
         
         # Annotate figure with counts in region of interest
         fig.add_annotation(
