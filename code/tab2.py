@@ -761,7 +761,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
 
     if log_switch:
 
-        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0, max_log_value+0.3])) 
+        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[1, max_log_value+0.3])) 
 
     else:
         fig.update_layout(yaxis=dict(autorange=True, type='linear', range=[0, max(y)]))
