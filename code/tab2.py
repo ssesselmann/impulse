@@ -120,6 +120,7 @@ def show_tab2():
 
     html_tab2 = html.Div(id='tab2', children=[
         html.Div(id='polynomial', children=''),
+        html.Div(id='output-roi', children=''),
         html.Div(id='bar_chart_div', # Histogram Chart
             children=[
                 dcc.Graph(id='bar-chart', figure={},),
@@ -476,7 +477,8 @@ def stop_button(n_clicks, filename):
                 Output('counts'             ,'children'),
                 Output('elapsed'            ,'children'),
                 Output('cps'                ,'children')],
-               [Input('interval-component'  ,'n_intervals')], 
+               [Input('interval-component'  ,'n_intervals'),
+                Input('bar-chart', 'relayoutData')], 
                 [State('filename'            ,'value'), 
                 State('epb_switch'          ,'on'),
                 State('log_switch'          ,'on'),
@@ -489,7 +491,7 @@ def stop_button(n_clicks, filename):
                 State('max_seconds'         ,'value'),
                 State('max_counts'          ,'value')])
 
-def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts):
+def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts):
 
     global global_counts
     from pulsecatcher import mean_cps
@@ -766,6 +768,25 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, filename2, com
     else:
         fig.update_layout(yaxis=dict(autorange=True, type='linear', range=[0, max(y)]))
 
+    # Check if user has selected a region of interest and calculate visible counts
+    if relayoutData and 'xaxis.range[0]' in relayoutData and 'xaxis.range[1]' in relayoutData:
+        x0, x1 = relayoutData['xaxis.range[0]'], relayoutData['xaxis.range[1]']
+        
+        # Filter the data based on the visible range
+        visible_counts = sum(count for count, bin in zip(y, x) if x0 <= bin <= x1)
+        
+        # Annotate figure with counts in region of interest
+        fig.add_annotation(
+            x=0.95, xref="paper",
+            y=0.8, yref="paper",
+            text=f"Selected counts {visible_counts}",
+            showarrow=False,
+            font=dict(size=14),
+            align="center",
+            bgcolor="yellow",
+            bordercolor="black",
+            borderwidth=1
+        )    
 
     return fig, f'{validPulseCount}', f'{elapsed}', f'cps {mean_cps}'
 
@@ -1032,5 +1053,4 @@ def update_spectrum_notes(spec_notes, filename):
     logger.info(f'Spectrum notes updated {spec_notes}')
 
     return spec_notes
-
 
