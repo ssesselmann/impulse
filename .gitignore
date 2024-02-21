@@ -5,7 +5,7 @@ __pycache__/
 /code/run.spec
 /code/build/*
 /code/dist/
-/code/impulse_dist/*
+/code/impulse/*
 /code/assets/
 /code/data/*
 /code/myenv/*
