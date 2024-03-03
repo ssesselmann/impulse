@@ -7,10 +7,16 @@ import shapecatcher as sc
 import os
 import logging
 import requests as req
-
+import shproto.dispatcher
+import threading
+import time
+import dash_table
 from dash import dcc, html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from server import app
+from functions import execute_serial_command
+from functions import generate_device_settings_table
+from functions import allowed_command
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +85,7 @@ def show_tab1():
         dcc.Dropdown(
             id='device_dropdown',
             options=options,
-            value=device,  # pre-selected option
+            value=device,  
             clearable=False,
             className='dropdown',
         ),
@@ -178,27 +184,48 @@ def show_tab1():
 
                 html.Div(id='canvas', children=[
 
-                    html.Div(id='instruction_div', children=[
-                        html.Div(id='instructions', children=[
-                            html.H2('Easy step by step setup and run'),
-                            html.P('You have selected a GS-MAX serial device',      style={'display': serial}), 
-                            html.P('Nothing to do here ... Go to tab 2 -->'  ,      style={'display': serial}),
+                    html.Div(id='instructions', children=[
+                        html.H3('You have selected a GS-MAX serial device'),
+                        html.Label('Input commands to device'),
+                        html.Div(children=[
+                            dcc.Input(id='cmd_input', type='text', value ='', style={'marginRight': '10px', 'width':'50%'}),
+                            dcc.Input(id='hidden-input', type='text', value=f'{device}', style={'display': 'none'}),
+    
+                            html.Button('Submit', id='submit_cmd', n_clicks=0),
+                        ]),
+                        html.Div(id='command_output', style={'width':'100%', 'marginTop': '20px'}),                            
+                        html.P(''),
+                        html.P('Found a bug 🐞 or have a suggestion, email me below'),
+                        html.P('Steven Sesselmann'),
+                        html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
+                        html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
+                    ], style={'display': serial}),
 
-                            html.P('You have selected an GS-PRO Audio device',      style={'display': audio}),
-                            html.P('1) Select preferred sample rate, higher is better', style={'display': audio}),
-                            html.P('2) Select sample length - dead time < 200 µs',    style={'display': audio}),
-                            html.P('3) Sample up to 1000 pulses for a good mean',      style={'display': audio}),
-                            html.P('4) Capture pulse shape (about 3000 for Cs-137)',    style={'display': audio}),
-                            html.P('5) Optionally check distortion curve, this will help you set correct tolerance on tab2',    style={'display': audio}),
-                            html.P('6) Once pulse shape shows on plot go to tab2',    style={'display': audio}),
+
+                    html.Div(id='instruction_div', children=[              
+                            html.H2('Easy step by step setup and run'),
+                            html.P('You have selected an GS-PRO Audio device'),
+                            html.P('1) Select preferred sample rate, higher is better'),
+                            html.P('2) Select sample length - dead time < 200 µs'),
+                            html.P('3) Sample up to 1000 pulses for a good mean'),
+                            html.P('4) Capture pulse shape (about 3000 for Cs-137)'),
+                            html.P('5) Optionally check distortion curve, this will help you set correct tolerance on tab2'),
+                            html.P('6) Once pulse shape shows on plot go to tab2'),
                             html.P('Found a bug 🐞 or have a suggestion, email me below'),
                             html.P('Steven Sesselmann'),
                             html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
                             html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
                             html.Hr(),
                             html.Div(id='path_text', children=f'Note: {data_directory}'),
-                        ]),
-                    ]),
+                    ], style={'display':audio, 'width':'100%', 'height':'100%', 'padding':10}),
+
+                ], style={'width':400, 'height':'100%', 'backgroundColor':'lightgray', 'float':'left', 'padding':10}),
+
+
+                    html.Div(id='canvas2', children=[
+                        #html.Div(id='information'),
+                        html.Div(id='information_upd'),
+                    ], style={'width':400, 'backgroundColor':'lightgray', 'float':'left', 'marginTop':20, 'marginLeft':20,'display': serial}),
 
                     html.Div(id='pulse_shape_div', children=[
                         html.Div(id='showplot', children=[
@@ -237,7 +264,7 @@ def show_tab1():
                         ]),
                     ], style={'display':audio}),
 
-                ],style={'backgroundColor':'white', 'width':'100%', 'height': '500px', 'float':'left'}),
+                ],style={'backgroundColor':'white', 'width':'100%', 'height': '600px', 'float':'left'}),
 
 
             ]),
@@ -245,7 +272,7 @@ def show_tab1():
                 html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif'),
                 html.Div(id="rate_output")]),
         ]),  # tab1 ends here
-    ]),
+   # ]),
     
     return tab1
 
@@ -254,8 +281,8 @@ def show_tab1():
 @app.callback(
     [Output('selected_device_text'      ,'children'),
     Output('sampling_time_output'       ,'children')],
-    [Input('submit'                     ,'n_clicks')],
-    [Input('device_dropdown'            ,'value'),
+    [Input('submit'                     ,'n_clicks'),
+    Input('device_dropdown'            ,'value'),
     Input('sample_rate'                 ,'value'),
     Input('chunk_size'                  ,'value'),
     Input('catch'                       ,'value'),
@@ -263,7 +290,7 @@ def show_tab1():
     Input('peakshifter'                 ,'value'),
     ])
 
-def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
+def save_settings(n_clicks, value1, value2, value3, value4, value5, value6, ):
 
     if n_clicks == 0:
         device      = value1
@@ -296,15 +323,16 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6):
             warning = 'WARNING LONG'
 
         logger.info(f'Settings saved to database tab1')
+ 
 
         return f'Device: {device} (Refresh)', f'{warning} Dead time ~ {pulse_length} µs'
 
 #-------- Callback to capture and save mean pulse shape ----------
 
 @app.callback(
-    [Output('plot'        ,'figure'),
-    Output('showplot'         ,'figure')],
-    [Input('get_shape_btn'    ,'n_clicks')
+    [Output('plot'          ,'figure'),
+    Output('showplot'       ,'figure')],
+    [Input('get_shape_btn'  ,'n_clicks')
     ])
 
 def capture_pulse_shape(n_clicks):
@@ -387,4 +415,38 @@ def distortion_curve(n_clicks):
         fig     = {'data': data, 'layout': layout}
 
     return fig, fig
-        
+
+# ------- Send serial device commands -------------------
+
+from dash import no_update
+
+@app.callback(
+    [Output('command_output'    , 'children'), 
+     Output('information_upd'   , 'children'),
+     Output('cmd_input'         , 'value')],
+    [Input('submit_cmd'         , 'n_clicks')],
+    [State('cmd_input'          , 'value')]
+)
+def update_output(n_clicks, cmd):
+    if n_clicks is None:
+        # This prevents the callback from updating outputs on initial load
+        return no_update, no_update, no_update
+
+    if cmd is None or not isinstance(cmd, str):
+        table = generate_device_settings_table()
+        return 'No command sent', table, ''
+
+    allowed = allowed_command(cmd)
+
+    if cmd.startswith("+"):
+        cmd = cmd[1:]
+
+    if allowed:
+        execute_serial_command(cmd)
+        time.sleep(1)  # Consider async handling for production applications
+        table = generate_device_settings_table()
+        return f'Command sent: {cmd}', table, ''
+
+    else:
+        table = generate_device_settings_table()
+        return "!! Command disallowed !!" , table, '' 

@@ -11,6 +11,7 @@ import csv
 import json
 import time
 import os
+import re
 import platform
 import threading
 import sqlite3 as sql
@@ -19,19 +20,21 @@ import pulsecatcher as pc
 import logging
 import paramiko
 import requests as req
+import shproto.dispatcher
+import serial.tools.list_ports
+
+from dash import dash_table
 from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
 from datetime import datetime
 from urllib.request import urlopen
-import serial.tools.list_ports
+from shproto.dispatcher import process_03
 
-logger = logging.getLogger(__name__)
-
+logger          = logging.getLogger(__name__)
 cps_list        = []
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 run_flag_lock   = threading.Lock()
-run_flag        = threading.Event()  # Using Event instead of a simple flag
-
+run_flag        = threading.Event() 
 
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
@@ -59,6 +62,37 @@ def normalise_pulse(average):
     normalised = [n - mean for n in average]  
     normalised_int = [int(x) for x in normalised]
     return normalised_int
+
+def get_serial_device_information():
+    with shproto.dispatcher.command_lock:
+        shproto.dispatcher.command = "-inf"
+        logger.info("Sending '-inf' command to device")
+    time.sleep(0.1)  
+
+    with shproto.dispatcher.command_lock:  
+        device_info = shproto.dispatcher.inf_str
+        shproto.dispatcher.inf_str = ""
+    return device_info
+
+def parse_device_info(info_string):
+    components = info_string.split()
+    # Initialize a dictionary to hold the parsed settings
+    settings = {}
+    # Iterate over the components in pairs (step of 2)
+    for i in range(0, len(components) - 1, 2):
+        key = components[i]
+        value = components[i + 1]
+        # Attempt to convert numeric values, otherwise keep as string
+        if value.replace('.', '', 1).isdigit() and value.count('.') < 2:
+            # Convert to float if it contains a dot, indicating a decimal, otherwise to int
+            converted_value = float(value) if '.' in value else int(value)
+        else:
+            # Keep as string for non-numeric values
+            converted_value = value
+        
+        settings[key] = converted_value
+
+    return settings    
 
     # Normalised pulse samples less normalised shape samples squared summed and rooted
 def distortion(normalised, shape):
@@ -189,6 +223,7 @@ def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_nu
     with open(jsonfile, "w") as f:
         json.dump(data, f, indent=4)
 
+# This function writes counts per second to json
 def write_cps_json(filename, cps):
     global cps_list
     jsonfile = get_path(f'{data_directory}/{filename}-cps.json')
@@ -196,7 +231,8 @@ def write_cps_json(filename, cps):
     data     = {'cps': cps_list }
     with open(jsonfile, "w+") as f:
         json.dump(data, f, indent=4)
-  
+ 
+# Clears global counts per second list   
 def clear_global_cps_list():
     global cps_list
     cps_list = []
@@ -244,18 +280,15 @@ def refresh_audio_device_list():
     except:
         return
 
+# Function to query settings database 
 def get_device_number():
-
     database = get_path(f'{data_directory}/.data_v2.db')
     conn            = sql.connect(database)
     c               = conn.cursor()
     query           = "SELECT * FROM settings "
-
     c.execute(query) 
-
     settings        = c.fetchall()[0]
     device          = settings[2]
-
     return device
 
 # This function gets a list of audio device_list connected to the computer           
@@ -568,7 +601,6 @@ def get_spec_notes(filename):
         
         return 'Not writing'    
 
-
 def fetch_json(file_id):
     url = f'https://www.gammaspectacular.com/spectra/files/{file_id}.json'
     
@@ -582,4 +614,121 @@ def fetch_json(file_id):
             return None  # Handle unexpected status codes as needed
     except req.exceptions.RequestException as e:
         print(f"Error fetching JSON: {e}")
-        return None  # Handle network or request-related errors      
+        return None  # Handle network or request-related errors     
+
+def execute_serial_command(input_cmd):
+
+    with shproto.dispatcher.command_lock:
+        shproto.dispatcher.command = input_cmd
+        logger.info(f"Sending command {input_cmd} to device")
+
+        return
+
+def generate_device_settings_table():
+
+    shproto.dispatcher.spec_stopflag = 0
+    dispatcher = threading.Thread(target=shproto.dispatcher.start)  
+    dispatcher.start()
+
+    time.sleep(0.1)
+
+    dev_info = get_serial_device_information()
+
+    info_dict   = parse_device_info(dev_info)
+
+    # Assuming parsed_settings is your dictionary from the previous step
+    version     = info_dict.get('VERSION')
+    rise        = info_dict.get('RISE')
+    fall        = info_dict.get('FALL')
+    noise       = info_dict.get('NOISE')
+    frequency   = info_dict.get('F')
+    max_value   = info_dict.get('MAX')
+    hysteresis  = info_dict.get('HYST')
+    mode        = info_dict.get('MODE')
+    step        = info_dict.get('STEP')
+    temperature = info_dict.get('t')
+    pot1        = info_dict.get('POT')
+    pot2        = info_dict.get('POT2')
+    t1_status   = info_dict.get('T1')
+    t2_status   = info_dict.get('T2')
+    t3_status   = info_dict.get('T3')
+    prise       = info_dict.get('Prise')
+    srise       = info_dict.get('Srise')
+    output      = info_dict.get('OUT')
+    pfall       = info_dict.get('Pfall')
+    sfall       = info_dict.get('Sfall')
+    tc_status   = info_dict.get('TC')
+    tcpot_status= info_dict.get('TCpot')
+    tco         = info_dict.get('Tco')
+    tp          = info_dict.get('TP')
+    pileup      = info_dict.get('PileUp')
+    pileup_thr  = info_dict.get('PileUpThr')
+
+    process_03('-cal')
+
+    serial      = shproto.dispatcher.serial_number
+
+
+    table = dash_table.DataTable(
+        columns=[
+            {"id": "Setting", "name": "Firmware settings"},
+            {"id": "cmd", "name": "Command"},
+            {"id": "Value", "name": "Value"}
+        ],
+        data=[
+            {"Setting": "Version", "cmd":"-", "Value": version},
+            {"Setting": "Serial number", "cmd":"status", "Value": serial},
+            {"Setting": "Threshold for X (pulse rise)", "cmd":"-ris", "Value": rise},
+            {"Setting": "Threshold for Y (pulse fall)", "cmd":"-fall", "Value": fall},
+            {"Setting": "Lower Limit Discriminator LLD", "cmd":"-nos", "Value": noise},
+            {"Setting": "ADC Sample Frequency", "cmd":"-frq", "Value": frequency},
+            {"Setting": "Max integral value", "cmd":"-max", "Value": max_value},
+            {"Setting": "Hysteresis value", "cmd":"-hyst", "Value": hysteresis},
+            {"Setting": "Working Mode [0, 1, 2]", "cmd":"-mode", "Value": mode},
+            {"Setting": "Discriminator step (>1)", "cmd":"-step", "Value": step},
+            {"Setting": "High Voltage (0-255)", "cmd":"-U", "Value": pot1},
+            {"Setting": "Baseline trim (0-255)", "cmd":"-V", "Value": pot2},
+            {"Setting": "Temperature sensor 1", "cmd":"status", "Value": f"{t1_status} C˚"},
+            {"Setting": "Energy Window (-win X1 X2)", "cmd":"-win", "Value": output},
+            #{"Setting": "Pulse Pile Up (PPU) rise", "Value": pfall},
+            #{"Setting": "Pulse Pile Up (PPU) fall", "Value": sfall},
+            {"Setting": "Temp. compensation status", "cmd":"status", "Value": tcpot_status},
+            {"Setting": "Temp. compensation table", "cmd":"status", "Value": tco},
+            #{"Setting": "Time between integral", "Value": tp},
+        ],
+        style_cell={
+            'textAlign': 'left',
+            'padding': '4px',  
+            'fontSize': '12px',  
+            'fontFamily': 'Arial'  
+        },
+        style_cell_conditional=[
+            {'if': {'column_id': 'Setting'}, 'width': '60%'},
+            {'if': {'column_id': 'cmd'}, 'width':'10%'},
+            {'if': {'column_id': 'Value'}, 'width': '30%'}
+        ]
+    )
+
+    return table
+
+# Check if commands sent to processor is safe 
+def allowed_command(cmd):
+
+    allowed_command_patterns = [
+    r"^-U[0-9]{1,3}$",  # Matches -U followed by up to three digits (0-255)
+    r"^-V[0-9]{1,3}$",  # Another example pattern
+    ]    
+
+    secret_prefix = "+"
+
+    if cmd is None or not isinstance(cmd, str):
+        return False
+
+    if cmd.startswith("+"):
+        return True
+
+    for pattern in allowed_command_patterns:
+        if re.match(pattern, cmd):
+            return True 
+
+    return False

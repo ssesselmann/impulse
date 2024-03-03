@@ -92,8 +92,8 @@ def start(sn=None):
                     print("Unknown non-text response.")
                 #print("<< {}".format(resp_decoded))
                 if len(resp_lines) == 40:
-                    shproto.dispatcher.serial_number = " s/n: {}".format(resp_lines[39]);
-                    logger.info("Found nano-pro detector serial num: {}".format(shproto.dispatcher.serial_number))
+                    shproto.dispatcher.serial_number = "{}".format(resp_lines[39]);
+                    logger.info("Found nano-pro serial # {}".format(shproto.dispatcher.serial_number))
                     b_str =  ''
                     for b in resp_lines[0:10]:
                         b_str += b
@@ -175,7 +175,7 @@ def start(sn=None):
 
 # This function writes the 2D spectrum to a JSON file
 
-def process_01(filename, compression, device):  # Compression reduces the number of channels by 8, 4, or 2
+def process_01(filename, compression, device, t_interval):  # Compression reduces the number of channels by 8, 4, or 2
     logger.debug(f'dispatcher.process_01({filename})')
 
     global counts
@@ -201,7 +201,7 @@ def process_01(filename, compression, device):  # Compression reduces the number
 
     while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag) and (counts < max_counts and dt <= max_seconds):
 
-        time.sleep(1)
+        time.sleep(t_interval)
 
         # Get the current time
         t1 = time.time()
@@ -386,19 +386,19 @@ def process_03(_command):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = _command
         logger.info(f'Command received (dispatcher):{_command}')
-        #print('process03:', _command)    
-
+    return
 
 def stop():
     with shproto.dispatcher.stopflag_lock:
         shproto.dispatcher.stopflag = 1
         logger.info('Stop flag set(dispatcher)')
+        return
 
 def spec_stop():
     with shproto.dispatcher.spec_stopflag_lock:
         shproto.dispatcher.spec_stopflag = 1
         logger.info('Stop flag set(dispatcher)')
-        #print('Stop function')
+        return
 
 def clear():
     with shproto.dispatcher.histogram_lock:

@@ -36,6 +36,7 @@ schemaVersion   = None
 device          = None
 global_counts   = 0
 global_cps      = 0
+cps             = 0
 stop_event      = threading.Event()
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 spec_notes      = ''
@@ -98,6 +99,8 @@ def show_tab2():
     t_interval      = settings[27]
     compression     = settings[29]
 
+    millisec        = t_interval*1000
+
     spec_notes      = fn.get_spec_notes(filename)
 
     if device >= 100:
@@ -124,7 +127,7 @@ def show_tab2():
         html.Div(id='bar_chart_div', # Histogram Chart
             children=[
                 dcc.Graph(id='bar-chart', figure={},),
-                dcc.Interval(id='interval-component', interval=bins, n_intervals=0) # Refresh rate 1s.
+                dcc.Interval(id='interval-component', interval=millisec, n_intervals=0) # Refresh rate 1s.
             ]),
 
         html.Div(id='t2_filler_div', children=''),
@@ -134,14 +137,14 @@ def show_tab2():
             html.Div(id='start_text', children=''),
             html.Div(id='counts', children= ''),
             html.Div(''),
-            html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=bins,  readOnly=False, value=max_counts, className='input',style={'background-color': counts_warning} )]),
+            html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1,  readOnly=False, value=max_counts, className='input',style={'background-color': counts_warning} )]),
             ]),
 
         html.Div(id='t2_setting_div2', children=[            
             html.Button('STOP', id='stop'), 
             html.Div(id='stop_text', children=''),
             html.Div(id='elapsed', children= '' ),
-            html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=60,  readOnly=False, value=max_seconds, className='input', style={'background-color': seconds_warning} )]),
+            html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1,  readOnly=False, value=max_seconds, className='input', style={'background-color': seconds_warning} )]),
             html.Div(id='cps', children=''),
             ]),
 
@@ -194,60 +197,6 @@ def show_tab2():
                     {'label': 'Pause MCA'         , 'value': '-sto'},
                     {'label': 'Restart MCA'       , 'value': '-sta'},
                     {'label': 'Reset histogram  ' , 'value': '-rst'},
-                    {'label': 'Read calibration'  , 'value': '-cal'},
-                    {'label': '----Gain--------'  , 'value': ''},
-                    {'label': '500 Volts', 'value': '-U000'},
-                    {'label': '510 Volts', 'value': '-U005'},
-                    {'label': '520 Volts', 'value': '-U010'},
-                    {'label': '530 Volts', 'value': '-U015'},
-                    {'label': '540 Volts', 'value': '-U020'},
-                    {'label': '550 Volts', 'value': '-U025'},
-                    {'label': '560 Volts', 'value': '-U030'},
-                    {'label': '570 Volts', 'value': '-U035'},
-                    {'label': '580 Volts', 'value': '-U040'},
-                    {'label': '590 Volts', 'value': '-U045'},
-                    {'label': '600 Volts', 'value': '-U050'},
-                    {'label': '610 Volts', 'value': '-U055'},
-                    {'label': '620 Volts', 'value': '-U060'},
-                    {'label': '630 Volts', 'value': '-U065'},
-                    {'label': '640 Volts', 'value': '-U070'},
-                    {'label': '650 Volts', 'value': '-U075'},
-                    {'label': '660 Volts', 'value': '-U080'},
-                    {'label': '670 Volts', 'value': '-U085'},
-                    {'label': '680 Volts', 'value': '-U090'},
-                    {'label': '690 Volts', 'value': '-U095'},
-                    {'label': '700 Volts', 'value': '-U100'},
-                    {'label': '710 Volts', 'value': '-U105'},
-                    {'label': '720 Volts', 'value': '-U110'},
-                    {'label': '730 Volts', 'value': '-U115'},
-                    {'label': '740 Volts', 'value': '-U120'},
-                    {'label': '750 Volts', 'value': '-U125'},
-                    {'label': '760 Volts', 'value': '-U130'},
-                    {'label': '770 Volts', 'value': '-U135'},
-                    {'label': '780 Volts', 'value': '-U140'},
-                    {'label': '790 Volts', 'value': '-U145'},
-                    {'label': '800 Volts', 'value': '-U150'},
-                    {'label': '810 Volts', 'value': '-U155'},
-                    {'label': '820 Volts', 'value': '-U160'},
-                    {'label': '830 Volts', 'value': '-U165'},
-                    {'label': '840 Volts', 'value': '-U170'},
-                    {'label': '850 Volts', 'value': '-U175'},
-                    {'label': '860 Volts', 'value': '-U180'},
-                    {'label': '870 Volts', 'value': '-U185'},
-                    {'label': '880 Volts', 'value': '-U190'},
-                    {'label': '890 Volts', 'value': '-U195'},
-                    {'label': '900 Volts', 'value': '-U200'},
-                    {'label': '910 Volts', 'value': '-U205'},
-                    {'label': '920 Volts', 'value': '-U210'},
-                    {'label': '930 Volts', 'value': '-U215'},
-                    {'label': '940 Volts', 'value': '-U220'},
-                    {'label': '950 Volts', 'value': '-U225'},
-                    {'label': '960 Volts', 'value': '-U230'},
-                    {'label': '970 Volts', 'value': '-U235'},
-                    {'label': '980 Volts', 'value': '-U240'},
-                    {'label': '990 Volts', 'value': '-U245'},
-                    {'label': '1000 Volts', 'value': '-U250'}
-
                 ],
                 placeholder='Select command',
                 value=commands[0] if commands else None, # Check if commands is not None before accessing its elements
@@ -260,7 +209,7 @@ def show_tab2():
             # html.Div(id='cmd_text', children='', style={'display': 'none'}),
             html.Div(['LLD Threshold:'      , dcc.Input(id='threshold'  , type='number', value=threshold, className='input')], style={'display':audio}),
             html.Div(['Shape Tolerance:'    , dcc.Input(id='tolerance'  , type='number', value=tolerance, className='input' )], style={'display':audio}),
-            html.Div(['Update Interval(s)'  , dcc.Input(id='t_interval' , type='number', step=1,  readOnly=False, value=t_interval, className='input' )], style={'display':audio}),
+            html.Div(['Update Interval(s)'  , dcc.Input(id='t_interval' , type='number', step=1,  readOnly=False, value=t_interval, className='input' )]),
 
         ],style={'width':'10%', } 
         ),
@@ -383,9 +332,10 @@ def confirm_with_user(start_clicks, confirm_clicks, cancel_clicks, filename, is_
     [Input('confirm-overwrite'  , 'n_clicks'),
      Input('start'              , 'n_clicks')], 
     [State('filename'           , 'value'),
-     State('compression'        , 'value')]  
+     State('compression'        , 'value'),
+     State('t_interval'         , 'value')]  
 )
-def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression):
+def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression, t_interval):
     ctx = dash.callback_context
 
     if not ctx.triggered:
@@ -424,7 +374,7 @@ def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression):
 
                 time.sleep(0.1)
 
-                shproto.dispatcher.process_01(filename, compression, "GS-MAX or ATOM-NANO")
+                shproto.dispatcher.process_01(filename, compression, "GS-MAX or ATOM-NANO", t_interval)
                 logger.info(f'Serial recording started')
 
                 time.sleep(0.1)
@@ -493,8 +443,12 @@ def stop_button(n_clicks, filename):
 
 def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts):
 
-    global global_counts
-    from pulsecatcher import mean_cps
+    if device > 100:
+        from shproto.dispatcher import cps
+
+    else:
+        from pulsecatcher import mean_cps
+        cps = mean_cps 
 
     annotations = []
     lines       = []
@@ -613,7 +567,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
 
   #-------------------annotations-----------------------------------------------       
 
-    peaks, fwhm = fn.peakfinder(y, prominence, peakfinder)
+    peaks, fwhm = fn.peakfinder(gc, prominence, peakfinder)
     num_peaks   = len(peaks)
     annotations = []
     lines       = []
@@ -623,7 +577,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         counts      = y[peaks[i]]
         x_pos       = peaks[i]
         y_pos       = y[peaks[i]]
-        y_pos_ann   = y_pos + 10
+        y_pos_ann   = y_pos + 30
         resolution  = (fwhm[i]/peaks[i])*100
 
         if y_pos_ann > (max_value * 0.9):
@@ -644,29 +598,30 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
                     y= y_pos_ann,
                     xref='x',
                     yref='y',
-                    text=f'y {counts}<br>x {peak_value:.1f}<br>fwhm<br>{resolution:.1f}%',
+                    text=f'Y{counts}<br>X{peak_value:.1f}<br>{resolution:.1f}%',
+                    align='center',
                     showarrow=True,
-                    arrowhead=1,
+                    arrowhead=0,
                     ax=0,
                     ay=-60
                 )
             )
 
-        lines.append(
-            dict(
-                type='line',
-                x0=x_pos,
-                y0=0,
-                x1=x_pos,
-                y1=y_pos,
-                line=dict(
-                    color='white',
-                    width=1,
-                    dash='dot'
+            lines.append(
+                dict(
+                    type='line',
+                    x0=x_pos,
+                    y0=0,
+                    x1=x_pos,
+                    y1=y_pos,
+                    line=dict(
+                        color='white',
+                        width=1,
+                        dash='dot'
+                    )
                 )
             )
-        )
-            
+                
         # Add annotations to the figure
     fig.update_layout(annotations=annotations)
 
@@ -763,7 +718,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
 
     if log_switch:
 
-        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[1, max_log_value+0.3])) 
+        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0.1, max_log_value+0.3])) 
 
     else:
         fig.update_layout(yaxis=dict(autorange=True, type='linear', range=[0, max(y)]))
@@ -789,9 +744,11 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
             bgcolor="white",
             bordercolor="lightgray",
             borderwidth=1
-        )    
+        )   
 
-    return fig, f'{validPulseCount}', f'{elapsed}', f'cps {mean_cps}'
+
+
+    return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}'
 
     
 #--------UPDATE SETTINGS------------------------------------------------------------------------------------------
@@ -881,7 +838,8 @@ def save_settings(*args):
     c.execute(query)
     conn.commit()
 
-    logger.info(f'Settings saved tab2')
+    logger.info(f'(Settings updated from tab2)')
+    #logger.info(f'{query}')
 
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
 
@@ -983,8 +941,6 @@ def update_output(selected_cmd, active_tab):
     [State("confirmation-modal", "is_open")]
 )
 def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_publish_clicks, is_open):
-
-
 
     ctx = dash.callback_context
 
