@@ -7,7 +7,15 @@ Python Script MCA for gamma spectrometry.
  The current version of Impulse is also compatible with Atom-Nano and GS-Max devices with USB serial communication.
  When used in serial device mode the already completed spectrum is retrieved from the device and the program performs the display monitor function only.
  
-Installation Method (Windows, Mac or Linux)
+The Easy Way
+------------
+Not too concerned about downloading the latest changes and just want to try Impulse ? 
+Download the precompiled executable for Mac or Windows from Gammaspectacular.com
+
+https://www.gammaspectacular.com/blue/software-downloads/impulse
+
+
+Raw Code Installation Method (Windows, Mac or Linux)
 -------------------------------------------
 Step 1)
 -------
@@ -134,6 +142,7 @@ Change log
 57) Bug fix - Start button fixed
 58) Added user table to local database for later use in publishing spectra
 60) Added functionality for publishing spectra to a public repository.
+61) Added functionality for Atom-Nano serial devices 
 
 
 Things to do
