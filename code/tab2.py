@@ -567,7 +567,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
 
   #-------------------annotations-----------------------------------------------       
 
-    peaks, fwhm = fn.peakfinder(gc, prominence, peakfinder)
+    peaks, fwhm = fn.peakfinder(y, prominence, peakfinder)
     num_peaks   = len(peaks)
     annotations = []
     lines       = []
