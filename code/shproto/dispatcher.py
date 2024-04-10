@@ -386,17 +386,22 @@ def process_03(_command):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = _command
         logger.info(f'Command received (dispatcher):{_command}')
-    return
+        return
 
 def stop():
+
     with shproto.dispatcher.stopflag_lock:
         shproto.dispatcher.stopflag = 1
         logger.info('Stop flag set(dispatcher)')
+        time.sleep(0.5)
+        process_03('-sto')
         return
 
 def spec_stop():
+
     with shproto.dispatcher.spec_stopflag_lock:
         shproto.dispatcher.spec_stopflag = 1
+
         logger.info('Stop flag set(dispatcher)')
         return
 
