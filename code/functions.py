@@ -678,8 +678,8 @@ def generate_device_settings_table():
         data=[
             {"Setting": "Version", "cmd":"-", "Value": version},
             {"Setting": "Serial number", "cmd":"status", "Value": serial},
-            {"Setting": "Threshold for X (pulse rise)", "cmd":"-ris", "Value": rise},
-            {"Setting": "Threshold for Y (pulse fall)", "cmd":"-fall", "Value": fall},
+            {"Setting": "Samples for X (pulse rise)", "cmd":"-ris", "Value": rise},
+            {"Setting": "Samples for Y (pulse fall)", "cmd":"-fall", "Value": fall},
             {"Setting": "Lower Limit Discriminator LLD", "cmd":"-nos", "Value": noise},
             {"Setting": "ADC Sample Frequency", "cmd":"-frq", "Value": frequency},
             {"Setting": "Max integral value", "cmd":"-max", "Value": max_value},
