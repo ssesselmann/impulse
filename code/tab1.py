@@ -339,7 +339,7 @@ def capture_pulse_shape(n_clicks):
 
     layout = {
                 'title': {
-                'text': 'Pulse Shape',
+                'text': 'Pulse Shape (16 bit)',
                 'font': {'size': 16},
                 'x': 0.5,
                 'y': 0.9
