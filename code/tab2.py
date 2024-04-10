@@ -394,7 +394,7 @@ def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression, 
 
 #----STOP BUTTON ----------------------------------------------------
 
-@app.callback( Output('stop_text'  ,'children'),
+@app.callback(Output('stop_text'  ,'children'),
                 [Input('stop'      ,'n_clicks')],
                 [State('filename'   , 'value')]
                 )
@@ -411,15 +411,15 @@ def stop_button(n_clicks, filename):
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
         time.sleep(0.1)
-        logger.info('Stop button(tab2) serial device')
+        logger.info('Stop button clicked (tab2) serial device')
 
     else:
 
         fn.stop_recording()
 
-        logger.info('Stop button(tab2) audio device')
+        logger.info('Stop button clicked (tab2) audio device')
 
-        return 
+    return
 
 #-------UPDATE GRAPH---------------------------------------------------------
 
@@ -465,14 +465,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         paper_bgcolor = 'white', 
         plot_bgcolor = '#f0f0f0',
         showlegend=True,
-        title={
-            'text': f'{filename}<br>{time}',
-            'x': 0.8,
-            'y': 0.9,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font': {'family': 'Arial', 'size': 20, 'color': 'black'},
-            },
+        
         height  =480, 
         margin_t=0,
         margin_b=0,
@@ -603,7 +596,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
                     showarrow=True,
                     arrowhead=0,
                     ax=0,
-                    ay=-60
+                    ay=-60,
                 )
             )
 
@@ -622,8 +615,19 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
                 )
             )
                 
-        # Add annotations to the figure
-    fig.update_layout(annotations=annotations)
+
+    # Add annotations to the figure
+    fig.update_layout(
+        annotations=annotations,
+        title={
+            'text': f'{filename}<br>{time}<br>{validPulseCount} counts<br>{elapsed} seconds',
+            'x': 0.8,
+            'y': 0.9,
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font': {'family': 'Arial', 'size': 18, 'color': 'black'},
+            },
+        )
 
     # Add lines (shapes) to the figure
     fig.update_layout(shapes=lines)     
@@ -662,6 +666,10 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
             if cal_switch == True:
 
                 x2 = np.polyval(np.poly1d(coefficients_2), x2)
+
+            if log_switch == True:
+                
+                y2 = [x * 0.5 for x in y2]    
 
             if epb_switch == True:
 
