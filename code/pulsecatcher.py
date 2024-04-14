@@ -51,13 +51,9 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 	max_seconds     = settings[26]
 	t_interval      = settings[27]
 	peakshift       = settings[28]
-
 	peak 		    = int((sample_length-1)/2) + peakshift
-	condition       = True
 
 	# Create an array of empty bins
-	start 			= 0
-	stop 			= bins * bin_size
 	histogram 		= [0] * bins
 	histogram_3d 	= [0] * bins
 	audio_format 	= pyaudio.paInt16
