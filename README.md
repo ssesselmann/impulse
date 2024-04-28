@@ -143,11 +143,11 @@ Change log
 58) Added user table to local database for later use in publishing spectra
 60) Added functionality for publishing spectra to a public repository.
 61) Added functionality for Atom-Nano serial devices 
+62) Added functionality for right channel recording and coincidence counting
 
 
 Things to do
 ------------
-* Build functionality for right channel recording and coincidence counting
 * Build interval histogram with Dead time calculation 
 * Show Subtraction in spectrum name
 * Save background subtracted spectra
