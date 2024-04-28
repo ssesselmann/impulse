@@ -235,6 +235,7 @@ def show_tab2():
             html.Div(['Energy by bin'   , daq.BooleanSwitch(id='epb_switch',on=False, color='purple',)]),
             html.Div(['Show log(y)'     , daq.BooleanSwitch(id='log_switch',on=False, color='purple',)]),
             html.Div(['Calibration'     , daq.BooleanSwitch(id='cal_switch',on=False, color='purple',)]),
+            html.Div(['Coincidence'     , daq.BooleanSwitch(id='mode-switch',on=False, color='purple',)]),
             ]), 
 
         html.Div(id='t2_setting_div7', children=[
@@ -300,12 +301,12 @@ def show_tab2():
 
 # - pop up warning ------------------
 @app.callback(
-    Output('modal-overwrite', 'is_open'),
-    [Input('start', 'n_clicks'), 
-     Input('confirm-overwrite', 'n_clicks'), 
-     Input('cancel-overwrite', 'n_clicks')],
-    [State('filename', 'value'),
-     State('modal-overwrite', 'is_open')]
+    Output('modal-overwrite'    , 'is_open'),
+    [Input('start'              , 'n_clicks'), 
+     Input('confirm-overwrite'  , 'n_clicks'), 
+     Input('cancel-overwrite'   , 'n_clicks')],
+    [State('filename'           , 'value') ,
+     State('modal-overwrite'    , 'is_open')]
 )
 def confirm_with_user(start_clicks, confirm_clicks, cancel_clicks, filename, is_open):
     ctx = dash.callback_context
@@ -333,13 +334,19 @@ def confirm_with_user(start_clicks, confirm_clicks, cancel_clicks, filename, is_
      Input('start'              , 'n_clicks')], 
     [State('filename'           , 'value'),
      State('compression'        , 'value'),
-     State('t_interval'         , 'value')]  
+     State('t_interval'         , 'value'),
+     State('mode-switch'        , 'on')]  
 )
-def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression, t_interval):
+def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression, t_interval, mode_switch):
     ctx = dash.callback_context
 
     if not ctx.triggered:
         raise PreventUpdate
+
+    if mode_switch == True:
+        mode = 4
+    else:
+        mode = 2        
 
     trigger_id      = ctx.triggered[0]['prop_id'].split('.')[0]
     trigger_value   = ctx.triggered[0]['value']
@@ -384,7 +391,7 @@ def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression, 
                 return f"Error: {str(e)}"
         else:
             
-            fn.start_recording(2)
+            fn.start_recording(mode)
 
             logger.info('Tab2 fn.startrecording(2) passed.') 
 
@@ -439,16 +446,22 @@ def stop_button(n_clicks, filename):
                 State('peakfinder'          ,'value'),
                 State('sigma'               ,'value'),
                 State('max_seconds'         ,'value'),
-                State('max_counts'          ,'value')])
+                State('max_counts'          ,'value'),
+                State('mode-switch'         , 'on')])
 
-def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts):
+def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts, mode_switch):
 
     if device > 100:
-        from shproto.dispatcher import cps
+        from shproto.dispatcher import cps   
 
     else:
         from pulsecatcher import mean_cps
         cps = mean_cps 
+
+    if mode_switch == True:
+        coincidence = 'coincidence<br>(left if right)'
+    else:
+        coincidence = ""        
 
     annotations = []
     lines       = []
@@ -620,7 +633,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
     fig.update_layout(
         annotations=annotations,
         title={
-            'text': f'{filename}<br>{time}<br>{validPulseCount} counts<br>{elapsed} seconds',
+            'text': f'{filename}<br>{time}<br>{validPulseCount} counts<br>{elapsed} seconds<br>{coincidence}',
             'x': 0.8,
             'y': 0.9,
             'xanchor': 'center',

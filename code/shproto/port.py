@@ -47,7 +47,7 @@ def connectdevice(sn=None):
     else:
         nanoport = getdevicebyserialnumber(sn)
     if nanoport is None:
-        print("!Error. Could not find nano connected: ", nanoport)
+        logger.info('No serial port device found')
         exit(0)
     tty = serial.Serial(nanoport, baudrate=600000, bytesize=8, parity='N', stopbits=1, timeout=5)
     return tty

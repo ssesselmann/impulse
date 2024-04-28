@@ -1,143 +1,116 @@
-# shapecatcher.py
-
-# This page contains a function to generate a pulse shape file
-# First it finds a list of pulses, then
-# the pulses are summed, averaged and normalised, 
-# finally saved as a csv file.
-# Ultimately this file should also be a JSON file as I have too many file types here. 
-
 import pyaudio
 import wave
-import math
 import csv
 import os
 import time
-import sqlite3 as sql
 import functions as fn
+import sqlite3 as sql
 import pandas as pd
+import numpy as np
 import logging
 from collections import defaultdict
 
+# Setup logging
 logger = logging.getLogger(__name__)
 
-# Starts timer
-t0 					= time.perf_counter() 
-data 				= None
-left_channel 		= []
-sample_list 		= []
-data_directory  	= os.path.join(os.path.expanduser("~"), "impulse_data")
+# Define the directory where data files are stored
+data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 
-# Function to catch pulses and output time, pulkse height and distortion
 def shapecatcher():
+    # Connect to the database and get settings
+    database = fn.get_path(f'{data_directory}/.data_v2.db')
+    shapecsv = fn.get_path(f'{data_directory}/shape.csv')
+    conn = sql.connect(database)
+    c = conn.cursor()
+    c.execute("SELECT * FROM settings")
+    settings = c.fetchall()[0]
 
-	database 		= fn.get_path(f'{data_directory}/.data_v2.db')
-	shapecsv 		= fn.get_path(f'{data_directory}/shape.csv')
-	n 				= 0
-	shape 			= None
-	samples_sum 	= None
-	samples 		= None
-	left_channel	= None
-	summed 			= None
-	shapecatches	= None
-	sample_length 	= None
-	pulse_list		= []
+    name            = settings[1]
+    device          = settings[2]             
+    sample_rate     = settings[3]
+    chunk_size      = settings[4]                        
+    threshold       = settings[5]
+    tolerance       = settings[6]
+    bins            = settings[7]
+    bin_size        = settings[8]
+    max_counts      = settings[9]
+    shapecatches    = settings[10]
+    sample_length   = settings[11]
+    peakshift       = settings[28]
+    peak            = int((sample_length-1)/2) + peakshift
 
-	conn = sql.connect(database)
-	c = conn.cursor()
-	query = "SELECT * FROM settings "
-	c.execute(query) 
-	settings = c.fetchall()[0]
+    right_channel_active = False
 
-	name            = settings[1]
-	device          = settings[2]             
-	sample_rate     = settings[3]
-	chunk_size      = settings[4]                        
-	threshold       = settings[5]
-	tolerance       = settings[6]
-	bins            = settings[7]
-	bin_size        = settings[8]
-	max_counts      = settings[9]
-	shapecatches 	= settings[10]
-	sample_length	= settings[11]
-	peakshift       = settings[28]
-	peak 			= int((sample_length-1)/2) + peakshift
+    # Initialize PyAudio
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paInt16,
+                    channels=2,  # Set to 2 channels for stereo
+                    rate=sample_rate,
+                    input=True,
+                    output=False,
+                    frames_per_buffer=chunk_size * 2)
 
-	# Create an array of empty bins
-	start 			= 0
-	stop 			= bins * bin_size
-	bin_array 		= fn.create_bin_array(start, stop, bin_size)
-	bin_counts 		= defaultdict(int)
+    pulse_list_left = []
+    pulse_list_right = []
 
-	threshold 		= 3200
-	
-	threshold_trace = [threshold] * sample_length
+    try:
+        while True:
+            data = stream.read(chunk_size, exception_on_overflow=False)
+            values = list(wave.struct.unpack("%dh" % (chunk_size * 2), data))
+            left_channel = values[::2]
+            right_channel = values[1::2]
 
-	try:
-		# Get audio parameters
-		device_list 	= fn.get_device_list()
-		device_channels = fn.get_max_input_channels(device)
-		p 				= pyaudio.PyAudio()
-		audio_format 	= pyaudio.paInt16
-		
-		# Open the selected audio input device
-		stream = p.open(
-			format=audio_format,
-			channels=device_channels,
-			rate=sample_rate,
-			input=True,
-			output=False,
-			input_device_index=device,
-			frames_per_buffer=chunk_size * 2)
+            # Process each channel to detect pulses
+            for channel, pulse_list in zip([left_channel, right_channel], [pulse_list_left, pulse_list_right]):
+                for i in range(len(channel) - sample_length):
+                    samples = channel[i:i + sample_length]
+                    if (max(samples) - min(samples) > threshold and
+                        samples[peak] == max(samples)):
+                        pulse_list.append(samples)
+                        # Mark right channel as active if pulses are detected
+                        if channel == right_channel:
+                            right_channel_active = True
+                        # Break if enough pulses are collected
+                        if len(pulse_list) >= shapecatches:
+                            break
 
-		# Loops through and finds a number of pulses (shapecatches) as loaded from settings
-		while True:
-			# Read the audio data stream
-			data = stream.read(chunk_size, exception_on_overflow=False)
-			# Convert hex to numbers
-			values = list(wave.struct.unpack("%dh" % (chunk_size * device_channels), data))
-		    # Extract every other element (left channel)
-			left_channel = values[::2]
-			# Cycle through list of sample strings
-			#for i in range(len(left_channel) - sample_length):
-			for i, sample in enumerate(left_channel[:-sample_length]):	
-				# Get the first string of  samples
-				samples = left_channel[i:i+sample_length]  
-				# Function checks if pulse is positive or negative
-				flip = fn.detect_pulse_direction(samples)
-				# Flips samples if pulse is positive
-				samples = [flip * x for x in samples]
-				# Find pulses based only on the peak height being in the middle 80% of 32000
-				if samples[peak] >= max(samples) and (max(samples)-min(samples)) > threshold and samples[peak] < 28800:
-					# gather a list of samples 
-					pulse_list.append(samples)
-					# Counter
-					n += 1
-					# Stop[ afer n samples]
-					if n >= (shapecatches-1): # number of pulses to average
-						# close stream
-						p.terminate()
-						# Zip sum all lists
-						pulses_sum = [sum(x)/len(pulse_list) for x in zip(*pulse_list)] 
-						# Normalise summed list
-						shape = fn.normalise_pulse(pulses_sum)
-						# convert floats to ints
-						shape_int = [int(x) for x in shape]
-						# Format and save to csv file
-						df = pd.DataFrame(shape_int)
-						# Save Pulse Direction to database
-						database = fn.get_path(f'{data_directory}/.data_v2.db')
-						conn = sql.connect(database)
-						c = conn.cursor()
-						query = f"UPDATE settings SET flip = {flip} WHERE id=0;"
-						c.execute(query)
-						conn.commit()
-						# Write to csv
-						df.to_csv(shapecsv, index='Shape', header=0)
+            
 
-						return shape_int, threshold_trace	
-	except:
+            # Check exit condition for loop
+            if (len(pulse_list_left) >= shapecatches and
+                (len(pulse_list_right) >= shapecatches or (not right_channel_active and len(pulse_list_right) == 0))):
+                break
 
-		shape_int = [0] * sample_length
+        # If the right channel had no activity, fill with zero-filled lists
+        if not right_channel_active:
+            # Create a list of zero-filled lists, each representing a pulse
+            pulse_list_right = [[0] * sample_length for _ in range(shapecatches)]
+          # Zeroes based on sample_length and shapecatches
 
-		return shape_int, threshold_trace
-	    
+        # Calculate average pulses
+        pulses_sum_left = [int(sum(x) / len(x)) for x in zip(*pulse_list_left)] if pulse_list_left else []
+        pulses_sum_right = [int(sum(x) / len(x)) for x in zip(*pulse_list_right)] if pulse_list_right else []
+
+
+        # Save data to CSV
+        df = pd.DataFrame({
+            'Left': pulses_sum_left,
+            'Right': pulses_sum_right
+        })
+        
+        # Convert columns to integer type to ensure all values are integers
+        df['Left'] = df['Left'].astype(int)
+        df['Right'] = df['Right'].astype(int)
+
+        # Save DataFrame to CSV, include index as the first column (row numbers)
+        df.to_csv(shapecsv, index=True, index_label='Row')
+
+
+
+    finally:
+        # Clean up and close streams
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
+    return pulses_sum_left, pulses_sum_right 

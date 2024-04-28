@@ -8,7 +8,6 @@ import os
 import logging
 import requests as req
 import shproto.dispatcher
-import threading
 import time
 import dash_table
 from dash import dcc, html
@@ -48,7 +47,8 @@ def show_tab1():
     peakshift       = settings[28]
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
-    shape           = fn.load_shape()
+    shape_left, shape_right = fn.load_shape()
+
 
     try:
         response    = req.get('https://www.gammaspectacular.com/steven/impulse/news.html', verify=False)
@@ -336,83 +336,118 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6, ):
     ])
 
 def capture_pulse_shape(n_clicks):
-
     layout = {
-                'title': {
-                'text': 'Pulse Shape (16 bit)',
-                'font': {'size': 16},
-                'x': 0.5,
-                'y': 0.9
-            },
-            'margin': {'l': 40, 'r': 10, 't': 40, 'b': 40},
-            'height': 350,
-            'paper_bgcolor': 'white',
-            'plot_bgcolor': 'white',
-            'xaxis': {
-                'showgrid': True,
-                'gridcolor': 'lightgray',
-                'zeroline': True,
-                'zerolinecolor': 'black',
-                'zerolinewidth': 1
-            },
-            'yaxis': {
-                'showgrid': True,
-                'gridcolor': 'lightgray',
-                'zeroline': True,
-                'zerolinecolor': 'black',
-                'zerolinewidth': 1
-            }
+        'title': {
+            'text': 'Pulse Shape (16 bit)',
+            'font': {'size': 16},
+            'x': 0.5,
+            'y': 0.9
+        },
+        'margin': {'l': 40, 'r': 10, 't': 40, 'b': 40},
+        'height': 350,
+        'paper_bgcolor': 'white',
+        'plot_bgcolor': 'white',
+        'xaxis': {
+            'showgrid': True,
+            'gridcolor': 'lightgray',
+            'zeroline': True,
+            'zerolinecolor': 'black',
+            'zerolinewidth': 1
+        },
+        'yaxis': {
+            'showgrid': True,
+            'gridcolor': 'lightgray',
+            'zeroline': True,
+            'zerolinecolor': 'black',
+            'zerolinewidth': 1
+        },
+        'legend': {
+            'x': 0.6,  # Center the legend horizontally
+            'y': 0.1,  # Position the legend above the top of the chart
+            'xanchor': 'center',  # Anchor the legend's center at x
+            'yanchor': 'top',     # Anchor the legend's top at y
+            'orientation': 'h'    # Optional: make the legend horizontal
         }
+    }
 
-    #prevent click on page load
+
+    # Prevent click on page load
     if n_clicks == 0:
         fig = {'data': [{}], 'layout': layout}
-        feedback = ''
-    else:   
-        shape = sc.shapecatcher()
-        dots = list(range(len(shape[0])))
+    else:
+        result = sc.shapecatcher()  # Call to shapecatcher
+        if result is None or len(result) < 2:
+            # Handling cases where shapecatcher does not return expected results
+            shape_left = []
+            shape_right = []
+        else:
+            shape_left, shape_right = result
 
-        data = go.Scatter(
-            x = dots, 
-            y = shape[0], 
-            mode = 'lines+markers',  
-            marker = {'color': 'black', 'size':4}, 
-            line = {'color':'blue', 'width':2},
-            showlegend = False)
-        
-        threshold = go.Scatter(
-            x = dots, 
-            y = shape[1], 
-            mode = 'lines',  
-            line = {'color':'red', 'width':1},
-            showlegend = False)
+        dots = list(range(len(shape_left)))  # Use the length of shape_left for the x-axis
 
-        fig = go.Figure(data=[data, threshold], layout=layout)
+        trace_left = go.Scatter(
+            x=dots,
+            y=shape_left,
+            mode='lines+markers',
+            marker={'color': 'blue', 'size': 4},
+            line={'color': 'blue', 'width': 2},
+            name='Left Channel')
+
+        trace_right = go.Scatter(
+            x=dots,
+            y=shape_right,
+            mode='lines+markers',
+            marker={'color': 'red', 'size': 4},
+            line={'color': 'red', 'width': 2},
+            name='Right Channel')
+
+        fig = go.Figure(data=[trace_left, trace_right], layout=layout)
 
     return fig, fig
 
-#------- Distortion curve -----------------------------------
+from dash.dependencies import Input, Output
 
+
+#--------------Callback for plotting distortion curve ------------------------
 @app.callback(
-            [Output('curve'         ,'figure'),
-            Output('showcurve'      ,'figure')],
-            [Input('get_curve_btn'  ,'n_clicks'),
-            ])
-
+    [Output('curve', 'figure'),
+     Output('showcurve', 'figure')],
+    [Input('get_curve_btn', 'n_clicks')]
+)
 def distortion_curve(n_clicks):
+    layout = {
+            'title': {
+                'text': 'Distortion curve', 'font': {
+                    'size': 16}, 'x': 0.5, 'y': 0.9
+                    },
+                'margin': {
+                    'l': 40, 'r': 40, 't': 40, 'b': 40
+                    }, 
+                'height': 350,
+                'showlegend':False
+                }
 
-    layout  = {'title': {'text': 'Distortion curve','font': {'size': 16},'x': 0.5,'y': 0.9}, 'margin':{'l':'40', 'r':'40', 't':'40', 'b':'40'}, 'height': '350'}
-
-    #prevent click on page load
-    if n_clicks == 0: 
+    # Prevent click on page load
+    if n_clicks == 0:
         fig = {'data': [{}], 'layout': layout}
+    else:
+        # Define line styles for left and right channels
+        line_style_left = dict(size=2, color='blue')
+        line_style_right = dict(size=2, color='red')
 
-    else: 
-        lines   = dict(size = 2, color = 'blue')
-        y       = dcr.distortion_finder()
-        x       = list(range(len(y)))
-        data    = [{'x': x, 'y': y, 'type': 'line', 'name': 'SF', 'mode': 'lines', 'marker':lines}]
-        fig     = {'data': data, 'layout': layout}
+        # Get distortion data for both channels
+        distortion_list_left, distortion_list_right = dcr.distortion_finder()
+
+        # Create x values for the number of distortions captured
+        x_left = list(range(len(distortion_list_left)))
+        x_right = list(range(len(distortion_list_right)))
+
+        # Create traces for both left and right channels
+        trace_left = {'x': x_left, 'y': distortion_list_left, 'type': 'line', 'name': 'Left Channel', 'mode': 'lines', 'marker': line_style_left}
+        trace_right = {'x': x_right, 'y': distortion_list_right, 'type': 'line', 'name': 'Right Channel', 'mode': 'lines', 'marker': line_style_right}
+
+        # Combine traces into a figure
+        fig = {'data': [trace_left, trace_right], 'layout': layout}
 
     return fig, fig
 

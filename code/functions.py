@@ -251,20 +251,28 @@ def load_settings():
 
 # This function opens the csv and loads the pulse shape  
 def load_shape():
-
     shapecsv = get_path(f'{data_directory}/shape.csv')
-   
-    data = []
+    data_left = []
+    data_right = []
+
     if os.path.exists(shapecsv):
         with open(shapecsv, 'r') as f:
             reader = csv.reader(f)
+            next(reader)  # Skip the header row
             for row in reader:
-                data.append(row[1])
-                shape = [int(x) for x in data] #converts 'string' to integers in data
-        return shape  
+                data_left.append(row[1])   # Assuming the second column contains the left channel data
+                data_right.append(row[2])  # Assuming the third column contains the right channel data
+
+        # Converts 'string' to integers in data
+        shape_left = [int(x) for x in data_left]
+        shape_right = [int(x) for x in data_right]
+                
+        return shape_left, shape_right
     else:
-        shape = pd.DataFrame(data = {'Shape': [0]*51})   
-        return shape 
+        # Returns default shapes of zeros if file doesn't exist
+        default_length = 51  # Modify this number if a different default length is required
+        return ([0] * default_length, [0] * default_length)
+
 
 # Function extracts keys from dictionary
 def extract_keys(dict_, keys):
@@ -342,7 +350,7 @@ def create_dummy_csv(filepath):
     with open(filepath, mode='w', newline='') as csv_file:
         writer = csv.writer(csv_file)
         for i in range(0, 50):
-            writer.writerow([i, 0])
+            writer.writerow([i, 0,0])
  
 # Function to automatically switch between positive and negative pulses
 def detect_pulse_direction(samples):

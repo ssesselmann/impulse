@@ -71,5 +71,5 @@ port = 8050
 
 # Application must be started from (__main__)
 if __name__ == '__main__':
-    Timer(1, fn.open_browser(port)).start();
+    Timer(1, lambda: fn.open_browser(port)).start()
     app.run_server(host='0.0.0.0', debug=False, threaded=True, port=port)
