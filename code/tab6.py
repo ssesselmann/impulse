@@ -50,7 +50,8 @@ def show_tab6():
                         {"label": "Pink"     , "value": "pink"},
                         {"label": "Sunburst" , "value": "sunburst"},
                         {"label": "Potassium", "value": "potassium"},
-                        {"label": "Developer", "value": "developer"},
+                        {"label": "Under Water", "value": "underwater"},
+                        {"label": "Milky Way", "value": "milkyway"},
                     ], 
                     value=theme,  # pre-selected option
                     clearable=False,
