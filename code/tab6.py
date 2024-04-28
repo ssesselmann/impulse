@@ -85,7 +85,7 @@ def show_tab6():
                 html.P('Any spectra you publish will appear on the right hand panel. By clicking the x in the last column you can delete a previously uploaded spectrum. This could be handy if you want to replace an old spectrum with a better one.'), 
 
 
-                html.H2('Device and Control tab'),
+                html.H2('Device and Control Tab'),
 
                 html.H4('Devise Specific Rendering'),
                 html.P('After selecting a spectrometer device from the pulldown menu, refresh the page, fields specific to your device will show.'),
@@ -107,13 +107,14 @@ def show_tab6():
                 html.P('This setting sets the length of the sample in sample points. Sample length in combination with the sample rate determines how much time it takes to sample a pulse and consequently affects the dead time. Dead time is the amount of time the computer can not process pulses, simply put you cant measure more than one pulse within (1 second/ sample rate) * (number of samples), lets take the example (1s/384,000 Hz)*51 samples = 132 µs, now as our pulses are randomly spaced we have to allow more time between pulses, typically three times as much time. We can calculate the maximum count rate as follows: 1s / 132µs / 3 = 2525 cps '),
                 html.P('WARNING: Setting both sample length and sample rate to maximum may cause loss of counts as the computer may not be able to keep up.'),
 
+                html.H4('Pulse Shape'),
+                html.P('What you see in the pulse shape graph is the left and right channel normalised positive pulse shape. The program runs a quick function to check if the pulses are negative or positive and automatically flips the pulses if necessary, therefore we have no setting for negative pulses. '),
+                html.P('Note: Pulse energy must be within a minumum and maximum range for this function to work, so if nothing happens when you click the button, your gain might be too low or too high.'),
+
                 html.H4('Distortion Curve'),
                 html.P('The distortion curve plot has no other function than to help you to visualise where the distortion in your sampling is occurring. When you click the [Get Distortion Curve] button the computer collects n unfiltered samples, compares each one with the mean and assigns a distortion factor to each pulse. The distortion factors are then ordered by size and plotted on a graph. The shape of this graph will help you determine how tight to set your distortion tolerance when recording your spectrum on tab2. Shape distortion may be caused by pulse overlap or large pulses that exceed the capacity of the electronic circuit.'),
-                
-                html.H4('Pulse Shape'),
-                html.P('What you see in the pulse shape graph is a normalised positive pulse shape and a horizontal red line representing the fixed height threshold which must be exceeded for a pulse to get sampled (this threshold is hard coded). The program runs a quick function to check if the pulses are negative or positive and automatically flips the pulses if necessary, therefore we have no setting for negative pulses. '),
 
-                html.H2('2D Histogram'),
+                html.H2('2D Histogram Tab'),
                 html.H4('Spectrum File Name'),
                 html.P('This is exactly what it says, you can name your spectrum anything you like, it will automatically save in the user home directory ~/impulse_data/myspectrum.json , the JSON file format is NPESv2 and is backwards compatible with NPESv1. NOTE! It is not possible to rename a file via this input, changing the filename will start a new spectrum. To rename a file go to the impulse_data directory in your home folder. '),
                 html.Div(html.A('https://github.com/OpenGammaProject/NPES-JSON', href='https://github.com/OpenGammaProject/NPES-JSON', target='_blank')),
@@ -158,6 +159,11 @@ def show_tab6():
                 html.P('The calibration switch turns calibration on or off. Energy calibration is done by a second order polynomial fit. There are six fields where the user may enter three bins with three corresponding energies. By choosing a linear relationship between bins and energies you can achieve a linear spectrum and by choosing non linear relationships you can correct for detectors that are non linear. The typical use case would be to enter the bins and known ebnergies from three widely spread gamma peaks.  '),
                 html.P('Note !! Your standard calibration poits are saved to your local database, new spectra start recording with these settings. This is convienient if you are using the same detector setup all the time.'),
 
+                html.H4('Coincidence'),
+                html.P('The coincidence function only works when there is a signal connectoed right channel audio input. The boolean switch needs to be activated on before the start button is pressed'),
+                html.P('When running a coincidence spectrum the default primary detector should always be the left channel, and the secondary or trigger detector connected to the right channel'),        
+                html.P('Pulses are considered coincident when the secondary peak occurs within +3 or -3 sample points, therefore a higher sample rate will achieve a tighter coincidence.'),        
+
 
                 html.H4('Peakfinder'),
                 html.P('Impulse has a built in function which can find peaks and calculate the resolution. The slider adjusts the tolerance, allowing you to increase or reduce the number of peaks found. There is a limit to how close together it can identify two peaks, this is due to the width of the notation only. '),
@@ -170,11 +176,11 @@ def show_tab6():
 
 
 
-                html.H2('3D Histogram tab'),
+                html.H2('3D Histogram Tab'),
                 html.P('This page functions much the same way as the regular 2D histogram, with the added time axis. You can control the time interval between each update. NOTE: Because this spectrum writes a lot of data to the browser it is advisable to keep the number of channels and time intervals to a minimum'), 
 
 
-                html.H2('Count Rate tab'),
+                html.H2('Count Rate Tab'),
                 html.P('This is a line chart the count rate over time and is entirely driven by the settings on the previous tab-1 and tab-2. The green line is a 10 second rolling average. No options or settings on this page yet.'),
                 
                 html.H2('Repository tab'),
@@ -190,7 +196,7 @@ def show_tab6():
                 html.Div('working with a wide range of gamma scintillation detectors and geiger counters.'), 
 
                 html.H4('GS-PRO-V5 Spectrometer (BYO detector)'),
-                html.A('Order the GS-PRO-V5 Spectrometer here', href='https://www.gammaspectacular.com/blue/gamma-spectroscopy/sound-card-spectrometry-drivers/gs-pro-v5?tracking=641198710758a', target='_blank'),
+                html.A('Order the GS-PRO-V5 Spectrometer here', href='https://www.gammaspectacular.com/blue/gamma-spectroscopy/gamma-spectrometers/gs-pro-v5?tracking=641198710758a', target='_blank'),
                 
                 html.H4('GSB-1515-NAI Complete spectrometry kit with 1.5 x 1.5" NaI(Tl) detector'),
                 html.A('Order the GSB-1515-NAI Complete spectrometry kit', href='https://www.gammaspectacular.com/blue/gamma-spectroscopy/gamma-spectrometry-systems/GSB-1515-NAI?tracking=641198710758a', target='_blank'),
