@@ -2,6 +2,7 @@
 import dash
 import time
 import os
+import csv
 import shutil
 import logging
 import functions as fn
@@ -15,7 +16,7 @@ backup_db_filename  = "old_data.db"
 backup_db           = os.path.join(data_directory, backup_db_filename)
 old_db              = fn.get_path(f'{data_directory}/.data.db')
 shapecsv            = fn.get_path(f'{data_directory}/shape.csv')
-
+shapecsv_old        = fn.get_path(f'{data_directory}/shape-old.csv')
 
 if os.path.exists(old_db):
         # Rename the old database
@@ -34,6 +35,21 @@ try:
     if not os.path.exists(shapecsv):
         fn.create_dummy_csv(shapecsv)
         logger.info(f'Created a blank shape.csv file')
+    else:
+        try:
+            # Open the CSV file and determine the number of columns
+            with open(shapecsv, 'r', newline='') as file:
+                reader = csv.reader(file)
+                headers = next(reader, None)
+                if headers and len(headers) == 2:  # Check if there are exactly two columns
+                    # Rename the file if it has two columns
+                    os.rename(shapecsv, shapecsv_old)
+                    logger.info(f'Renamed shape.csv to shape_old.csv')
+                    # Create a new dummy CSV with three columns
+                    fn.create_dummy_csv(shapecsv)
+                    logger.info(f'Created a new shape.csv with three columns')
+        except Exception as e:
+            logger.error(f'Failed to process the CSV file: {str(e)}')
 except:
     pass
 
