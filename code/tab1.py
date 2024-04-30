@@ -9,8 +9,7 @@ import logging
 import requests as req
 import shproto.dispatcher
 import time
-import dash_table
-from dash import dcc, html
+from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output, State
 from server import app
 from functions import execute_serial_command
