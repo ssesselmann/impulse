@@ -2,6 +2,7 @@ import serial
 import serial.tools.list_ports
 import logging
 import re
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ def connectdevice(sn=None):
         nanoport = getdevicebyserialnumber(sn)
     if nanoport is None:
         logger.info('No serial port device found')
-        exit(0)
+        sys.exit(0)
     tty = serial.Serial(nanoport, baudrate=600000, bytesize=8, parity='N', stopbits=1, timeout=5)
     return tty
 
