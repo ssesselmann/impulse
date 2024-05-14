@@ -725,7 +725,8 @@ def allowed_command(cmd):
     allowed_command_patterns = [
     r"^-U[0-9]{1,3}$",  # Matches -U followed by up to three digits (0-255)
     r"^-V[0-9]{1,3}$",  
-    r"^-sto$",  
+    r"^-sto$",
+    r"^-nos[0-9]{1,3}$" 
     ]    
 
     secret_prefix = "+"
