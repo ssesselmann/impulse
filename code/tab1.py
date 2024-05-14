@@ -404,9 +404,6 @@ def capture_pulse_shape(n_clicks):
 
     return fig, fig
 
-from dash.dependencies import Input, Output
-
-
 #--------------Callback for plotting distortion curve ------------------------
 @app.callback(
     [Output('curve', 'figure'),
