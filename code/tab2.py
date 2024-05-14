@@ -477,7 +477,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
     layout = go.Layout(
         paper_bgcolor = 'white', 
         plot_bgcolor = '#f0f0f0',
-        showlegend=True,
+        showlegend=False,
         
         height  =480, 
         margin_t=0,
