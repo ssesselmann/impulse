@@ -20,6 +20,8 @@ data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 t_interval = 1
 
+rolling = 0
+
 def show_tab4():
 
     # Get some settings from database----------
@@ -42,8 +44,15 @@ def show_tab4():
                 dcc.Graph(id='count_rate_chart', figure= {}),
                 dcc.Interval(id='interval_component', interval= interval), # Refresh rate 1s.
                 html.Div(['Update Interval (s)', dcc.Input(id='t_interval', type='number', step=1,  readOnly=False, value=t_interval )], style={'display':'none'}),
-                
+                html.Div('Rolling Average', style={'textAlign':'left', 'marginLeft':'20px'}),
+                html.Div(children=[dcc.Slider(
+                    id='rolling', 
+                    min=0 ,max=3600, 
+                    step=1, value= rolling, 
+                    marks= {0:'0', 300:'300', 600:'600', 900:'900', 1200:'1200', 1500:'1500', 1800:'1800', 2100:'2100', 2400:'2400', 2700:'2700', 3000:'3000', 3300:'3300', 3600:'3600'})]),
+
             ]),
+        
         html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif'),]),
     ])
 
@@ -51,16 +60,19 @@ def show_tab4():
 
 #-----------------END of Page---------------------------------------------------
 
-@app.callback(Output('count_rate_chart'  , 'figure'),
+@app.callback([Output('count_rate_chart'  , 'figure'), 
+               Output('rolling'           , 'value')],
               [Input('interval_component', 'n_intervals'),
                Input('filename'          , 'value'),
                Input('t_interval'        , 'value')],
-               [State('tabs'             , 'value')],
+               [State('tabs'             , 'value'),
+               State('rolling'           , 'value')],
                ) 
 
-def update_count_rate_chart(n_intervals, filename, t_interval, tab):
+def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
 
     cps_file = fn.get_path(f'{data_directory}/{filename}-cps.json')
+
 
     if os.path.exists(cps_file):
         with open(cps_file, "r") as f:
@@ -75,9 +87,9 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab):
             # create pandas series for y data
             y_series = pd.Series(y)
             # create rolling average series
-            rolling_series = y_series.rolling(window=11, center=True).mean()
+            rolling_series = y_series.rolling(window=rolling, center=True).mean()
             # create scatter trace for rolling average line
-            rolling_line = go.Scatter(x=x[10:], y=rolling_series[10:], mode='lines', line=dict(width=2, color='green'), name='10 sec rolling ave')
+            rolling_line = go.Scatter(x=x[rolling:], y=rolling_series[rolling:], mode='lines', line=dict(width=2, color='green'), name=f'{rolling} sec rolling ave')
 
             layout = go.Layout(
                 title={
@@ -108,12 +120,14 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab):
                     type='linear',
                     tickfont=dict(family='Arial', size=14, color='black'),
                     titlefont=dict(family='Arial', size=18, color='black')
+
                 ),
                 uirevision="Don't change",
                 height=500,
-                margin=dict(l=80, r=50, t=100, b=80),
+                margin=dict(l=80, r=50, t=100, b=50),
                 paper_bgcolor='white',
-                plot_bgcolor='white'
+                plot_bgcolor='white',
+                showlegend= False,   
             )
 
             fig = go.Figure(data=[line, rolling_line], layout=layout)
@@ -124,7 +138,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab):
                     'xaxis': {'title': 'X-axis title'}, 
                     'yaxis': {'title': 'Y-axis title'}}}
 
-    return fig
+    return fig, rolling
 
 #-----------------------The End --------------------
 
