@@ -45,13 +45,13 @@ def show_tab6():
                     id="theme",
                     className='dropdown',
                     options=[
-                        {"label": "Boring theme (lightgray)", "value": "lightgray"},
-                        {"label": "Orange"   , "value": "orange"},
-                        {"label": "Pink"     , "value": "pink"},
-                        {"label": "Sunburst" , "value": "sunburst"},
-                        {"label": "Potassium", "value": "potassium"},
-                        {"label": "Under Water", "value": "underwater"},
-                        {"label": "Milky Way", "value": "milkyway"},
+                        {"label": "Lightgray"   , "value": "lightgray"},
+                        {"label": "Orange"      , "value": "orange"},
+                        {"label": "Pink"        , "value": "pink"},
+                        {"label": "Sunburst"    , "value": "sunburst"},
+                        {"label": "Potassium"   , "value": "potassium"},
+                        {"label": "Under Water" , "value": "underwater"},
+                        {"label": "Milky Way"   , "value": "milkyway"},
                     ], 
                     value=theme,  # pre-selected option
                     clearable=False,
@@ -182,7 +182,7 @@ def show_tab6():
 
 
                 html.H2('Count Rate Tab'),
-                html.P('This is a line chart the count rate over time and is entirely driven by the settings on the previous tab-1 and tab-2. The green line is a 10 second rolling average. No options or settings on this page yet.'),
+                html.P('This is a line chart showing the counts per second and is entirely driven by the settings on tab-2 and tab-3. The rolling average (green line) can be adjusted with the slider or for fine adjustment click on the slider and use your left right arrow keys to move the slider in steps of one second.'),
                 
                 html.H2('Repository tab'),
                 html.P('The is is a common repository where spectra published by all Impulse users appear. All published spectra are saved in NPESv2 json format and can be opened in many popular programs. Please contribute your spectra and make more data available to the community. The search field is a convenient way to find what you are looking for so make sure you give your published spactra a good name.'),
