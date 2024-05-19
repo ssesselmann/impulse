@@ -2,6 +2,7 @@
 import dash
 import json
 import os
+import time
 import logging
 import plotly.graph_objs as go
 import functions as fn
@@ -9,6 +10,7 @@ import dash_daq as daq
 import sqlite3 as sql
 import pandas as pd
 
+from datetime import datetime
 from dash import html, dcc
 from dash.dependencies import Input, Output, State
 #from dash.exceptions import PreventUpdate
@@ -80,9 +82,9 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
         with open(cps_file, "r") as f:
             count_data = json.load(f)
             countrate = count_data["cps"]
-
             total_counts = sum(countrate)
-
+            now         = datetime.now()
+            time        = now.strftime('%d/%m/%Y')
             elapsed = int(count_data["elapsed"])
             
             x = [str(i * t_interval) for i in range(len(countrate))]
@@ -99,7 +101,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
 
             layout = go.Layout(
                 title={
-                    'text': f'Countrate<br>{filename}e',
+                    'text': f'Countrate {time}<br>{filename}',
                     'x': 0.5,
                     'y': 0.9,
                     'xanchor': 'center',
