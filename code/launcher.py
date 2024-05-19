@@ -18,6 +18,17 @@ old_db              = fn.get_path(f'{data_directory}/.data.db')
 shapecsv            = fn.get_path(f'{data_directory}/shape.csv')
 shapecsv_old        = fn.get_path(f'{data_directory}/shape-old.csv')
 
+# Check if the "stereo" field exists in the settings table, and add it if it doesn't
+def add_stereo_field_if_missing(conn):
+    c = conn.cursor()
+    c.execute("PRAGMA table_info(settings);")
+    columns = [column[1] for column in c.fetchall()]
+    
+    if 'stereo' not in columns:
+        c.execute("ALTER TABLE settings ADD COLUMN stereo BOOLEAN DEFAULT False;")
+        conn.commit()
+        logger.info(f'Added "stereo" field to settings table')
+
 if os.path.exists(old_db):
         # Rename the old database
         os.rename(old_db, backup_db)
@@ -57,6 +68,9 @@ except:
 conn    = sql.connect(database)
 c       = conn.cursor()
 
+# Add the stereo field if it is missing
+add_stereo_field_if_missing(conn)
+
 # This query creates a table in the database when used for the first time
 query   = """CREATE TABLE IF NOT EXISTS settings (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,  
@@ -88,7 +102,8 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         max_seconds     INTEGER DEFAULT 3600,
         t_interval      INTEGER DEFAULT 1,
         peakshift       INTEGER DEFAULT 0,
-        compression     INTEGER DEFAULT 8               
+        compression     INTEGER DEFAULT 8,
+        stereo          BOOLEAN DEFAULT False               
         );"""
 
 # This query inserts the first record in settings with defaults
