@@ -35,6 +35,8 @@ def show_tab4():
     t_interval      = int(t_interval)
     interval        = 1000
 
+
+
     html_tab4 = html.Div(id='tab4', children=[
 
         html.Div(dcc.Input(id='filename', type='text', value=settings[1], style={'display': 'none'})),
@@ -78,6 +80,10 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
         with open(cps_file, "r") as f:
             count_data = json.load(f)
             countrate = count_data["cps"]
+
+            total_counts = sum(countrate)
+
+            elapsed = int(count_data["elapsed"])
             
             x = [str(i * t_interval) for i in range(len(countrate))]
 
@@ -93,7 +99,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
 
             layout = go.Layout(
                 title={
-                    'text': f'Counts per Second<br>{filename}e',
+                    'text': f'Countrate<br>{filename}e',
                     'x': 0.5,
                     'y': 0.9,
                     'xanchor': 'center',
@@ -105,11 +111,10 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
                     title='Seconds',
                     tickmode='auto',
                     tickangle=90,
-                    range=[0, 300],
+                    #range=[0, 300],
                     tickfont=dict(family='Arial', size=14, color='black'),
                     titlefont=dict(family='Arial', size=18, color='black'),
                     type='linear',
-                    rangeslider=dict(visible=True),
                     showline=True,
                     linewidth=2,
                     linecolor='black',
@@ -126,7 +131,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
 
                 annotations=[
                     dict(
-                        text=f"{rolling} second average",
+                        text=f"{rolling} Second average<br>{total_counts} Total counts<br>{elapsed} Seconds total",
                         x=1,
                         y=1.1,
                         xref='paper',

@@ -224,13 +224,13 @@ def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_nu
         json.dump(data, f, indent=4)
 
 # This function writes counts per second to json
-def write_cps_json(filename, cps):
+def write_cps_json(filename, cps, elapsed):
     global cps_list
     jsonfile = get_path(f'{data_directory}/{filename}-cps.json')
     cps_list.append(cps)
-    data     = {'cps': cps_list }
+    data = {'cps': cps_list, 'elapsed': elapsed}
     with open(jsonfile, "w+") as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, separators=(',', ':'))
  
 # Clears global counts per second list   
 def clear_global_cps_list():

@@ -187,7 +187,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                     tla = time.time()
 
             with write_lock:
-                fn.write_cps_json(filename, global_cps)
+                fn.write_cps_json(filename, global_cps, elapsed)
                 global_cps = 0
     
     p.terminate() # closes stream when done
