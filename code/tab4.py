@@ -20,7 +20,7 @@ data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 t_interval = 1
 
-rolling = 0
+rolling = 5
 
 def show_tab4():
 
@@ -93,13 +93,14 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
 
             layout = go.Layout(
                 title={
-                    'text': filename,
+                    'text': f'Counts per Second<br>{filename}e',
                     'x': 0.5,
                     'y': 0.9,
                     'xanchor': 'center',
                     'yanchor': 'top',
-                    'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+                    'font': {'family': 'Arial', 'size': 20, 'color': 'black'}
                 },
+
                 xaxis=dict(
                     title='Seconds',
                     tickmode='auto',
@@ -122,8 +123,21 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
                     titlefont=dict(family='Arial', size=18, color='black')
 
                 ),
+
+                annotations=[
+                    dict(
+                        text=f"{rolling} sec. rolling average",
+                        x=1,
+                        y=1.1,
+                        xref='paper',
+                        yref='paper',
+                        showarrow=False,
+                        font=dict(family='Arial', size=16, color='black')
+                    )
+                ],
+
                 uirevision="Don't change",
-                height=500,
+                height=600,
                 margin=dict(l=80, r=50, t=100, b=50),
                 paper_bgcolor='white',
                 plot_bgcolor='white',
@@ -131,6 +145,8 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
             )
 
             fig = go.Figure(data=[line, rolling_line], layout=layout)
+
+           
     else:
         
         fig = {'data': [{'type': 'scatter', 'mode': 'markers+lines', 'x': [], 'y': []}], 
