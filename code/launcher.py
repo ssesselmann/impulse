@@ -68,9 +68,13 @@ except:
 conn    = sql.connect(database)
 c       = conn.cursor()
 
-# Add the stereo field if it is missing
-add_stereo_field_if_missing(conn)
-
+try:
+    # Add the stereo field if it is missing
+    add_stereo_field_if_missing(conn)
+except:
+    logger.info(f'Attempted to add stereo field but database does not exist yet')
+    pass
+    
 # This query creates a table in the database when used for the first time
 query   = """CREATE TABLE IF NOT EXISTS settings (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,  
