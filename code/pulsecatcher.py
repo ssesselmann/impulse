@@ -1,5 +1,3 @@
-# pulsecatcher.py
-
 import pyaudio
 import wave
 import math
@@ -27,7 +25,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
     # Start timer
     t0              = datetime.datetime.now()
-    tb              = time.time()   #time beginning
+    tb              = time.time()   # time beginning
     tla = 0
 
     # Get the following from settings
@@ -51,6 +49,8 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     peakshift       = settings[28]
     peak            = int((sample_length-1)/2) + peakshift
 
+    right_threshold = 1000  # Set a stricter threshold for right channel to filter out noise
+
     # Create an array of empty bins
     histogram       = [0] * bins
     histogram_3d    = [0] * bins
@@ -58,8 +58,6 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     device_channels = fn.get_max_input_channels(device)
 
     # Loads pulse shape from csv
-    shapestring = fn.load_shape()
-
     shapes = fn.load_shape()
     left_shape = [int(x) for x in shapes[0]]
     right_shape = [int(x) for x in shapes[1]]
@@ -93,13 +91,24 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         data = stream.read(chunk_size, exception_on_overflow=False)
         # Convert hex values into a list of decimal values
         values = list(wave.struct.unpack("%dh" % (chunk_size * 2), data))
+
         # Extract every other element (left channel)
         left_channel = values[::2]
         right_channel = values[1::2]
+
         # Flip inverts all samples if detector pulses are positive
-        if flip != 1:
+        if flip == 22:
             left_channel = [flip * x for x in left_channel]
             right_channel = [flip * x for x in right_channel]
+
+        if flip == 12:
+            right_channel = [flip * x for x in right_channel]
+
+        if flip == 21:
+            left_channel = [flip * x for x in left_channel]
+
+        logger.debug(f"Left channel data: {left_channel[:10]}")
+        logger.debug(f"Right channel data: {right_channel[:10]}")
 
         # Extend detection to right channel for mode 4
         right_pulses = []
@@ -108,23 +117,30 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             for i in range(len(right_channel) - sample_length):
                 samples = right_channel[i:i+sample_length]
                 height = fn.pulse_height(samples)
-                if samples[peak] == max(samples) and height > threshold and samples[peak] < 32768:
+                if samples[peak] == max(samples) and abs(height) > right_threshold and samples[peak] < 32768:
                     right_pulses.append((i + peak, height))
+                    logger.debug(f"Right channel pulse detected at index {i}: height {height} sample = {samples}")
 
         # Read through the list of left channel values and find pulse peaks
         for i in range(len(left_channel) - sample_length):
-            # iterate through one sample lenghth at the time in quick succession, ta-ta-ta-ta-ta...
+            # iterate through one sample length at the time in quick succession, ta-ta-ta-ta-ta...
             samples = left_channel[i:i+sample_length]
             # Function calculates pulse height of all samples 
             height = fn.pulse_height(samples)
             # Filter out noise
-            if samples[peak] == max(samples) and height > threshold and samples[peak] < 32768:
+            if samples[peak] == max(samples) and abs(height) > threshold and samples[peak] < 32768:
 
                 if mode == 4:
                     # Check for coincident pulses within 3 sample indices
-                    coincident_pulse = any(i + peak - 3 <= rp[0] <= i + peak + 3 for rp in right_pulses)
+                    coincident_pulse = None
+                    for rp in right_pulses:
+                        if i + peak - 3 <= rp[0] <= i + peak + 3:
+                            coincident_pulse = rp
+                            break
                     if not coincident_pulse:
                         continue  # Skip this pulse if no coincident pulse found
+                    else:
+                        logger.debug(f"Coincidence found: Left pulse at index {i}, height {height}, Right pulse at index {coincident_pulse[0]}, height {coincident_pulse[1]}")
 
                 # Function normalises sample to zero and converts to integer
                 normalised = fn.normalise_pulse(samples)
@@ -176,4 +192,3 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     
     p.terminate() # closes stream when done
     return                      
-                                            

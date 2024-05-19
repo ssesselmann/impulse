@@ -742,3 +742,14 @@ def allowed_command(cmd):
             return True 
 
     return False
+
+def is_valid_json(file_path):
+    try:
+        with open(file_path, 'r') as f:
+            data = f.read()
+            if not data.strip():
+                return False
+            json.loads(data)
+        return True
+    except (json.JSONDecodeError, FileNotFoundError):
+        return False

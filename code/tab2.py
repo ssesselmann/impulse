@@ -25,6 +25,7 @@ from dash.dependencies import Input, Output, State
 from server import app
 from dash.exceptions import PreventUpdate
 from datetime import datetime
+from functions import is_valid_json
 
 logger = logging.getLogger(__name__)
 
@@ -451,12 +452,17 @@ def stop_button(n_clicks, filename):
 
 def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts, mode_switch):
 
-    if device > 100:
-        from shproto.dispatcher import cps   
+    
+    if device is not None and isinstance(device, int):
 
+        if device > 100:
+            from shproto.dispatcher import cps
+
+        if device < 100:
+            from pulsecatcher import mean_cps
+            cps = mean_cps 
     else:
-        from pulsecatcher import mean_cps
-        cps = mean_cps 
+        cps = 0        
 
     if mode_switch == True:
         coincidence = 'coincidence<br>(left if right)'
@@ -479,8 +485,8 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         plot_bgcolor = '#f0f0f0',
         showlegend=False,
         
-        height  =480, 
-        margin_t=0,
+        height  =460, 
+        margin_t=20,
         margin_b=0,
         margin_l=0,
         margin_r=0,
@@ -494,7 +500,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
 
     fig = go.Figure(layout=layout)
 
-    if os.path.exists(histogram1):
+    if os.path.exists(histogram1) and is_valid_json(histogram1):
 
         with open(histogram1, "r") as f:
 
@@ -583,21 +589,22 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         counts      = y[peaks[i]]
         x_pos       = peaks[i]
         y_pos       = y[peaks[i]]
-        y_pos_ann   = y_pos + 30
+        y_pos_ann   = y_pos + int(y_pos/10)
         resolution  = (fwhm[i]/peaks[i])*100
 
         if y_pos_ann > (max_value * 0.9):
             y_pos_ann = int(y_pos_ann - max_value * 0.03)
 
-        if cal_switch == True:
+        if cal_switch:
             peak_value  = np.polyval(np.poly1d(coefficients), peak_value)
             x_pos       = peak_value
 
-        if log_switch == True:
-            y_pos = np.log10(y_pos)
-            y_pos_ann = y_pos + 0.02
+        if log_switch:
+            y_pos_ann = np.log10(y_pos) #if y_pos > 0 else 0
+            #y_pos_ann = y_pos + 0.1
 
         if peakfinder > 0:
+
             annotations.append(
                 dict(
                     x= x_pos,
@@ -609,7 +616,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
                     showarrow=True,
                     arrowhead=0,
                     ax=0,
-                    ay=-60,
+                    ay=-40,
                 )
             )
 
@@ -621,7 +628,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
                     x1=x_pos,
                     y1=y_pos,
                     line=dict(
-                        color='white',
+                        color='red',
                         width=1,
                         dash='dot'
                     )
@@ -634,7 +641,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         annotations=annotations,
         title={
             'text': f'{filename}<br>{time}<br>{validPulseCount} counts<br>{elapsed} seconds<br>{coincidence}',
-            'x': 0.8,
+            'x': 0.9,
             'y': 0.9,
             'xanchor': 'center',
             'yanchor': 'top',
@@ -649,7 +656,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
   
     histogram2 = fn.get_path(f'{data_directory}/{filename2}.json')
 
-    if os.path.exists(histogram2):
+    if os.path.exists(histogram2) and is_valid_json(histogram1):
         with open(histogram2, "r") as f:
 
             data_2 = json.load(f)

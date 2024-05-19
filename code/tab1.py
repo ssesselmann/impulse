@@ -9,6 +9,7 @@ import logging
 import requests as req
 import shproto.dispatcher
 import time
+import dash_daq as daq
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output, State
 from server import app
@@ -19,6 +20,7 @@ from functions import allowed_command
 logger = logging.getLogger(__name__)
 
 data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
+
 
 # ----------- Audio input selection ---------------------------------
 
@@ -44,10 +46,12 @@ def show_tab1():
     shapecatches    = settings[10]
     sample_length   = settings[11]
     peakshift       = settings[28]
+    stereo          = bool(settings[30])
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
     shape_left, shape_right = fn.load_shape()
 
+    logger.info(f'stereo retrieved from settings as {stereo}')
 
     try:
         response    = req.get('https://www.gammaspectacular.com/steven/impulse/news.html', verify=False)
@@ -248,12 +252,24 @@ def show_tab1():
                             className='action_button',
                             style={'marginLeft':'20%'},
                             ),
+                                
+                            html.Div(
+                                children=[
+                                    html.Label('Stereo off/on', style={'paddingRight': '10px'}),
+                                    daq.BooleanSwitch(id='stereo', on=stereo, color='purple')
+                                ],
+                                style={'display': 'flex', 'alignItems': 'center', 'justifyContent': 'flex-end', 'padding': '5px'}
+                            ),
+
                             ], style={'display':audio}),
+
+                        
 
                     html.Div(id='distortion_div', children=[
                         html.Div(id='showcurve', children=[
                             dcc.Graph(id='curve', figure={'data': [{}], 'layout': {}}),
                             html.Div('', style= { 'height':'50px'}),
+                            
                             html.Button('Get Distortion Curve', 
                                 id='get_curve_btn', 
                                 n_clicks=0, 
@@ -279,7 +295,8 @@ def show_tab1():
 
 @app.callback(
     [Output('selected_device_text'      ,'children'),
-    Output('sampling_time_output'       ,'children')],
+    Output('sampling_time_output'       ,'children'),
+    Output('stereo'                     ,'on')],
     [Input('submit'                     ,'n_clicks'),
     Input('device_dropdown'            ,'value'),
     Input('sample_rate'                 ,'value'),
@@ -287,9 +304,9 @@ def show_tab1():
     Input('catch'                       ,'value'),
     Input('sample_length'               ,'value'),
     Input('peakshifter'                 ,'value'),
-    ])
+    Input('stereo'                      ,'on')])
 
-def save_settings(n_clicks, value1, value2, value3, value4, value5, value6, ):
+def save_settings(n_clicks, value1, value2, value3, value4, value5, value6, value7):
 
     if n_clicks == 0:
         device      = value1
@@ -298,6 +315,7 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6, ):
         catch       = value4
         length      = value5
         peakshift   = value6
+        stereo      = bool(value7)
 
         database    = fn.get_path(f'{data_directory}/.data_v2.db')
         conn        = sql.connect(database)
@@ -308,9 +326,10 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6, ):
                     chunk_size={chunk_size}, 
                     shapecatches={catch}, 
                     sample_length={length}, 
-                    peakshift={peakshift} 
+                    peakshift={peakshift},
+                    stereo={stereo} 
                     WHERE id=0;'''
-        
+
         c.execute(query)
         conn.commit()
 
@@ -321,20 +340,20 @@ def save_settings(n_clicks, value1, value2, value3, value4, value5, value6, ):
         if pulse_length >= 334:
             warning = 'WARNING LONG'
 
-        logger.info(f'Settings saved to database tab1')
- 
+        logger.debug(f'Settings saved to database tab1 {query}')
 
-        return f'Device: {device} (Refresh)', f'{warning} Dead time ~ {pulse_length} µs'
+        return f'Device: {device} (Refresh)', f'{warning} Dead time ~ {pulse_length} µs', stereo
 
 #-------- Callback to capture and save mean pulse shape ----------
 
 @app.callback(
     [Output('plot'          ,'figure'),
     Output('showplot'       ,'figure')],
-    [Input('get_shape_btn'  ,'n_clicks')
-    ])
+    [Input('get_shape_btn'  ,'n_clicks')],
+    [State('stereo'           , 'on')],
+    )
 
-def capture_pulse_shape(n_clicks):
+def capture_pulse_shape(n_clicks, stereo):
     layout = {
         'title': {
             'text': 'Pulse Shape (16 bit)',
@@ -374,10 +393,11 @@ def capture_pulse_shape(n_clicks):
     if n_clicks == 0:
         fig = {'data': [{}], 'layout': layout}
     else:
-        result = sc.shapecatcher()  # Call to shapecatcher
+        result = sc.shapecatcher(stereo)  # Call to shapecatcher
+
         if result is None or len(result) < 2:
             # Handling cases where shapecatcher does not return expected results
-            shape_left = []
+            shape_left  = []
             shape_right = []
         else:
             shape_left, shape_right = result
@@ -400,17 +420,21 @@ def capture_pulse_shape(n_clicks):
             line={'color': 'red', 'width': 2},
             name='Right Channel')
 
-        fig = go.Figure(data=[trace_left, trace_right], layout=layout)
+        if stereo:
+            fig = go.Figure(data=[trace_left, trace_right], layout=layout)
+        else:
+            fig = go.Figure(data=[trace_left], layout=layout)            
 
     return fig, fig
 
 #--------------Callback for plotting distortion curve ------------------------
 @app.callback(
-    [Output('curve', 'figure'),
-     Output('showcurve', 'figure')],
-    [Input('get_curve_btn', 'n_clicks')]
+    [Output('curve'         , 'figure'),
+     Output('showcurve'     , 'figure')],
+    [Input('get_curve_btn'  , 'n_clicks')],
+    [State('stereo'           , 'on')]
 )
-def distortion_curve(n_clicks):
+def distortion_curve(n_clicks, stereo):
     layout = {
             'title': {
                 'text': 'Distortion curve', 'font': {
@@ -432,7 +456,7 @@ def distortion_curve(n_clicks):
         line_style_right = dict(size=2, color='red')
 
         # Get distortion data for both channels
-        distortion_list_left, distortion_list_right = dcr.distortion_finder()
+        distortion_list_left, distortion_list_right = dcr.distortion_finder(stereo)
 
         # Create x values for the number of distortions captured
         x_left = list(range(len(distortion_list_left)))
@@ -443,7 +467,10 @@ def distortion_curve(n_clicks):
         trace_right = {'x': x_right, 'y': distortion_list_right, 'type': 'line', 'name': 'Right Channel', 'mode': 'lines', 'marker': line_style_right}
 
         # Combine traces into a figure
-        fig = {'data': [trace_left, trace_right], 'layout': layout}
+        if stereo:
+            fig = {'data': [trace_left, trace_right], 'layout': layout}
+        else:
+            fig = {'data': [trace_left], 'layout': layout}
 
     return fig, fig
 

@@ -1,9 +1,14 @@
 import pyaudio
 import wave
+import logging
 import functions as fn
 
+# Setup logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+
 # Function to catch pulses and output time, pulse height, and distortion
-def distortion_finder():
+def distortion_finder(stereo):
     settings        = fn.load_settings()
     device          = settings[2]
     sample_rate     = settings[3]
@@ -16,15 +21,12 @@ def distortion_finder():
     peak            = int((sample_length - 1) / 2) + peakshift
 
     audio_format    = pyaudio.paInt16
-    device_channels = fn.get_max_input_channels(device)
+    channels        = 2 if stereo else 1
 
     # Load pulse shapes from CSV for both channels
     shapes          = fn.load_shape()
     left_shape      = [int(x) for x in shapes[0]]
     right_shape     = [int(x) for x in shapes[1]]
-
-    # Check if right channel is inactive (all zeros)
-    right_active    = not all(v == 0 for v in right_shape)
 
     p = pyaudio.PyAudio()
     distortion_list_left = []
@@ -32,44 +34,70 @@ def distortion_finder():
     count_left = 0
     count_right = 0
 
+    logger.info(f'Distortionchecker says Stereo == {stereo}')
+
+    if flip == 11:
+        flip_left  = 1
+        flip_right = 1
+
+    if flip == 12:
+        flip_left  = 1
+        flip_right = -1  
+
+    if flip == 21:
+        flip_left  = -1
+        flip_right = 1
+
+    if flip == 22:
+        flip_left  = -1
+        flip_right = -1        
+
     # Open the selected audio input device
-    stream = p.open(format=audio_format, channels=device_channels, rate=sample_rate,
+    stream = p.open(format=audio_format, channels=channels, rate=sample_rate,
                     input=True, output=False, input_device_index=device,
                     frames_per_buffer=chunk_size)
 
     try:
-        while count_left < shapecatches or (right_active and count_right < shapecatches):
+        while count_left < shapecatches or (stereo and count_right < shapecatches):
             # Read the audio data from the stream
             data = stream.read(chunk_size, exception_on_overflow=False)
-            values = list(wave.struct.unpack("%dh" % (chunk_size * device_channels), data))
+            values = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))
 
             # Extract both left and right channels
-            left_channel = values[0::2]
-            right_channel = values[1::2]
+            left_channel = values[::2] if stereo else values
+            right_channel = values[1::2] if stereo else []
 
             for i in range(len(left_channel) - sample_length):
                 if count_left < shapecatches:
                     left_samples = left_channel[i:i + sample_length]
-                    left_samples = [flip * x for x in left_samples]
-                    if left_samples[peak] >= max(left_samples) and (max(left_samples) - min(left_samples)) > threshold:
+                    left_samples = [flip_left * x for x in left_samples]
+                    if left_samples[peak] == max(left_samples) and (max(left_samples) - min(left_samples)) > threshold:
                         left_normalised = fn.normalise_pulse(left_samples)
                         left_normalised_int = [int(round(x)) for x in left_normalised]
                         left_distortion = fn.distortion(left_normalised_int, left_shape)
                         distortion_list_left.append(left_distortion)
                         count_left += 1
 
-                if right_active and count_right < shapecatches:
+                if stereo and count_right < shapecatches:
                     right_samples = right_channel[i:i + sample_length]
-                    right_samples = [flip * x for x in right_samples]
-                    if right_samples[peak] >= max(right_samples) and (max(right_samples) - min(right_samples)) > threshold:
+                    right_samples = [flip_right * x for x in right_samples]
+                    if right_samples[peak] == max(right_samples) and (max(right_samples) - min(right_samples)) > threshold:
                         right_normalised = fn.normalise_pulse(right_samples)
                         right_normalised_int = [int(round(x)) for x in right_normalised]
                         right_distortion = fn.distortion(right_normalised_int, right_shape)
                         distortion_list_right.append(right_distortion)
                         count_right += 1
 
-                if count_left >= shapecatches and (not right_active or count_right >= shapecatches):
-                    break
+            # Check if both counts have reached shapecatches
+            if not stereo and count_left >= shapecatches:
+
+                print(f'Stereo == {stereo} count_left = {count_left}')
+                break
+
+            # Break the outer loop if both counts are satisfied
+            if stereo and (count_left >= shapecatches) and (count_right >= shapecatches):
+                break
+
 
     finally:
         stream.stop_stream()
@@ -78,9 +106,8 @@ def distortion_finder():
 
     distortion_list_left.sort()
     # Handle inactive right channel
-    if not right_active:
-        return distortion_list_left, "0" * len(distortion_list_left)  # Return a string of zeros of equal length to left list
+    if not stereo:
+        return distortion_list_left, ["0"] * len(distortion_list_left)  # Return a list of zeros of equal length to left list
     else:
         distortion_list_right.sort()
         return distortion_list_left, distortion_list_right
-

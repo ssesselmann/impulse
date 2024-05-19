@@ -2,15 +2,18 @@ import sys
 import threading
 import time
 import json
-from struct import *
 import binascii
 import re
+import serial
 import shproto
 import shproto.port
 import logging
 import os
 import platform
 import functions as fn
+from struct import *
+from datetime import datetime
+
 
 max_bins            = 8192
 logger              = logging.getLogger(__name__)
@@ -68,7 +71,12 @@ def start(sn=None):
             time.sleep(0.1)
             continue
         READ_BUFFER = max(nano.in_waiting, READ_BUFFER)
-        rx_byte_arr = nano.read(size=READ_BUFFER)
+        #rx_byte_arr = nano.read(size=READ_BUFFER)
+        try:
+            rx_byte_arr = nano.read(size=READ_BUFFER)
+        except serial.SerialException as e:
+            logger.error(f"SerialException: {e}")
+            break  # Exit the loop if there's a serial exception
         for rx_byte in rx_byte_arr:
             response.read(rx_byte)
             if response.dropped:
@@ -89,8 +97,8 @@ def start(sn=None):
                         shproto.dispatcher.inf_str = re.sub(r'\[[^]]*\]', '...', shproto.dispatcher.inf_str, count = 2)
                         logger.info("Got nano-pro settings: {}".format(shproto.dispatcher.inf_str))
                 except UnicodeDecodeError:
-                    print("Unknown non-text response.")
-                #print("<< {}".format(resp_decoded))
+                    logger.info("Unknown non-text response in dispatecher line 100")
+
                 if len(resp_lines) == 40:
                     shproto.dispatcher.serial_number = "{}".format(resp_lines[39]);
                     logger.info("Found nano-pro serial # {}".format(shproto.dispatcher.serial_number))
@@ -209,6 +217,10 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
         # Calculate the time difference
         dt = int(t1 - t0)
 
+        # Convert float timestamps to datetime objects
+        start_time = datetime.fromtimestamp(t0)
+        end_time = datetime.fromtimestamp(t1)
+
         # Fetch the histogram from the device
         hst = shproto.dispatcher.histogram
 
@@ -237,8 +249,8 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
                         "note": ""
                     },
                     "resultData": {
-                        "startTime": t0, 
-                        "endTime": t1,
+                        "startTime": start_time.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                        "endTime": end_time.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
                         "energySpectrum": {
                             "numberOfChannels": compressed_bins,
                             "energyCalibration": {
@@ -274,8 +286,6 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
 
 def process_02(filename, compression, t_interval):
     logger.info(f'dispatcher.process_01({filename})')
-
-    # print(f'process_02(): {filename}, {compression}, {t_interval}')
 
     global counts
     global last_counts
