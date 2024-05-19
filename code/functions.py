@@ -147,7 +147,7 @@ def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1
                 }
 
     with open(jsonfile, "w+") as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, separators=(',', ':'))
 
 
 # This function writes a 2D histogram to JSON file according to NPESv1 schema.
@@ -186,7 +186,7 @@ def write_histogram_npesv2(t0, t1, bins, counts, elapsed, name, histogram, coeff
             }
 
     with open(jsonfile, "w+") as f:
-        json.dump(data, f, indent=4)        
+        json.dump(data, f, separators=(',', ':'))        
 
 # This function writes 3D intervals to NPESv1 JSON
 def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_number, coeff_1, coeff_2, coeff_3):
@@ -221,7 +221,7 @@ def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_nu
     data["resultData"]["energySpectrum"]["spectrum"].extend([interval_number])  # Wrap intervals in a list
 
     with open(jsonfile, "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, separators=(',', ':'))
 
 # This function writes counts per second to json
 def write_cps_json(filename, cps, elapsed):
