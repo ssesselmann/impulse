@@ -26,6 +26,7 @@ from server import app
 from dash.exceptions import PreventUpdate
 from datetime import datetime
 from functions import is_valid_json
+from functions import execute_serial_command
 
 logger = logging.getLogger(__name__)
 
@@ -420,15 +421,15 @@ def stop_button(n_clicks, filename):
         spec.start()
         time.sleep(0.1)
         logger.info('Stop button clicked (tab2) serial device')
+        return
 
     else:
 
         fn.stop_recording()
-
         logger.info('Stop button clicked (tab2) audio device')
+        return
 
     return
-
 #-------UPDATE GRAPH---------------------------------------------------------
 
 @app.callback([ Output('bar-chart'          ,'figure'), 

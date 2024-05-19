@@ -401,10 +401,11 @@ def process_03(_command):
 def stop():
 
     with shproto.dispatcher.stopflag_lock:
+        process_03('-sto')
+        time.sleep(0.5)
         shproto.dispatcher.stopflag = 1
         logger.info('Stop flag set(dispatcher)')
         time.sleep(0.5)
-        process_03('-sto')
         return
 
 def spec_stop():
