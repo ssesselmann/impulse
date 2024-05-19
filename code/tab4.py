@@ -85,8 +85,13 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
             total_counts = sum(countrate)
             now         = datetime.now()
             time        = now.strftime('%d/%m/%Y')
-            elapsed = int(count_data["elapsed"])
             
+            try:
+                elapsed = int(count_data["elapsed"])
+            except:
+                elapsed = 0
+                pass
+                
             x = [str(i * t_interval) for i in range(len(countrate))]
 
             y = list(map(int, countrate))  # convert y values from string to integer
