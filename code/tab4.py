@@ -89,7 +89,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
             # create rolling average series
             rolling_series = y_series.rolling(window=rolling, center=True).mean() * rolling
             # create scatter trace for rolling average line
-            rolling_line = go.Scatter(x=x[rolling:], y=rolling_series[rolling:], mode='lines', line=dict(width=2, color='green'), name=f'{rolling} sec rolling ave')
+            rolling_line = go.Scatter(x=x[rolling:], y=rolling_series[rolling:], mode='lines', line=dict(width=2, color='green'), name=f'{rolling} second countrate')
 
             layout = go.Layout(
                 title={
@@ -126,7 +126,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
 
                 annotations=[
                     dict(
-                        text=f"Counts per {rolling} sec.",
+                        text=f"{rolling} second average",
                         x=1,
                         y=1.1,
                         xref='paper',
