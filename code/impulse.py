@@ -1,6 +1,6 @@
 # impulse.py
 
-# This is the main sript 
+# This is the main script 
 
 import functions as fn
 import webbrowser
@@ -23,48 +23,44 @@ from dash import dcc, html, Input, Output, State, callback, callback_context
 
 warnings.filterwarnings('ignore')
 
-content = None
-
 #---Defines the browser tabs------------------------------------------------------------
 
 app.layout = html.Div([
-    
     dcc.Tabs(id='tabs', value='tab_1', children=[
-        dcc.Tab(label='My Details'      , value='tab_0'),
+        dcc.Tab(label='My Details', value='tab_0'),
         dcc.Tab(label='Device', value='tab_1'),
-        dcc.Tab(label='2D Histogram'    , value='tab_2'), 
-        dcc.Tab(label='3D Histogram'    , value='tab_3'), 
-        dcc.Tab(label='Count Rate'      , value='tab_4'), 
-        dcc.Tab(label='Repository'      , value='tab_5'),
-        dcc.Tab(label='Manual & Exit'   , value='tab_6'),
-        ]),
-
-    html.Div(id = 'tab-content')]) # Empty Div for tab content
+        dcc.Tab(label='2D Histogram', value='tab_2'), 
+        dcc.Tab(label='3D Histogram', value='tab_3'), 
+        dcc.Tab(label='Count Rate', value='tab_4'), 
+        dcc.Tab(label='Repository', value='tab_5'),
+        dcc.Tab(label='Manual & Exit', value='tab_6'),
+    ]),
+    html.Div(id='tab-content')  # Empty Div for tab content
+])
 
 #---Tab values call function and provide page contents
 
 @app.callback(
-    Output('tab-content'   ,'children'),
-    Input('tabs'            ,'value'))
-
+    Output('tab-content', 'children'),
+    Input('tabs', 'value')
+)
 def render_content(tab):
-
-    if tab == 'tab_0': 
-        content = show_tab0()
-    if tab == 'tab_1': 
-        content = show_tab1()
-    if tab == 'tab_2': 
-        content = show_tab2()
-    if tab == 'tab_3': 
-        content = show_tab3()
-    if tab == 'tab_4': 
-        content = show_tab4()
-    if tab == 'tab_5': 
-        content = show_tab5()
-    if tab == 'tab_6': 
-        content = show_tab6()    
-
-    return content
+    if tab == 'tab_0':
+        return show_tab0()
+    elif tab == 'tab_1':
+        return show_tab1()
+    elif tab == 'tab_2':
+        return show_tab2()
+    elif tab == 'tab_3':
+        return show_tab3()
+    elif tab == 'tab_4':
+        return show_tab4()
+    elif tab == 'tab_5':
+        return show_tab5()
+    elif tab == 'tab_6':
+        return show_tab6()
+    else:
+        return html.Div('Tab not found')
 
 #---------------------------------------------
 port = 8050

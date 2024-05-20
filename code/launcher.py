@@ -29,6 +29,11 @@ def add_stereo_field_if_missing(conn):
         conn.commit()
         logger.info(f'Added "stereo" field to settings table')
 
+    if 'rolling_interval' not in columns:
+        c.execute("ALTER TABLE settings ADD COLUMN rolling_interval INTEGER DEFAULT 60;")
+        conn.commit()
+        logger.info(f'Added "rolling_interval" field to settings table')    
+
 if os.path.exists(old_db):
         # Rename the old database
         os.rename(old_db, backup_db)
@@ -107,7 +112,8 @@ query   = """CREATE TABLE IF NOT EXISTS settings (
         t_interval      INTEGER DEFAULT 1,
         peakshift       INTEGER DEFAULT 0,
         compression     INTEGER DEFAULT 8,
-        stereo          BOOLEAN DEFAULT False               
+        stereo          BOOLEAN DEFAULT False,
+        rolling_interval INTEGER DEFAULT 60               
         );"""
 
 # This query inserts the first record in settings with defaults
