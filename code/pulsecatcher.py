@@ -159,7 +159,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
         t1      = datetime.datetime.now() # Time capture
         te      = time.time()
-        elapsed = te - tb
+        elapsed = int(te - tb)
 
         # Saves histogram to json file at interval
         if te - tla >= t_interval:
