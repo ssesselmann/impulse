@@ -22,7 +22,7 @@ data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 t_interval = 1
 
-rolling = 5
+rolling = 60
 
 def show_tab4():
 
