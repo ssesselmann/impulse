@@ -193,7 +193,7 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
     last_counts     = 0
     compression     = int(compression)
     t0              = time.time()
-    dt              = 0
+    elapsed              = 0
     compressed_bins = int(max_bins / compression)
 
     settings        = fn.load_settings()
@@ -207,7 +207,7 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
     # Define the histogram list
     hst             = [0] * max_bins  # Initialize the original histogram list
 
-    while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag) and (counts < max_counts and dt <= max_seconds):
+    while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag) and (counts < max_counts and elapsed <= max_seconds):
 
         time.sleep(t_interval)
 
@@ -215,7 +215,7 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
         t1 = time.time()
 
         # Calculate the time difference
-        dt = int(t1 - t0)
+        elapsed = int(t1 - t0)
 
         # Convert float timestamps to datetime objects
         start_time = datetime.fromtimestamp(t0)
@@ -258,7 +258,7 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
                                 "coefficients": [coeff_3, coeff_2, coeff_1]
                             },
                             "validPulseCount": counts,
-                            "measurementTime": dt,
+                            "measurementTime": elapsed,
                             "spectrum": compressed_hst
                         }
                     }
@@ -276,7 +276,7 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
         with open(file_path, "w") as wjf:
             wjf.write(json_data)
 
-        fn.write_cps_json(filename, cps)
+        fn.write_cps_json(filename, cps, elapsed)
 
         last_counts = counts
 
