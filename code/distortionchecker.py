@@ -91,7 +91,6 @@ def distortion_finder(stereo):
             # Check if both counts have reached shapecatches
             if not stereo and count_left >= shapecatches:
 
-                print(f'Stereo == {stereo} count_left = {count_left}')
                 break
 
             # Break the outer loop if both counts are satisfied

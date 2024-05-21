@@ -51,6 +51,7 @@ def show_tab4():
                     marks={0:'0', 300:'300', 600:'600', 900:'900', 1200:'1200', 1500:'1500', 1800:'1800', 2100:'2100', 2400:'2400', 2700:'2700', 3000:'3000', 3300:'3300', 3600:'3600'}
                 )]),
             ]),
+        html.Div(html.H4('Start and stop from 2D tab.'), style={'textAlign':'center'}),
         html.Div(children=[html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
         html.Div(id='saved', children=''),
     ])
@@ -153,7 +154,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
 
     return fig
 
-#--------UPDATE SETTINGS------------------------------------------------------------------------------------------
+#--------UPDATE SETTINGS------------------------------------------------
 @app.callback(
     [Output('rolling', 'value'),
      Output('saved', 'children')],
@@ -173,12 +174,5 @@ def save_settings(rolling):
     logger.info(f'(tab4 rolling interval changed to {rolling})')
 
     return rolling, ''
-
-# Ensure the layout includes the tab
-# app.layout = html.Div([
-#     dcc.Tabs(id='tabs', value='tab4', children=[
-#         dcc.Tab(label='Tab 4', value='tab4', children=show_tab4()),
-#     ])
-# ])
 
 #-----------------------The End --------------------
