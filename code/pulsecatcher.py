@@ -179,6 +179,9 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 with write_lock:
                     fn.write_histogram_npesv2(t0, t1, bins, global_counts, int(elapsed), filename, histogram, coeff_1, coeff_2, coeff_3, device, location, note )                                           
                     tla = time.time()
+                with write_lock:
+                    fn.write_cps_json(filename, global_cps, elapsed)
+                    global_cps = 0    
 
             if mode == 3:
                 with write_lock:
@@ -186,9 +189,6 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                     histogram_3d = [0] * bins
                     tla = time.time()
 
-            with write_lock:
-                fn.write_cps_json(filename, global_cps, elapsed)
-                global_cps = 0
     
     p.terminate() # closes stream when done
     return                      
