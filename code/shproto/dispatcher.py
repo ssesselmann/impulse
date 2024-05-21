@@ -282,7 +282,7 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
 
     return    
 
-# This function writes the 3D spectrum to a JSON file
+# This function writes the 3D spectrum to a JSON file------------------------------- 3d Function
 
 def process_02(filename, compression, t_interval):
     logger.info(f'dispatcher.process_01({filename})')
@@ -294,12 +294,13 @@ def process_02(filename, compression, t_interval):
     counts          = 0
     last_counts     = 0
     total_counts    = 0  # Initialize total counts
+
     compression     = int(compression)
     t0              = time.time()
     compressed_bins = int(max_bins / compression)
 
-    filename        = filename + '_3d'
-    file_path       = os.path.expanduser('~/impulse_data/' + filename + '.json')
+    filename_3d     = filename + '_3d'
+    file_path       = os.path.expanduser('~/impulse_data/' + filename_3d + '.json')
 
     settings        = fn.load_settings()
     coeff_1         = settings[18]
@@ -354,6 +355,7 @@ def process_02(filename, compression, t_interval):
         total_counts += counts
 
         last_counts = counts
+
         last_compressed_hst = compressed_hst
 
         # Load existing data from the JSON file
