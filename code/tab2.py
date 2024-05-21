@@ -461,7 +461,9 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
 
         if device < 100:
             from pulsecatcher import mean_cps
-            cps = mean_cps 
+            cps = mean_cps
+        else:
+            cps = 0
     else:
         cps = 0        
 
