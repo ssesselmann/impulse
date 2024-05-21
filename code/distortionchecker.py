@@ -104,9 +104,14 @@ def distortion_finder(stereo):
         p.terminate()
 
     distortion_list_left.sort()
+    max_left = max(distortion_list_left)
+    logger.info(f'Max distortion left {max_left}')
+
     # Handle inactive right channel
     if not stereo:
         return distortion_list_left, ["0"] * len(distortion_list_left)  # Return a list of zeros of equal length to left list
     else:
         distortion_list_right.sort()
+        max_right = max(distortion_list_right)
+        logger.info(f'Max distortion left {max_right}')
         return distortion_list_left, distortion_list_right
