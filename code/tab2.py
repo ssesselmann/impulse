@@ -203,12 +203,9 @@ def show_tab2():
                 placeholder='Select command',
                 value=commands[0] if commands else None, # Check if commands is not None before accessing its elements
                 className='dropdown',
-            ),
-            html.Div(id='cmd_text', children=[
-                html.Div("TestTest")]
             )], style={'display':serial}),  
 
-            # html.Div(id='cmd_text', children='', style={'display': 'none'}),
+            html.Div(id='cmd_text', children='', style={'display': 'none'}),
             html.Div(['LLD Threshold:'      , dcc.Input(id='threshold'  , type='number', value=threshold, className='input')], style={'display':audio}),
             html.Div(['Shape Tolerance:'    , dcc.Input(id='tolerance'  , type='number', value=tolerance, className='input' )], style={'display':audio}),
             html.Div(['Update Interval(s)'  , dcc.Input(id='t_interval' , type='number', step=1,  readOnly=False, value=t_interval, className='input' )]),
@@ -395,7 +392,7 @@ def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression, 
             
             fn.start_recording(mode)
 
-            logger.info('Tab2 fn.startrecording(2) passed.') 
+            logger.info(f'Tab2 fn.start_recording(mode {mode}) passed.') 
 
         return
 
@@ -459,11 +456,9 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         if device > 100:
             from shproto.dispatcher import cps
 
-        if device < 100:
+        elif device < 100:
             from pulsecatcher import mean_cps
             cps = mean_cps
-        else:
-            cps = 0
     else:
         cps = 0        
 
@@ -644,7 +639,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         annotations=annotations,
         title={
             'text': f'{filename}<br>{time}<br>{validPulseCount} counts<br>{elapsed} seconds<br>{coincidence}',
-            'x': 0.9,
+            'x': 0.85,
             'y': 0.9,
             'xanchor': 'center',
             'yanchor': 'top',
