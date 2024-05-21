@@ -111,7 +111,6 @@ def show_tab3():
             html.Div(id='stop_text_3d', children=''),
         ]),
         html.Div(id='t2_setting_div3', children=[
-            html.Div(['File name:', dcc.Input(id='filename', type='text', value=filename)]),
             html.Div(['Number of bins:', dcc.Input(id='bins', type='number', value=bins)], style={'display': audio}),
             html.Div(['Bin size:', dcc.Input(id='bin_size', type='number', value=bin_size)], style={'display': audio}),
             html.Div(['Resolution:', dcc.Dropdown(id='compression',
@@ -125,6 +124,7 @@ def show_tab3():
                                                   value=compression,
                                                   className='dropdown')],
                      style={'display': serial}),
+            html.Div(['File name:', dcc.Input(id='filename', type='text', value=filename)])
         ]),
         html.Div(id='t2_setting_div4', children=[
             html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', step=10, value=threshold)], style={'display': audio}),
@@ -304,28 +304,19 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
             from pulsecatcher import mean_cps
             cps = mean_cps 
 
-    axis_type = 'log' if log_switch else 'linear'
-    histogram3 = fn.get_path(f'{data_directory}/{filename}_3d.json')
-    now = datetime.now()
-    title_text = f"{filename}<br>{now.strftime('%d/%m/%Y')}"
+    axis_type   = 'log' if log_switch else 'linear'
+    histogram3  = fn.get_path(f'{data_directory}/{filename}_3d.json')
+    now         = datetime.now()
     layout = go.Layout(
-        uirevision='nochange',
-        height=480,
-        margin=dict(l=0, r=0, b=0, t=0),
-        scene=dict(
-            xaxis=dict(title='Energy(x)'),
-            yaxis=dict(title='Seconds(y)'),
-            zaxis=dict(title='Counts(z)', type=axis_type),
-        ),
-        title={
-            'text': title_text,
-            'x': 0.9,
-            'y': 0.9,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font': {'family': 'Arial', 'size': 24, 'color': 'black'},
-        }
-    )
+            uirevision='nochange',
+            height=480,
+            margin=dict(l=0, r=0, b=0, t=0),
+            scene=dict(
+                xaxis=dict(title='Energy(x)'),
+                yaxis=dict(title='Seconds(y)'),
+                zaxis=dict(title='Counts(z)', 
+                type=axis_type),
+            ))
 
     if os.path.exists(histogram3):
         with open(histogram3, "r") as f:
@@ -368,6 +359,29 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
             'showlegend': False
         }
         traces.append(surface_trace)
+
+        date        =now.strftime('%d/%m/%Y')
+        title_text  = f'{filename}<br>{date}<br>{global_counts} counts<br>{elapsed} seconds'
+
+        layout = go.Layout(
+            title={
+                'text': title_text,
+                'x': 0.85,
+                'y': 0.9,
+                'xanchor': 'center',
+                'yanchor': 'top',
+                'font': {'family': 'Arial', 'size': 24, 'color': 'black'}},
+            uirevision='nochange',
+            height=480,
+            margin=dict(l=0, r=0, b=0, t=0),
+            scene=dict(
+                xaxis=dict(title='Energy(x)'),
+                yaxis=dict(title='Seconds(y)'),
+                zaxis=dict(title='Counts(z)', 
+                type=axis_type),
+            )
+        )
+
         fig = go.Figure(data=traces, layout=layout)
 
         return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}'
@@ -379,6 +393,7 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
             mode='markers',
             marker=dict(size=5, color='blue')
         )]
+
         fig = go.Figure(data=data, layout=layout)
 
         return fig, 0, 0, 0
