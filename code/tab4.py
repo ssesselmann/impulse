@@ -1,4 +1,3 @@
-# tab4.py
 import dash
 import json
 import os
@@ -50,8 +49,19 @@ def show_tab4():
                     step=1, value=rolling, 
                     marks={0:'0', 300:'300', 600:'600', 900:'900', 1200:'1200', 1500:'1500', 1800:'1800', 2100:'2100', 2400:'2400', 2700:'2700', 3000:'3000', 3300:'3300', 3600:'3600'}
                 )]),
+            
+
+        html.Div(children=[
+                    daq.ToggleSwitch(
+                        id='full-monty',
+                        label='Last hour | Show all',
+                        value=False,
+                        color='purple'
+                    )
+                ], style={'width': '200px', 'float':'right', 'marginTop':'40px'})
             ]),
-        html.Div(html.H4('Start and stop from 2D tab.'), style={'textAlign':'center'}),
+
+        html.Div(html.H5('Start and Stop from 2D tab.'), style={'textAlign':'left', 'marginTop':'10px', 'marginLeft':'5%'}),
         html.Div(children=[html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
         html.Div(id='saved', children=''),
     ])
@@ -66,27 +76,36 @@ def show_tab4():
     Output('count_rate_chart', 'figure'),
     [Input('interval_component', 'n_intervals'),
      Input('filename', 'value'),
-     Input('t_interval', 'value')],
+     Input('t_interval', 'value'),
+     Input('full-monty', 'value')],
     [State('tabs', 'value'), 
      State('rolling', 'value')]
 )
-def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
+def update_count_rate_chart(n_intervals, filename, t_interval, full_monty, tab, rolling):
     cps_file = fn.get_path(f'{data_directory}/{filename}-cps.json')
 
     if os.path.exists(cps_file):
-        with open(cps_file, "r") as f:
-            count_data = json.load(f)
-            countrate = count_data["cps"]
+        try:
+            with open(cps_file, "r") as f:
+                count_data = json.load(f)
+                
+            countrate = count_data.get("cps", [])
             total_counts = sum(countrate)
             now = datetime.now()
             time_str = now.strftime('%d/%m/%Y')
             
             try:
-                elapsed = int(count_data["elapsed"])
-            except:
+                elapsed = int(count_data.get("elapsed", 0))
+            except ValueError:
                 elapsed = 0
-                
-            x = [str(i * t_interval) for i in range(len(countrate))]
+
+            if not full_monty:
+                start_index = max(0, len(countrate) - 3600 // t_interval)
+                countrate = countrate[start_index:]
+                x = [str(i * t_interval) for i in range(start_index, start_index + len(countrate))]
+            else:
+                x = [str(i * t_interval) for i in range(len(countrate))]
+            
             y = list(map(int, countrate))  # convert y values from string to integer
 
             line = go.Scatter(x=x, y=y, mode='markers+lines', marker=dict(size=4, color='black'), line=dict(width=1, color='purple'), name='counts per sec.')
@@ -95,11 +114,11 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
             # create rolling average series
             rolling_series = y_series.rolling(window=rolling, center=True).mean() * rolling
             # create scatter trace for rolling average line
-            rolling_line = go.Scatter(x=x[rolling:], y=rolling_series[rolling:], mode='lines', line=dict(width=2, color='green'), name=f'{rolling} second countrate')
+            rolling_line = go.Scatter(x=x, y=rolling_series, mode='lines', line=dict(width=2, color='green'), name=f'{rolling} second countrate')
 
             layout = go.Layout(
                 title={
-                    'text': f'Countrate {time_str}<br>{filename}',
+                    'text': f'{filename} | Counts | {time_str}',
                     'x': 0.5,
                     'y': 0.9,
                     'xanchor': 'center',
@@ -127,8 +146,8 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
                 annotations=[
                     dict(
                         text=f"{rolling} Second average<br>{total_counts} Total counts<br>{elapsed} Seconds total",
-                        x=1,
-                        y=1.1,
+                        x=0.95,
+                        y=0.95,
                         xref='paper',
                         yref='paper',
                         showarrow=False,
@@ -139,11 +158,21 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
                 height=600,
                 margin=dict(l=80, r=50, t=100, b=50),
                 paper_bgcolor='white',
-                plot_bgcolor='white',
+                plot_bgcolor='#efefef',
                 showlegend=False,   
             )
 
             fig = go.Figure(data=[line, rolling_line], layout=layout)
+        
+        except json.JSONDecodeError:
+            logger.error(f"JSONDecodeError: Could not decode {cps_file}")
+            fig = {
+                'data': [{'type': 'scatter', 'mode': 'markers+lines', 'x': [], 'y': []}], 
+                'layout': {'title': 'Invalid JSON data', 
+                           'xaxis': {'title': 'X-axis title'}, 
+                           'yaxis': {'title': 'Y-axis title'}}
+            }
+
     else:
         fig = {
             'data': [{'type': 'scatter', 'mode': 'markers+lines', 'x': [], 'y': []}], 
@@ -153,6 +182,11 @@ def update_count_rate_chart(n_intervals, filename, t_interval, tab, rolling):
         }
 
     return fig
+
+
+
+
+
 
 #--------UPDATE SETTINGS------------------------------------------------
 @app.callback(

@@ -183,6 +183,7 @@ def show_tab6():
 
                 html.H2('Count Rate Tab'),
                 html.P('This is a line chart showing the counts per second and is entirely driven by the settings on tab-2 and tab-3. The rolling average (green line) can be adjusted with the slider or for fine adjustment click on the slider and use your left right arrow keys to move the slider in steps of one second.'),
+                html.P('To avoid latency the cps chart will only display the last hour by default, however the entire recording can be viewed with the Show Complete Dataset switch'),
                 
                 html.H2('Repository tab'),
                 html.P('The is is a common repository where spectra published by all Impulse users appear. All published spectra are saved in NPESv2 json format and can be opened in many popular programs. Please contribute your spectra and make more data available to the community. The search field is a convenient way to find what you are looking for so make sure you give your published spactra a good name.'),
