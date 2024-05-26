@@ -111,8 +111,8 @@ def update_count_rate_chart(n_intervals, filename, t_interval, full_monty, tab, 
             line = go.Scatter(x=x, y=y, mode='markers+lines', marker=dict(size=4, color='black'), line=dict(width=1, color='purple'), name='counts per sec.')
             # create pandas series for y data
             y_series = pd.Series(y)
-            # create rolling average series
-            rolling_series = y_series.rolling(window=rolling, center=True).mean() * rolling
+            # create counts per t_interval
+            rolling_series = y_series.rolling(window=rolling // t_interval, min_periods=rolling // t_interval).sum()
             # create scatter trace for rolling average line
             rolling_line = go.Scatter(x=x, y=rolling_series, mode='lines', line=dict(width=2, color='green'), name=f'{rolling} second countrate')
 
