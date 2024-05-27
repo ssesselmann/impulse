@@ -42,7 +42,7 @@ def show_tab4():
                 dcc.Graph(id='count_rate_chart', figure={}),
                 dcc.Interval(id='interval_component', interval=interval), # Refresh rate 1s.
                 html.Div(['Update Interval (s)', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval)], style={'display':'none'}),
-                html.Div('Rolling Average', style={'textAlign':'left', 'marginLeft':'20px'}),
+                html.Div('Sum Counts ', style={'textAlign':'left', 'marginLeft':'20px'}),
                 html.Div(children=[dcc.Slider(
                     id='rolling', 
                     min=0, max=3600, 
