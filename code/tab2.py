@@ -337,6 +337,9 @@ def confirm_with_user(start_clicks, confirm_clicks, cancel_clicks, filename, is_
      State('mode-switch'        , 'on')]  
 )
 def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression, t_interval, mode_switch):
+
+    fn.clear_global_cps_list()
+
     ctx = dash.callback_context
 
     if not ctx.triggered:
@@ -459,6 +462,9 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         elif device < 100:
             from pulsecatcher import mean_cps
             cps = mean_cps
+
+        else:
+            cps = 0    
     else:
         cps = 0        
 
