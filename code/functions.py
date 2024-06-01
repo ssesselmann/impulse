@@ -419,7 +419,10 @@ def gaussian_correl(data, sigma):
 
     max_data = max(data)
     max_correl_value = max(correl_values)
-    scaling_factor = 0.8 * max_data / max_correl_value
+    if max_correl_value != 0:
+        scaling_factor = 0.8 * max_data / max_correl_value
+    else: scaling_factor = 1
+        
     correl_values = [int(value * scaling_factor) for value in correl_values]
 
     return correl_values

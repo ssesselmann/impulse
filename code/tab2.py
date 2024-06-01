@@ -462,6 +462,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
 
     annotations = []
     lines       = []
+    gc          = []
     title_text  = ''
     now         = datetime.now()
     time        = now.strftime('%d/%m/%Y')
