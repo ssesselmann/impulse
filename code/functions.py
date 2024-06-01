@@ -18,6 +18,7 @@ import sqlite3 as sql
 import pandas as pd
 import pulsecatcher as pc
 import logging
+import glob
 import paramiko
 import requests as req
 import shproto.dispatcher
@@ -753,3 +754,24 @@ def is_valid_json(file_path):
         return True
     except (json.JSONDecodeError, FileNotFoundError):
         return False
+
+
+def get_options():
+        # Get all filenames in data folder and its subfolders
+    files = [os.path.relpath(file, data_directory).replace("\\", "/")
+             for file in glob.glob(os.path.join(data_directory, "**", "*.json"), recursive=True)]
+    # Add "i/" prefix to subfolder filenames for label and keep the original filename for value
+    options = [{'label': "~ " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json") 
+                else {'label': os.path.basename(file), 'value': file} for file in files]
+    # Filter out filenames ending with "-cps"
+    options = [opt for opt in options if not opt['value'].endswith("-cps.json")]
+    # Filter out filenames ending with "-3d"
+    options = [opt for opt in options if not opt['value'].endswith("_3d.json")]
+    # Sort options alphabetically by label
+    options_sorted = sorted(options, key=lambda x: x['label'])
+
+    for file in options_sorted:
+        file['label'] = file['label'].replace('.json', '')
+        file['value'] = file['value'].replace('.json', '')
+
+    return options_sorted    
