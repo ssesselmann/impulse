@@ -178,8 +178,6 @@ def shapecatcher(stereo):
 
                         pulse_list.append(aligned_samples)
 
-                        print(f'Sample #{len(pulse_list)}')
-
                         # Break if enough pulses are collected
                         if len(pulse_list) >= shapecatches:
                             break
