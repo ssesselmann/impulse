@@ -16,6 +16,7 @@ from server import app
 from functions import execute_serial_command
 from functions import generate_device_settings_table
 from functions import allowed_command
+from shapecatcher import sc_info
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,7 @@ def show_tab1():
         audio  = 'block'
 
     tab1 = html.Div(id='tab1', children=[
+        dcc.Interval(id='interval-component', interval=500, n_intervals=0),
         #html.Div(id='firstrow'),
         html.Div(id='news', children=[dcc.Markdown(news)]),
         html.Div(id='sampling_time_output', children='', style={'display':audio}),
@@ -252,7 +254,11 @@ def show_tab1():
                             className='action_button',
                             style={'marginLeft':'20%'},
                             ),
-                                
+
+                            html.Div(id='shapecatcher-feedback',
+                                children= '', 
+                                style={'paddingLeft':'70px','textAlign':'center', 'color':'green', 'height':'20px'}),
+
                             html.Div(
                                 children=[
                                     html.Label('Stereo off/on', style={'paddingRight': '10px'}),
@@ -260,6 +266,8 @@ def show_tab1():
                                 ],
                                 style={'display': 'flex', 'alignItems': 'center', 'justifyContent': 'flex-end', 'padding': '5px'}
                             ),
+
+                            
 
                             ], style={'display':audio}),
 
@@ -508,3 +516,14 @@ def update_output(n_clicks, cmd):
     else:
         table = generate_device_settings_table()
         return "!! Command disallowed !!" , table, '' 
+
+
+# ---- Callback for updating shapecatcher feedback ---------
+@app.callback(
+    Output('shapecatcher-feedback'  , 'children'),
+    [Input('interval-component'     , 'n_intervals')]
+)
+def update_log_output(n_intervals):
+
+    return html.Pre('\n'.join(sc_info[-1:]))  # Display the last log message
+

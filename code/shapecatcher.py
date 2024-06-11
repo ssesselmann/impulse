@@ -5,23 +5,32 @@ import sqlite3 as sql
 import pandas as pd
 import numpy as np
 import logging
+import time
 from functions import get_path
 
 # Setup logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
+sc_info = []
+
 # Define the directory where data files are stored
 data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 def determine_pulse_sign(pulse):
     """Determine if the pulse is predominantly positive or negative."""
+    sc_info.append('Determining pulse polarity')
+    time.sleep(1)
     return np.mean(pulse) > 0
 
 def encode_pulse_sign(left_sign, right_sign):
     """Encode pulse signs into a numeric value."""
     left_digit = 1 if left_sign else 2
     right_digit = 1 if right_sign else 2
+
+    sc_info.append('Saving pulse polarity')
+    time.sleep(1)
+
     return left_digit * 10 + right_digit
 
 def align_pulse(pulse, peak_position):
@@ -30,7 +39,7 @@ def align_pulse(pulse, peak_position):
     shift = peak_position - max_idx
     return np.pad(pulse, (max(shift, 0), max(-shift, 0)), 'constant', constant_values=(0,))[:len(pulse)]
 
-def capture_pulse_polarity(stereo, sample_rate, chunk_size, device, sample_length, peak, threshold):
+def capture_pulse_polarity(stereo, sample_rate, chunk_size, device, sample_length, peak, threshold, timeout=30):
     """Capture initial pulses to determine polarity."""
     p = pyaudio.PyAudio()
     channels = 2 if stereo else 1
@@ -46,8 +55,15 @@ def capture_pulse_polarity(stereo, sample_rate, chunk_size, device, sample_lengt
     pulse_sign_left = None
     pulse_sign_right = True if not stereo else None  # Default to True if stereo is False
 
+    start_time = time.time()
+
     try:
         while pulse_sign_left is None or (stereo and pulse_sign_right is None):
+            # Check for timeout
+            if time.time() - start_time > timeout:
+                sc_info.append('No pulse on right channel.. Timeout')
+                break
+
             # Read audio data
             data = stream.read(chunk_size, exception_on_overflow=False)
 
@@ -87,6 +103,7 @@ def capture_pulse_polarity(stereo, sample_rate, chunk_size, device, sample_lengt
     return pulse_sign_left, pulse_sign_right
 
 
+
 def shapecatcher(stereo):
     # Connect to the database and get settings
     database = get_path(f'{data_directory}/.data_v2.db')
@@ -115,15 +132,28 @@ def shapecatcher(stereo):
     logger.info(f'Shapecatcher threshold fixed at {threshold}')
     logger.info(f'Shapecatcher says Stereo is {stereo}')
 
+    if stereo:
+        sc_info.append(f'Preparing for stereo capture')
+    else:
+        sc_info.append(f'Preparing for mono capture')
+
+    time.sleep(1)
+
     # First, determine the pulse polarity
     pulse_sign_left, pulse_sign_right = capture_pulse_polarity(
         stereo, sample_rate, chunk_size, device, sample_length, peak, threshold)
 
+    if stereo and pulse_sign_right is None:
+        sc_info.append('No pulse on right channel... Exiting.')
+        return [], []
+
     # Log the signs for debugging
     logging.info(f"Determined Pulse Signs Left: {pulse_sign_left} Right: {pulse_sign_right}")
+    sc_info.append(f"Positive pulse Left: {pulse_sign_left} Right: {pulse_sign_right}")
 
     # Encode pulse signs into a numeric value
     encoded_pulse_sign = encode_pulse_sign(pulse_sign_left, pulse_sign_right)
+
     logging.info(f"Encoded Pulse Sign: {encoded_pulse_sign}")
 
     # Save the encoded pulse sign to the database
@@ -144,8 +174,10 @@ def shapecatcher(stereo):
                     frames_per_buffer=chunk_size * channels,
                     input_device_index=device)
 
-    pulse_list_left = []
+    pulse_list_left  = []
     pulse_list_right = []
+
+    sc_info.append(f'Collecting pulses')
 
     try:
         while True:
@@ -186,6 +218,9 @@ def shapecatcher(stereo):
             if (len(pulse_list_left) >= shapecatches and (not stereo or len(pulse_list_right) >= shapecatches)):
                 break
 
+        sc_info.append(f'Calculating mean shape')
+        time.sleep(1)
+
         # Calculate average pulses
         pulses_sum_left = [int(sum(x) / len(x)) for x in zip(*pulse_list_left)] if pulse_list_left else []
         pulses_sum_right = [int(sum(x) / len(x)) for x in zip(*pulse_list_right)] if pulse_list_right else []
@@ -206,6 +241,8 @@ def shapecatcher(stereo):
         df['Left'] = df['Left'].astype(int)
         df['Right'] = df['Right'].astype(int)
 
+        sc_info.append(f'Saving shape.csv')
+
         # Save DataFrame to CSV, include index as the first column (row numbers)
         df.to_csv(shapecsv, index=True, index_label='Row')
 
@@ -215,4 +252,8 @@ def shapecatcher(stereo):
         stream.close()
         p.terminate()
 
+        sc_info.append(f' ')
+
     return pulses_sum_left, pulses_sum_right
+
+
