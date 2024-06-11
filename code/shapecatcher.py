@@ -19,7 +19,7 @@ data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
 
 def determine_pulse_sign(pulse):
     """Determine if the pulse is predominantly positive or negative."""
-    sc_info.append('Determining pulse polarity')
+    sc_info.append('Checking pulse polarity')
     time.sleep(1)
     return np.mean(pulse) > 0
 
@@ -28,7 +28,8 @@ def encode_pulse_sign(left_sign, right_sign):
     left_digit = 1 if left_sign else 2
     right_digit = 1 if right_sign else 2
 
-    sc_info.append('Saving pulse polarity')
+    sc_info.append(f'Saving pulse polarity')
+
     time.sleep(1)
 
     return left_digit * 10 + right_digit
@@ -133,9 +134,9 @@ def shapecatcher(stereo):
     logger.info(f'Shapecatcher says Stereo is {stereo}')
 
     if stereo:
-        sc_info.append(f'Preparing for stereo capture')
+        sc_info.append(f'Preparing for {sample_rate} kHz stereo')
     else:
-        sc_info.append(f'Preparing for mono capture')
+        sc_info.append(f'Preparing for {sample_rate} kHz mono')
 
     time.sleep(1)
 
