@@ -778,3 +778,40 @@ def get_options():
         file['value'] = file['value'].replace('.json', '')
 
     return options_sorted    
+
+
+# Calibrates the x axis of the gaussian correlation
+def calibrate_gc(gc, coefficients):
+    channels = np.arange(len(gc))
+    x_values = np.polyval(coefficients, channels)
+    # Combine x_values and gc counts into a list of tuples
+    gc_calibrated = list(zip(x_values, gc))
+    return gc_calibrated
+
+# Opens and reads the isotopes.json file
+def get_isotopes(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    return data
+
+# Finds the peaks in gc (gaussian correlation)
+def find_peaks_in_gc(gc, sigma):
+    width = sigma * 2 
+    peaks, _ = find_peaks(gc, width=width)
+    return peaks
+
+# Finds matching isotopes in the json data file
+def matching_isotopes(gc_calibrated, peaks, data, sigma):
+    matches = {}
+    for idx, peak_idx in enumerate(peaks):
+        x, y = gc_calibrated[peak_idx]
+        if y > 0:
+            matched_isotopes = [
+                isotope for isotope in data 
+                if abs(isotope['energy'] - x) <= sigma
+            ]
+            if matched_isotopes:
+                matches[idx] = (x, y, matched_isotopes)
+    return matches
+
+

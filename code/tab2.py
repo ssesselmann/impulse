@@ -26,6 +26,10 @@ from datetime import datetime
 from functions import is_valid_json
 from functions import execute_serial_command
 from functions import get_options
+from functions import calibrate_gc
+from functions import get_isotopes
+from functions import matching_isotopes
+from functions import find_peaks_in_gc
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +52,7 @@ def show_tab2():
     global cps_list
     global device
 
-    options_sorted = get_options()
-
+    options_sorted  = get_options()
     database        = fn.get_path(f'{data_directory}/.data_v2.db')
 
     conn            = sql.connect(database)
@@ -90,11 +93,11 @@ def show_tab2():
     spec_notes      = fn.get_spec_notes(filename)
 
     if device >= 100:
-        serial          = 'block'
-        audio           = 'none'
+        serial      = 'block'
+        audio       = 'none'
     else:
-        serial          = 'none'
-        audio           = 'block'
+        serial      = 'none'
+        audio       = 'block'
 
     if max_counts == 0:
         counts_warning  = 'red'
@@ -247,7 +250,14 @@ def show_tab2():
                 className="custom-modal", 
             ),
 
-            html.Div(id="confirmation-output", children= ''),
+            html.Div(id="confirmation-output", children=''),
+            html.Button(id='toggle-annotations-button', n_clicks=0, children='Find isotopes', className="action_button"),
+
+            html.Div(id='isotope-match'),
+            # storing temporary data here to prevent repetitive lookup
+            dcc.Store(id='store-coefficients', data=[1, 0, 0]), # stores polynomial coefficients
+            dcc.Store(id='store-gc'), # stores gaussian correlation 
+            dcc.Store(id='store-annotations', data=[]), # stores annotations 
 
         ]),
 
@@ -420,13 +430,17 @@ def stop_button(n_clicks, filename):
         logger.info('Stop button clicked (tab2) audio device')
         return
 
-# UPDATE GRAPH callback
+# Update Histogram Callback -------------------------------------
+
 @app.callback([ Output('bar-chart'          ,'figure'), 
                 Output('counts'             ,'children'),
                 Output('elapsed'            ,'children'),
-                Output('cps'                ,'children')],
+                Output('cps'                ,'children'),
+                Output('store-gc'           ,'data'),
+                Output('store-coefficients' ,'data')],
                [Input('interval-component'  ,'n_intervals'),
-                Input('bar-chart', 'relayoutData')], 
+                Input('bar-chart'           ,'relayoutData'),
+                Input('store-annotations'   ,'data')], 
                 [State('filename'           ,'value'),
                 State('epb_switch'          ,'on'),
                 State('log_switch'          ,'on'),
@@ -439,17 +453,14 @@ def stop_button(n_clicks, filename):
                 State('max_seconds'         ,'value'),
                 State('max_counts'          ,'value'),
                 State('mode-switch'         , 'on')])
-def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts, mode_switch):
+def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts, mode_switch):
 
     if device is not None and isinstance(device, int):
-
         if device > 100:
             from shproto.dispatcher import cps
-
         elif device < 100:
             from pulsecatcher import mean_cps
             cps = mean_cps
-
         else:
             cps = 0    
     else:
@@ -458,7 +469,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
     if mode_switch:
         coincidence = 'coincidence<br>(left if right)'
     else:
-        coincidence = ""        
+        coincidence = ""  
 
     annotations = []
     lines       = []
@@ -475,8 +486,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         paper_bgcolor = 'white', 
         plot_bgcolor = '#f0f0f0',
         showlegend=False,
-        
-        height  =460, 
+        height=460, 
         margin_t=20,
         margin_b=0,
         margin_l=0,
@@ -487,14 +497,12 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         annotations=annotations,
         shapes=lines,
         uirevision="Don't change",
-        )
+    )
 
     fig = go.Figure(layout=layout)
 
     if os.path.exists(histogram1) and is_valid_json(histogram1):
-
         with open(histogram1, "r") as f:
-
             with write_lock:
                 data = json.load(f)
 
@@ -507,7 +515,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         polynomialOrder     = data["resultData"]["energySpectrum"]["energyCalibration"]["polynomialOrder"]
         coefficients        = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
         spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
-        coefficients        = coefficients[::-1] # Revese order   
+        coefficients        = coefficients[::-1] # Reverse order   
         mu                  = 0
         prominence          = 0.5
 
@@ -516,21 +524,21 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         else:  
             gc = fn.gaussian_correl(spectrum, sigma)
 
-        x           = list(range(numberOfChannels))
-        y           = spectrum
-        max_value   = np.max(y)
+        x = list(range(numberOfChannels))
+        y = spectrum
+        max_value = np.max(y)
 
-        if max_value    == 0:
-            max_value   = 10
+        if max_value == 0:
+            max_value = 10
         
-        max_log_value   = np.log10(max_value)
+        max_log_value = np.log10(max_value)
 
         if cal_switch:
             x = np.polyval(np.poly1d(coefficients), x)
 
         if epb_switch:
             y = [i * count for i, count in enumerate(spectrum)]
-            gc= [i * count for i, count in enumerate(gc)]
+            gc = [i * count for i, count in enumerate(gc)]
 
         trace1 = go.Bar(
             x=x, 
@@ -548,9 +556,9 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
         fig.add_trace(trace1)      
 
     else:
-        filename    = 'no filename'
-        prominence  = 0
-        elapsed     = 0
+        filename = 'no filename'
+        prominence = 0
+        elapsed = 0
         validPulseCount = 0
 
         y = [0]
@@ -563,7 +571,7 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
                 'color': 'rgba(255,0,0,0.5)',  # Semi-transparent red marker
                 'line': {
                     'color': 'rgba(255,0,0,0.5)',  # Customize the border color here
-                    'width': 0.5                  # Customize the border width here
+                    'width': 0.5  # Customize the border width here
                 }
             },
             width=1.0  # Set the width of the bars
@@ -571,34 +579,33 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
 
     # Annotations
     peaks, fwhm = fn.peakfinder(y, prominence, peakfinder)
-    num_peaks   = len(peaks)
+    num_peaks = len(peaks)
     annotations = []
-    lines       = []
+    lines = []
 
     for i in range(num_peaks):
-        peak_value  = peaks[i]
-        counts      = y[peaks[i]]
-        x_pos       = peaks[i]
-        y_pos       = y[peaks[i]]
-        y_pos_ann   = y_pos + int(y_pos/10)
-        resolution  = (fwhm[i]/peaks[i])*100
+        peak_value = peaks[i]
+        counts = y[peaks[i]]
+        x_pos = peaks[i]
+        y_pos = y[peaks[i]]
+        y_pos_ann = y_pos + int(y_pos / 10)
+        resolution = (fwhm[i] / peaks[i]) * 100
 
         if y_pos_ann > (max_value * 0.9):
             y_pos_ann = int(y_pos_ann - max_value * 0.03)
 
         if cal_switch:
-            peak_value  = np.polyval(np.poly1d(coefficients), peak_value)
-            x_pos       = peak_value
+            peak_value = np.polyval(np.poly1d(coefficients), peak_value)
+            x_pos = peak_value
 
         if log_switch:
-            y_pos_ann = np.log10(y_pos) #if y_pos > 0 else 0
-            #y_pos_ann = y_pos + 0.1
+            y_pos_ann = np.log10(y_pos)
 
         if peakfinder > 0:
             annotations.append(
                 dict(
-                    x= x_pos,
-                    y= y_pos_ann,
+                    x=x_pos,
+                    y=y_pos_ann,
                     xref='x',
                     yref='y',
                     text=f'Y{counts}<br>X{peak_value:.1f}<br>{resolution:.1f}%',
@@ -623,8 +630,12 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
                         dash='dot'
                     )
                 )
-            )
+            )  
                 
+    # Append isotope annotations
+    if isotopes:
+        annotations.extend(isotopes)
+
     # Add annotations to the figure
     fig.update_layout(
         annotations=annotations,
@@ -635,8 +646,8 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
             'xanchor': 'center',
             'yanchor': 'top',
             'font': {'family': 'Arial', 'size': 18, 'color': 'black'},
-            },
-        )
+        }
+    )
 
     # Add lines (shapes) to the figure
     fig.update_layout(shapes=lines)     
@@ -650,16 +661,16 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
 
             schema_version = data_2["schemaVersion"]
 
-            if schema_version  == "NPESv2":
-                data_2 = data_2["data"][0] # This makes it backwards compatible
+            if schema_version == "NPESv2":
+                data_2 = data_2["data"][0]  # This makes it backwards compatible
 
-            numberOfChannels_2    = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
-            elapsed_2             = data_2["resultData"]["energySpectrum"]["measurementTime"]
-            spectrum_2            = data_2["resultData"]["energySpectrum"]["spectrum"]
-            coefficients_2        = data_2["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+            numberOfChannels_2 = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
+            elapsed_2 = data_2["resultData"]["energySpectrum"]["measurementTime"]
+            spectrum_2 = data_2["resultData"]["energySpectrum"]["spectrum"]
+            coefficients_2 = data_2["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
 
             if elapsed > 0 and elapsed_2 > 0:
-                steps = (elapsed/elapsed_2)
+                steps = (elapsed / elapsed_2)
             else:
                 steps = 0.1    
 
@@ -682,22 +693,22 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
                     'color': 'red',  # Semi-transparent red marker
                     'line': {
                         'color': 'red',  # Customize the border color here
-                        'width': 0.5                  # Customize the border width here
+                        'width': 0.5  # Customize the border width here
                     }
                 },
             )
 
     if sigma == 0:
         trace4 = {}
-    else:    
+    else:
         trace4 = go.Bar(
-            x=x, 
-            y=gc, 
+            x=x,
+            y=gc,
             marker={
                 'color': 'red',
                 'line': {
                     'color': 'red',  # Customize the border color here
-                    'width': 0.5        # Customize the border width here
+                    'width': 0.5  # Customize the border width here
                 }
             },
             width=1.0  # Set the width of the bars
@@ -711,25 +722,25 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
     if difference_switch:
         y3 = [a - b for a, b in zip(y, y2)]
         trace3 = go.Bar(
-            x=x, 
-            y=y3, 
+            x=x,
+            y=y3,
             marker={
                 'color': 'green',
                 'line': {
                     'color': 'green',  # Customize the border color here
-                    'width': 0.5       # Customize the border width here
+                    'width': 0.5  # Customize the border width here
                 }
             },
             width=1.0  # Set the width of the bars
         )
         fig = go.Figure(data=[trace3], layout=layout)
-        fig.update_layout(yaxis=dict(autorange=True, range=[min(y3),max(y3)]))
+        fig.update_layout(yaxis=dict(autorange=True, range=[min(y3), max(y3)]))
 
     if not difference_switch:
         fig.update_layout(yaxis=dict(autorange=True))
 
     if log_switch:
-        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0.1, max_log_value+0.3])) 
+        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0.1, max_log_value + 0.3])) 
     else:
         fig.update_layout(yaxis=dict(autorange=True, type='linear', range=[0, max(y)]))
 
@@ -750,7 +761,10 @@ def update_graph(n, relayoutData, filename, epb_switch, log_switch, cal_switch, 
             bordercolor="lightgray",
             borderwidth=1
         )   
-    return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}'
+
+    return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}', gc, coefficients
+
+
 
 # UPDATE SETTINGS callback
 @app.callback(
@@ -958,6 +972,71 @@ def update_spectrum_notes(spec_notes, filename):
     return spec_notes
 
 app.layout = show_tab2()
+
+
+# This callback looks up the table of isotopes.json and generates annotations file
+# These annotations can be turned on or off with a button
+# Isotope suggestions will only work if spectrum is calibrated and with sigma not zero.
+
+@app.callback(
+    Output('store-annotations', 'data'),
+    Output('isotope-match', 'children'),
+    Input('toggle-annotations-button', 'n_clicks'),
+    State('store-gc', 'data'),
+    State('store-coefficients', 'data'),
+    State('sigma', 'value'),
+    State('cal_switch', 'on')
+)
+def toggle_annotations(n_clicks, gc, coefficients, sigma, cal_switch):
+    if n_clicks is None:
+        raise PreventUpdate
+
+    n_clicks += 1
+    # When n_clicks is odd, clear annotations; when even, calculate annotations
+    if n_clicks % 2 == 0:
+        if gc is not None and coefficients is not None:
+            path_isotopes = os.path.join(data_directory, 'i/tbl/gamma.json')
+            gc_calibrated = calibrate_gc(gc, coefficients)
+            peaks = find_peaks_in_gc(gc, sigma=sigma)
+            isotopes_data = get_isotopes(path_isotopes)  # Adjust the path as needed
+            matches = matching_isotopes(gc_calibrated, peaks, isotopes_data, sigma)
+            annotations = []
+
+            for idx, (x, y, isotopes) in matches.items():
+                isotope_names = ', '.join([isotope['isotope'] for isotope in isotopes])
+                y_pos = 0.8 - (idx * 0.04)  # Start at 0.9 and move down by 0.04 for each idx
+                annotations.append(
+                    dict(
+                        x=x,
+                        y=y_pos,
+                        xref='x',
+                        yref='paper',  # Use paper coordinates for y-axis
+                        text=isotope_names,
+                        showarrow=True,
+                        arrowhead=1,
+                        ax=0,
+                        ay=-40,
+                        xanchor='left',
+                        yanchor='bottom',
+                        align='right'
+                    )
+                )
+
+            if cal_switch == False or sigma ==0:
+                feedback = 'Turn on calibration and adjust sigma'
+                return [], feedback
+
+            else:
+                feedback = 'on'    
+                return annotations, feedback
+
+        return [], ''
+
+    else:
+        return [], 'off'
+
+
+    
 
 if __name__ == '__main__':
     app.run_server(debug=True)

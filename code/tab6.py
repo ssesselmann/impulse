@@ -156,6 +156,9 @@ def show_tab6():
                 html.H4('Publish Spectrum Button'),
                 html.P('Once you have recorded and calibrated a beutiful spectrum, share it with the wider community of Impulse users.'),
 
+                html.H4('Find Isotopes Button'),
+                html.P('This button switches isotope information on/off. It will only function when Calibration is switched on and Sigma is not zero. Isotope data comes from the isotopes.json file inside your impulse_data folder in your home directory. The isotopes.json file is not comprehensive, very low intensity and unlikely gamma have been removed to prevent the entire screen filling up with data. Users can add more isotopes to the json file manually if required.'),
+
                 html.H4('Calibration'),
                 html.P('The calibration switch turns calibration on or off. Energy calibration is done by a second order polynomial fit. There are six fields where the user may enter three bins with three corresponding energies. By choosing a linear relationship between bins and energies you can achieve a linear spectrum and by choosing non linear relationships you can correct for detectors that are non linear. The typical use case would be to enter the bins and known ebnergies from three widely spread gamma peaks.  '),
                 html.P('Note !! Your standard calibration poits are saved to your local database, new spectra start recording with these settings. This is convienient if you are using the same detector setup all the time.'),
