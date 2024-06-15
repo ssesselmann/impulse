@@ -646,7 +646,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             'y': 0.9,
             'xanchor': 'center',
             'yanchor': 'top',
-            'font': {'family': 'Arial', 'size': 18, 'color': 'black'},
+            'font': {'family': 'Arial', 'size': 14, 'color': 'black'},
         }
     )
 
@@ -795,6 +795,10 @@ def save_settings(*args):
     if n_clicks is None and not shproto.dispatcher.calibration_updated:
         raise PreventUpdate
 
+    # Initialize x_bins and x_energies
+    x_bins      = []
+    x_energies  = []
+
     if shproto.dispatcher.calibration_updated:
         with shproto.dispatcher.calibration_lock:
             shproto.dispatcher.calibration_updated = 0
@@ -806,9 +810,11 @@ def save_settings(*args):
         x_bins      = [args[8], args[9], args[10]]
         x_energies  = [args[11], args[12], args[13]]
 
-    coefficients = np.polyfit(x_bins, x_energies, 2)
 
+    coefficients = np.polyfit(x_bins, x_energies, 2)
     polynomial_fn = np.poly1d(coefficients)
+
+
     database = fn.get_path(f'{data_directory}/.data_v2.db')
     conn = sql.connect(database)
     c = conn.cursor()
@@ -1006,7 +1012,7 @@ def toggle_annotations(n_clicks, gc, coefficients, sigma, cal_switch):
 
             for idx, (x, y, isotopes) in matches.items():
                 isotope_names = ', '.join([isotope['isotope'] for isotope in isotopes])
-                y_pos = 0.85 - ((idx % 15) * 0.03) # Start at 0.9 and move down by 0.03 for each idx
+                y_pos = 0.85 - ((idx % 16) * 0.03) # Start at 0.9 and move down by 0.03 for each idx
                 annotations.append(
                     dict(
                         x=x,
@@ -1015,13 +1021,14 @@ def toggle_annotations(n_clicks, gc, coefficients, sigma, cal_switch):
                         yref='paper',  # Use paper coordinates for y-axis
                         text=isotope_names,
                         showarrow=True,
-                        arrowhead=1,
+                        arrowhead=None,
                         ax=0,
                         ay=-40,
                         font=dict(size=10, color='blue'),
                         xanchor='left',
                         yanchor='bottom',
-                        align='right'
+                        align='right',
+                        bgcolor='white'
                     )
                 )
 

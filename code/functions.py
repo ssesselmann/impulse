@@ -808,7 +808,7 @@ def matching_isotopes(gc_calibrated, peaks, data, sigma):
         if y > 4:
             matched_isotopes = [
                 isotope for isotope in data 
-                if abs(isotope['energy'] - x) <= sigma
+                if abs(isotope['energy'] - x) <= sigma * 2
             ]
             if matched_isotopes:
                 matches[idx] = (x, y, matched_isotopes)
