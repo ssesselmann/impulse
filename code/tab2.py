@@ -1004,7 +1004,7 @@ def toggle_annotations(n_clicks, gc, coefficients, sigma, cal_switch):
 
             for idx, (x, y, isotopes) in matches.items():
                 isotope_names = ', '.join([isotope['isotope'] for isotope in isotopes])
-                y_pos = 0.85 - (idx * 0.03)  # Start at 0.9 and move down by 0.03 for each idx
+                y_pos = 0.85 - ((idx % 15) * 0.03) # Start at 0.9 and move down by 0.03 for each idx
                 annotations.append(
                     dict(
                         x=x,
@@ -1016,6 +1016,7 @@ def toggle_annotations(n_clicks, gc, coefficients, sigma, cal_switch):
                         arrowhead=1,
                         ax=0,
                         ay=-40,
+                        font=dict(size=10, color='blue'),
                         xanchor='left',
                         yanchor='bottom',
                         align='right'
