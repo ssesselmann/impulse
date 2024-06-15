@@ -251,7 +251,7 @@ def show_tab2():
             ),
 
             html.Div(id="confirmation-output", children=''),
-            html.Button(id='toggle-annotations-button', n_clicks=0, children='Find isotopes', className="action_button"),
+            html.Button(id='toggle-annotations-button', n_clicks=0, children='Isotopes on/off', className="action_button"),
 
             html.Div(id='isotope-match'),
             # storing temporary data here to prevent repetitive lookup
@@ -1004,7 +1004,7 @@ def toggle_annotations(n_clicks, gc, coefficients, sigma, cal_switch):
 
             for idx, (x, y, isotopes) in matches.items():
                 isotope_names = ', '.join([isotope['isotope'] for isotope in isotopes])
-                y_pos = 0.8 - (idx * 0.04)  # Start at 0.9 and move down by 0.04 for each idx
+                y_pos = 0.85 - (idx * 0.03)  # Start at 0.9 and move down by 0.03 for each idx
                 annotations.append(
                     dict(
                         x=x,

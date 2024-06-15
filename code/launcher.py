@@ -154,15 +154,22 @@ with conn:
     conn.commit()
     logger.info(f'Created new database tables if required')
 
-# This script places the isotope sample spectra into the data directory when the program is run the first time
-isotopes = "i"
-data_directory_path = os.path.join(data_directory, isotopes)
 
+# Set the paths for isotopes and tbl folders
+isotopes = "i"
+tbl = "tbl"
+data_directory_path = os.path.join(data_directory, isotopes)
+tbl_directory_path = os.path.join(data_directory_path, tbl)
+
+# Check if the isotope folder exists in the data directory, if not, copy it
 if not os.path.exists(data_directory_path):
     isotope_folder_path = os.path.join(os.getcwd(), isotopes)
     if os.path.exists(isotope_folder_path):
         shutil.copytree(isotope_folder_path, data_directory_path)
 
-
-
+# Check if the tbl folder exists within the isotope folder, if not, copy it
+if not os.path.exists(tbl_directory_path):
+    tbl_folder_path = os.path.join(os.getcwd(), isotopes, tbl)
+    if os.path.exists(tbl_folder_path):
+        shutil.copytree(tbl_folder_path, tbl_directory_path)
 
