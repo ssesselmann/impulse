@@ -472,6 +472,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         coincidence = ""  
 
     annotations = []
+    coefficients= []
     lines       = []
     gc          = []
     title_text  = ''
@@ -802,10 +803,11 @@ def save_settings(*args):
             polynomial_fn = np.poly1d(shproto.dispatcher.calibration[::-1])
             x_energies = [polynomial_fn(x_bins_default[0]), polynomial_fn(x_bins_default[1]), polynomial_fn(x_bins_default[2])]
     else:
-        x_bins = [args[8], args[9], args[10]]
-        x_energies = [args[11], args[12], args[13]]
+        x_bins      = [args[8], args[9], args[10]]
+        x_energies  = [args[11], args[12], args[13]]
 
     coefficients = np.polyfit(x_bins, x_energies, 2)
+
     polynomial_fn = np.poly1d(coefficients)
     database = fn.get_path(f'{data_directory}/.data_v2.db')
     conn = sql.connect(database)
