@@ -46,6 +46,7 @@ stop_event      = threading.Event()
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
 spec_notes      = ''
 write_lock      = threading.Lock()
+flag_file = 'i/tbl/gamma.json'
 
 def show_tab2():
     global global_counts
@@ -258,8 +259,17 @@ def show_tab2():
             dcc.Store(id='store-annotations', data=[]), # stores annotations 
             html.Div('Gaussian (sigma)'),
             html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
-            
-        ]),
+            dcc.Dropdown(id='flags',
+                    options=[
+                        {'label': 'gamma flags'       , 'value': 'i/tbl/gamma.json'},
+                        {'label': 'x-ray flags'       , 'value': 'i/tbl/xray.json'},
+                        {'label': 'n-capture flags'   , 'value': 'i/tbl/ncapture.json'},
+                    ],
+                    style={'height': '15px', 'fontSize': '12px', 'borderwidth': '0px'},
+                    value=flag_file,
+                    className='dropdown', 
+                    optionHeight=15)
+            ]),
 
         html.Div(id='t2_setting_div8', children=[
             html.Div('Calibration Bins'),
@@ -986,23 +996,26 @@ app.layout = show_tab2()
 # Isotope suggestions will only work if spectrum is calibrated and with sigma not zero.
 
 @app.callback(
-    Output('store-annotations', 'data'),
-    Output('toggle-annotations-button', 'children'),
-    Input('toggle-annotations-button', 'n_clicks'),
-    State('store-gc', 'data'),
-    State('store-coefficients', 'data'),
-    State('sigma', 'value'),
-    State('cal_switch', 'on')
+    Output('store-annotations', 'data') ,
+    Output('toggle-annotations-button'  , 'children'),
+    Output('flags'                  , 'value'),
+    Input('toggle-annotations-button'   , 'n_clicks'),
+    Input('flags'                       , 'value'),
+    State('store-gc'                    , 'data'),
+    State('store-coefficients'          , 'data'),
+    State('sigma'                       , 'value'),
+    State('cal_switch'                  , 'on')
 )
-def toggle_annotations(n_clicks, gc, coefficients, sigma, cal_switch):
+def toggle_annotations(n_clicks, flags, gc, coefficients, sigma, cal_switch):
     if n_clicks is None:
         raise PreventUpdate
 
     n_clicks += 1
+
     # When n_clicks is odd, clear annotations; when even, calculate annotations
     if n_clicks % 2 == 0:
         if gc is not None and coefficients is not None:
-            path_isotopes = os.path.join(data_directory, 'i/tbl/gamma.json')
+            path_isotopes = os.path.join(data_directory, flags)
             gc_calibrated = calibrate_gc(gc, coefficients)
             peaks = find_peaks_in_gc(gc, sigma=sigma)
             isotopes_data = get_isotopes(path_isotopes)  # Adjust the path as needed
@@ -1032,15 +1045,15 @@ def toggle_annotations(n_clicks, gc, coefficients, sigma, cal_switch):
                 )
 
             if cal_switch == False or sigma ==0:
-                return [], '! Turn on calib first'
+                return [], '! Turn on calib first', flags
 
             else:
-                return annotations, 'Isotope Flags On' 
+                return annotations, 'Isotope Flags On', flags
 
-        return [], ''
+        return [], '', flags
 
     else:
-        return [], 'Isotopes Flags off'
+        return [], 'Isotopes Flags off', flags
 
 
     
