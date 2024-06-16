@@ -249,16 +249,16 @@ def show_tab2():
                 size="md",
                 className="custom-modal", 
             ),
+            dcc.Store(id="confirmation-output", data=''), # Stores output from modal
 
-            html.Div(id="confirmation-output", children=''),
-            html.Button(id='toggle-annotations-button', n_clicks=0, children='Isotopes on/off', className="action_button"),
-
-            html.Div(id='isotope-match'),
-            # storing temporary data here to prevent repetitive lookup
+            # This section relates to the isotope flag button
+            html.Button('isotope flags', id='toggle-annotations-button', n_clicks=0, className="action_button"),
             dcc.Store(id='store-coefficients', data=[1, 0, 0]), # stores polynomial coefficients
             dcc.Store(id='store-gc'), # stores gaussian correlation 
             dcc.Store(id='store-annotations', data=[]), # stores annotations 
-
+            html.Div('Gaussian (sigma)'),
+            html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
+            
         ]),
 
         html.Div(id='t2_setting_div8', children=[
@@ -274,9 +274,7 @@ def show_tab2():
             html.Div('Energies'),
             html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1, className='input')),
             html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2, className='input')),
-            html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3, className='input')),
-            html.Div('Gaussian corr. (sigma)'),
-            html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
+            html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3, className='input')),            
             html.Div(id='specNoteDiv', children=[
                 dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='Spectrum notes', cols=20, rows=6)]),
                 html.Div(id='notes-warning', children=['Calibrate and add notes after recording !']),
@@ -988,7 +986,7 @@ app.layout = show_tab2()
 
 @app.callback(
     Output('store-annotations', 'data'),
-    Output('isotope-match', 'children'),
+    Output('toggle-annotations-button', 'children'),
     Input('toggle-annotations-button', 'n_clicks'),
     State('store-gc', 'data'),
     State('store-coefficients', 'data'),
@@ -1033,17 +1031,15 @@ def toggle_annotations(n_clicks, gc, coefficients, sigma, cal_switch):
                 )
 
             if cal_switch == False or sigma ==0:
-                feedback = 'Turn on calibration and adjust sigma'
-                return [], feedback
+                return [], '! Turn on calib first'
 
             else:
-                feedback = 'on'    
-                return annotations, feedback
+                return annotations, 'Isotope Flags On' 
 
         return [], ''
 
     else:
-        return [], 'off'
+        return [], 'Isotopes Flags off'
 
 
     
