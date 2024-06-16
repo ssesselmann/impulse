@@ -196,7 +196,7 @@ def show_tab2():
             )], style={'display':serial}),  
 
             html.Div(id='cmd_text', children='', style={'display': 'none'}),
-            html.Div(['LLD Threshold:'      , dcc.Input(id='threshold'  , type='number', value=threshold, className='input')], style={'display':audio}),
+            html.Div(['LLD Threshold:'      , dcc.Input(id='threshold'  , type='number', value=threshold, className='input', style={'height':'35px'})], style={'display':audio}),
             html.Div(['Shape Tolerance:'    , dcc.Input(id='tolerance'  , type='number', value=tolerance, className='input' )], style={'display':audio}),
             html.Div(['Update Interval(s)'  , dcc.Input(id='t_interval' , type='number', step=1,  readOnly=False, value=t_interval, className='input' )]),
 
@@ -275,9 +275,10 @@ def show_tab2():
             html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1, className='input')),
             html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2, className='input')),
             html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3, className='input')),            
+            
             html.Div(id='specNoteDiv', children=[
-                dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='Spectrum notes', cols=20, rows=6)]),
-                html.Div(id='notes-warning', children=['Calibrate and add notes after recording !']),
+                dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='Spectrum notes', cols=20, rows=6)], style={'marginTop':'15px', 'fontSize':'12px'}),
+                html.Div(id='notes-warning', children=['Update notes after recording !']),
                 html.Div(id='spec-notes-output', children='', style={'visibility':'hidden'}),
             
             ]),
