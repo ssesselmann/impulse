@@ -1,8 +1,7 @@
 .DS_Store
 .eggs
 __pycache__/
-/code/data.db
-/code/run.spec
+
 /code/build/*
 /code/dist/*
 /code/impulse/*
@@ -12,10 +11,19 @@ __pycache__/
 /code/.*
 /code/impulse.log
 /code/impulse_last_run.log
-/code/Impulse.dmg
+/code/setup_mac.py
+
+
+
 codesign.txt
 codesign.log
 codesign.py
 appdevcert.p12
 impulse_api_token.txt
+Developer ID Application/ Steven Sesselmann (4JA6UDV8XS).cer
+notarize_dmg.txt
 
+*.spec
+*.dmg
+*.cer
+*.db
