@@ -11,9 +11,6 @@ __pycache__/
 /code/.*
 /code/impulse.log
 /code/impulse_last_run.log
-/code/setup_mac.py
-
-
 
 codesign.txt
 codesign.log
@@ -23,7 +20,7 @@ impulse_api_token.txt
 Developer ID Application/ Steven Sesselmann (4JA6UDV8XS).cer
 notarize_dmg.txt
 
-*.spec
+
 *.dmg
 *.cer
 *.db
