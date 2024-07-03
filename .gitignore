@@ -19,7 +19,14 @@ appdevcert.p12
 impulse_api_token.txt
 Developer ID Application/ Steven Sesselmann (4JA6UDV8XS).cer
 notarize_dmg.txt
-
+appfixer.py
+appsigner.py
+appsimplesign.py
+apptodmg.py
+entitlements.py
+notarize.txt
+sign-tool.log
+simplesign.py
 
 *.dmg
 *.cer
