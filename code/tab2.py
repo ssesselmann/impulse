@@ -682,7 +682,7 @@ def save_settings(*args):
 
     polynomial_fn = np.poly1d(coefficients)
 
-    global_vars.bins        = args[0]
+    
     global_vars.bin_size    = args[1]
     global_vars.max_counts  = args[2]
     global_vars.max_seconds = args[3]
@@ -703,7 +703,13 @@ def save_settings(*args):
     global_vars.coeff_2     = float(coefficients[1])
     global_vars.coeff_3     = float(coefficients[2])
     global_vars.compression = args[17]
-    
+
+    device = get_device_number()
+
+    if device >= 100:
+        global_vars.bins    = int(8192/int(args[17]))
+    else:
+        global_vars.bins    = args[0]
 
     global_vars.save_settings_to_json()
     
