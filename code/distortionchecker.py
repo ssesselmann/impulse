@@ -2,6 +2,7 @@ import pyaudio
 import wave
 import logging
 import functions as fn
+import global_vars
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -9,24 +10,23 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Function to catch pulses and output time, pulse height, and distortion
 def distortion_finder(stereo):
-    settings        = fn.load_settings()
-    device          = settings[2]
-    sample_rate     = settings[3]
-    chunk_size      = settings[4]
-    threshold       = settings[5]
-    flip            = settings[22]
-    sample_length   = settings[11]
-    peakshift       = settings[28]
-    shapecatches    = settings[10]
-    peak            = int((sample_length - 1) / 2) + peakshift
+    device = global_vars.device
+    sample_rate = global_vars.sample_rate
+    chunk_size = global_vars.chunk_size
+    threshold = global_vars.threshold
+    flip = global_vars.flip
+    sample_length = global_vars.sample_length
+    peakshift = global_vars.peakshift
+    shapecatches = global_vars.shapecatches
+    peak = int((sample_length - 1) / 2) + peakshift
 
-    audio_format    = pyaudio.paInt16
-    channels        = 2 if stereo else 1
+    audio_format = pyaudio.paInt16
+    channels = 2 if stereo else 1
 
     # Load pulse shapes from CSV for both channels
-    shapes          = fn.load_shape()
-    left_shape      = [int(x) for x in shapes[0]]
-    right_shape     = [int(x) for x in shapes[1]]
+    shapes = fn.load_shape()
+    left_shape = [int(x) for x in shapes[0]]
+    right_shape = [int(x) for x in shapes[1]]
 
     p = pyaudio.PyAudio()
     distortion_list_left = []
@@ -37,19 +37,16 @@ def distortion_finder(stereo):
     logger.info(f'Distortionchecker says Stereo == {stereo}')
 
     if flip == 11:
-        flip_left  = 1
+        flip_left = 1
         flip_right = 1
-
-    if flip == 12:
-        flip_left  = 1
+    elif flip == 12:
+        flip_left = 1
         flip_right = -1  
-
-    if flip == 21:
-        flip_left  = -1
+    elif flip == 21:
+        flip_left = -1
         flip_right = 1
-
-    if flip == 22:
-        flip_left  = -1
+    elif flip == 22:
+        flip_left = -1
         flip_right = -1        
 
     # Open the selected audio input device
@@ -90,13 +87,11 @@ def distortion_finder(stereo):
 
             # Check if both counts have reached shapecatches
             if not stereo and count_left >= shapecatches:
-
                 break
 
             # Break the outer loop if both counts are satisfied
             if stereo and (count_left >= shapecatches) and (count_right >= shapecatches):
                 break
-
 
     finally:
         stream.stop_stream()
@@ -113,5 +108,5 @@ def distortion_finder(stereo):
     else:
         distortion_list_right.sort()
         max_right = max(distortion_list_right)
-        logger.info(f'Max distortion left {max_right}')
+        logger.info(f'Max distortion right {max_right}')
         return distortion_list_left, distortion_list_right

@@ -1,6 +1,3 @@
-# Reads data in CHUNK and looks for pulse peaks in position 26 of a 51 number array
-# Repeats x times
-# Calculates zip average
 import pyaudio
 import webbrowser
 import wave
@@ -23,7 +20,9 @@ import paramiko
 import requests as req
 import shproto.dispatcher
 import serial.tools.list_ports
-
+import global_vars
+# Import pulsecatcher function
+from pulsecatcher import pulsecatcher  # Adjust according to the actual module name
 from dash import dash_table
 from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
@@ -31,95 +30,73 @@ from datetime import datetime
 from urllib.request import urlopen
 from shproto.dispatcher import process_03
 
-logger          = logging.getLogger(__name__)
-cps_list        = []
-data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
-run_flag_lock   = threading.Lock()
-run_flag        = threading.Event() 
+logger = logging.getLogger(__name__)
+cps_list = []
+data_directory = global_vars.data_directory
 
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
-    samples =[]
-    pulses  = []
+    pulses = []
     for i in range(len(left_channel) - 51):
-        samples = left_channel[i:i+51]  # Get the first 51 samples
-        if samples[25] >= max(samples) and (max(samples)-min(samples)) > 100 and samples[25] < 32768:
+        samples = left_channel[i:i + 51]  # Get the first 51 samples
+        if samples[25] >= max(samples) and (max(samples) - min(samples)) > 100 and samples[25] < 32768:
             pulses.append(samples)
-    if len(pulses) != 0:  # If the list is empty
-        next       
-    return pulses   
+    return pulses
 
 # Calculates the average pulse shape
-def average_pulse(sum_pulse, count):       
-    average = []
-    for x in sum_pulse:
-        average.append(x / count)
-    return average 
+def average_pulse(sum_pulse, count):
+    return [x / count for x in sum_pulse]
 
-    # Normalises the average pulse shape
+# Normalizes the average pulse shape
 def normalise_pulse(average):
-    normalised = []
-    mean = sum(average) / len(average)   
-    normalised = [n - mean for n in average]  
-    normalised_int = [int(x) for x in normalised]
-    return normalised_int
+    mean = sum(average) / len(average)
+    normalised = [int(n - mean) for n in average]
+    return normalised
 
 def get_serial_device_information():
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = "-inf"
         logger.info("Sending '-inf' command to device")
-    time.sleep(0.1)  
+    time.sleep(0.1)
 
-    with shproto.dispatcher.command_lock:  
+    with shproto.dispatcher.command_lock:
         device_info = shproto.dispatcher.inf_str
         shproto.dispatcher.inf_str = ""
     return device_info
 
 def parse_device_info(info_string):
     components = info_string.split()
-    # Initialize a dictionary to hold the parsed settings
     settings = {}
-    # Iterate over the components in pairs (step of 2)
     for i in range(0, len(components) - 1, 2):
         key = components[i]
         value = components[i + 1]
-        # Attempt to convert numeric values, otherwise keep as string
         if value.replace('.', '', 1).isdigit() and value.count('.') < 2:
-            # Convert to float if it contains a dot, indicating a decimal, otherwise to int
             converted_value = float(value) if '.' in value else int(value)
         else:
-            # Keep as string for non-numeric values
             converted_value = value
-        
         settings[key] = converted_value
+    return settings
 
-    return settings    
-
-    # Normalised pulse samples less normalised shape samples squared summed and rooted
+# Normalized pulse samples less normalized shape samples squared summed and rooted
 def distortion(normalised, shape):
-    product = [(x - y)**2 for x, y in zip(shape, normalised)]
-    distortion = int(math.sqrt(sum(product)))
+    product = [(x - y) ** 2 for x, y in zip(shape, normalised)]
+    return int(math.sqrt(sum(product)))
 
-    return distortion
-    # Function calculates pulse height
+# Function calculates pulse height
 def pulse_height(samples):
-    return max(samples)-min(samples)
+    return max(samples) - min(samples)
 
-    # Function to create bin_array 
+# Function to create bin_array
 def create_bin_array(start, stop, bin_size):
     return np.arange(start, stop, bin_size)
 
 def histogram_count(n, bins):
-    # find the bin for the input number
     for i in range(len(bins)):
         if n < bins[i]:
-            bin_num = i
-            break
-    else:
-        bin_num = len(bins)
-    return bin_num
+            return i
+    return len(bins)
 
-    #Function to bin pulse height
+# Function to bin pulse height
 def update_bin(n, bins, bin_counts):
     bin_num = histogram_count(n, bins)
     bin_counts[bin_num] += 1
@@ -127,153 +104,180 @@ def update_bin(n, bins, bin_counts):
 
 # This function writes a 2D histogram to JSON file according to NPESv1 schema.
 def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
-    
     jsonfile = get_path(f'{data_directory}/{name}.json')
-
-    data =  {"schemaVersion":"NPESv1",
-                "resultData":{
-                    "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-                    "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-                    "energySpectrum":{
-                        "numberOfChannels":bins,
-                        "energyCalibration":{
-                            "polynomialOrder":2,
-                            "coefficients":[coeff_3,coeff_2,coeff_1]
-                            },
-                        "validPulseCount":counts,
-                        "measurementTime": elapsed,
-                        "spectrum": histogram
-                        }
-                    }
-                }
-
+    data = {
+        "schemaVersion": "NPESv1",
+        "resultData": {
+            "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+            "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+            "energySpectrum": {
+                "numberOfChannels": bins,
+                "energyCalibration": {
+                    "polynomialOrder": 2,
+                    "coefficients": [coeff_3, coeff_2, coeff_1]
+                },
+                "validPulseCount": counts,
+                "measurementTime": elapsed,
+                "spectrum": histogram
+            }
+        }
+    }
     with open(jsonfile, "w+") as f:
         json.dump(data, f, separators=(',', ':'))
 
-
-# This function writes a 2D histogram to JSON file according to NPESv1 schema.
+# This function writes a 2D histogram to JSON file according to NPESv2 schema.
 def write_histogram_npesv2(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3, device, location, note):
-    
     jsonfile = get_path(f'{data_directory}/{name}.json')
-
-    data =  {"schemaVersion": "NPESv2",
-              "data": [
-                {
-                  "deviceData": {
+    data = {
+        "schemaVersion": "NPESv2",
+        "data": [
+            {
+                "deviceData": {
                     "softwareName": "IMPULSE",
                     "deviceName": "AUDIO-CODEC",
-                  },
-                  "sampleInfo": {
+                },
+                "sampleInfo": {
                     "name": name,
                     "location": location,
                     "note": note,
-                  },
-                  "resultData": {
+                },
+                "resultData": {
                     "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
                     "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
                     "energySpectrum": {
-                      "numberOfChannels": bins,
-                      "energyCalibration": {
-                        "polynomialOrder": 2,
-                        "coefficients": [coeff_3,coeff_2,coeff_1],
-                      },
-                      "validPulseCount": counts,
-                      "measurementTime": elapsed,
-                      "spectrum": histogram
+                        "numberOfChannels": bins,
+                        "energyCalibration": {
+                            "polynomialOrder": 2,
+                            "coefficients": [coeff_3, coeff_2, coeff_1],
+                        },
+                        "validPulseCount": counts,
+                        "measurementTime": elapsed,
+                        "spectrum": histogram
                     }
-                  }
                 }
-              ]
             }
-
+        ]
+    }
     with open(jsonfile, "w+") as f:
-        json.dump(data, f, separators=(',', ':'))        
+        json.dump(data, f, separators=(',', ':'))
 
-# This function writes 3D intervals to NPESv1 JSON
-def write_3D_intervals_json(t0, t1, bins, counts, elapsed, filename, interval_number, coeff_1, coeff_2, coeff_3):
 
-    jsonfile = get_path(f'{data_directory}/{filename}_3d.json')
+# Function to create a blank JSON NPESv2 schema filename_3d.json
+def write_blank_json_schema(filename, device):
+    jsonfile = get_path(f'{global_vars.data_directory}/{filename}_3d.json')
+    data = {
+        "schemaVersion": "NPESv2",
+        "data": [
+            {
+                "deviceData": {
+                    "softwareName": "IMPULSE",
+                    "deviceName": device
+                },
+                "sampleInfo": {
+                    "name": filename,
+                    "location": "",
+                    "note": ""
+                },
+                "resultData": {
+                    "startTime": "",
+                    "endTime": "",
+                    "energySpectrum": {
+                        "numberOfChannels": 0,
+                        "energyCalibration": {
+                            "polynomialOrder": 2,
+                            "coefficients": []
+                        },
+                        "validPulseCount": 0,
+                        "measurementTime": 0,
+                        "spectrum": []
+                    }
+                }
+            }
+        ]
+    }
+    
+    try:
+        with open(jsonfile, "w") as f:
+            json.dump(data, f, separators=(',', ':'))
+        logger.info(f"Blank JSON schema created: {jsonfile}")
+    except Exception as e:
+        logger.error(f"Error writing blank JSON file: {e}")
+
+# Function to update keys and histogram_3d.append(last_histogram)
+def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram, coeff_1, coeff_2, coeff_3):
+    logger.info(f'Updating JSON 3D file: t0:{t0} t1:{t1} bins:{bins} counts:{counts} elapsed:{elapsed} filename:{filename} coeff_1:{coeff_1} coeff_2:{coeff_2} coeff_3:{coeff_3}')
+    
+    jsonfile = get_path(f'{global_vars.data_directory}/{filename}_3d.json')
     
     if not os.path.isfile(jsonfile):
-        data = {
-            "schemaVersion": "NPESv1",
-            "resultData": {
-                "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-                "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-                "energySpectrum": {
-                    "numberOfChannels": bins,
-                    "energyCalibration": {
-                        "polynomialOrder": 2,
-                        "coefficients": [coeff_3, coeff_2, coeff_1]
-                    },
-                    "validPulseCount": 0,
-                    "measurementTime": 0,
-                    "spectrum":[]
-                }
-            }
-        }
-    else:
+        logger.error(f"JSON file does not exist: {jsonfile}")
+        return
+    
+    try:
         with open(jsonfile, "r") as f:
             data = json.load(f)
+    except Exception as e:
+        logger.error(f"Error reading JSON file: {e}")
+        return
+    
+    data["data"][0]["resultData"]["startTime"] = t0.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    data["data"][0]["resultData"]["endTime"] = t1.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    data["data"][0]["resultData"]["energySpectrum"]["numberOfChannels"] = bins
+    data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"] = [coeff_3, coeff_2, coeff_1]
+    data["data"][0]["resultData"]["energySpectrum"]["validPulseCount"] = counts
+    data["data"][0]["resultData"]["energySpectrum"]["measurementTime"] = elapsed
+    data["data"][0]["resultData"]["energySpectrum"]["spectrum"].append(last_histogram)
+    
+    try:
+        with open(jsonfile, "w") as f:
+            json.dump(data, f, separators=(',', ':'))
+        logger.info(f"JSON 3D file updated: {jsonfile}")
+    except Exception as e:
+        logger.error(f"Error writing JSON file: {e}")
 
-    # Update the existing values
-    data["resultData"]["energySpectrum"]["validPulseCount"] = counts
-    data["resultData"]["energySpectrum"]["measurementTime"] = elapsed
-    data["resultData"]["energySpectrum"]["spectrum"].extend([interval_number])  # Wrap intervals in a list
+# This function writes counts per second to JSON
+def write_cps_json(filename, count_history, elapsed):
 
-    with open(jsonfile, "w") as f:
-        json.dump(data, f, separators=(',', ':'))
+    data_directory = global_vars.data_directory
+    cps_file_path = os.path.join(data_directory, f"{filename}_cps.json")
+    # Ensure count_history is a flat list of integers
+    valid_count_history = [int(item) for sublist in count_history for item in (sublist if isinstance(sublist, list) else [sublist]) if isinstance(item, int) and item >= 0]
+    cps_data = {
+        "count_history": valid_count_history,
+        "elapsed": elapsed
+    }
+    try:
+        with open(cps_file_path, 'w') as file:
+            json.dump(cps_data, file, indent=4)
+    except Exception as e:
+        logger.error(f"Error saving CPS data to {cps_file_path}: {e}")
+     
+    return    
 
-# This function writes counts per second to json
-def write_cps_json(filename, cps, elapsed):
-    global cps_list
-    jsonfile = get_path(f'{data_directory}/{filename}-cps.json')
-    cps_list.append(cps)
-    data = {'cps': cps_list, 'elapsed': elapsed}
-    with open(jsonfile, "w+") as f:
-        json.dump(data, f, separators=(',', ':'))
- 
-# Clears global counts per second list   
+# Clears global counts per second list
 def clear_global_cps_list():
-    global cps_list
-    cps_list = []
+    global_vars.counts = 0
+    global_vars.count_history = []
 
-# This function loads settings from sqli database
-def load_settings():
 
-    database = get_path(f'{data_directory}/.data_v2.db')
-    settings        = []
-    conn            = sql.connect(database)
-    c               = conn.cursor()
-    query           = "SELECT * FROM settings "
-    c.execute(query) 
-    settings        = c.fetchall()[0]
-    return settings
-
-# This function opens the csv and loads the pulse shape  
+# This function opens the CSV and loads the pulse shape
 def load_shape():
-    shapecsv = get_path(f'{data_directory}/shape.csv')
+    shapecsv = global_vars.shapecsv
     data_left = []
     data_right = []
-
     if os.path.exists(shapecsv):
         with open(shapecsv, 'r') as f:
             reader = csv.reader(f)
             next(reader)  # Skip the header row
             for row in reader:
-                data_left.append(row[1])   # Assuming the second column contains the left channel data
+                data_left.append(row[1])  # Assuming the second column contains the left channel data
                 data_right.append(row[2])  # Assuming the third column contains the right channel data
-
-        # Converts 'string' to integers in data
         shape_left = [int(x) for x in data_left]
         shape_right = [int(x) for x in data_right]
-                
         return shape_left, shape_right
     else:
-        # Returns default shapes of zeros if file doesn't exist
-        default_length = 51  # Modify this number if a different default length is required
+        default_length = 51
         return ([0] * default_length, [0] * default_length)
-
 
 # Function extracts keys from dictionary
 def extract_keys(dict_, keys):
@@ -285,22 +289,15 @@ def refresh_audio_device_list():
         p = pyaudio.PyAudio()
         p.terminate()
         time.sleep(1)
-        return
     except:
-        return
+        pass
 
-# Function to query settings database 
+# Function to query settings database
 def get_device_number():
-    database = get_path(f'{data_directory}/.data_v2.db')
-    conn            = sql.connect(database)
-    c               = conn.cursor()
-    query           = "SELECT * FROM settings "
-    c.execute(query) 
-    settings        = c.fetchall()[0]
-    device          = settings[2]
-    return device
+    
+    return global_vars.device
 
-# This function gets a list of audio device_list connected to the computer           
+# This function gets a list of audio devices connected to the computer
 def get_device_list():
     refresh_audio_device_list()
     p = pyaudio.PyAudio()
@@ -318,24 +315,16 @@ def get_device_list():
         return [('no device', 99)]
 
 def get_serial_device_list():
-    # Get a list of available serial ports
     all_ports = serial.tools.list_ports.comports()
-
-    # Define criteria for selecting serial devices
     manufacturer_criteria = "FTDI"
-    #product_criteria = "FT232R USB UART"
-
-    # Create a list of tuples to store selected serial device information as couples
     serial_device_list = []
-
-    # Filter and assign unique integer indexes to selected serial devices starting from 100
     serial_index = 100
     for port in all_ports:
-        if 1 or port.manufacturer == manufacturer_criteria:
+        if port.manufacturer == manufacturer_criteria:
             serial_device_list.append((port.device, serial_index))
             serial_index += 1
     return serial_device_list
-         
+
 # Returns maxInputChannels in an unordered list
 def get_max_input_channels(device):
     p = pyaudio.PyAudio()
@@ -344,159 +333,172 @@ def get_max_input_channels(device):
 
 # Function to open browser on localhost
 def open_browser(port):
-    webbrowser.open_new("http://localhost:{}".format(port))    
-    return
+    webbrowser.open_new("http://localhost:{}".format(port))
 
 def create_dummy_csv(filepath):
     with open(filepath, mode='w', newline='') as csv_file:
         writer = csv.writer(csv_file)
-        for i in range(0, 50):
-            writer.writerow([i, 0,0])
- 
+        for i in range(50):
+            writer.writerow([i, 0, 0])
+
 # Function to automatically switch between positive and negative pulses
 def detect_pulse_direction(samples):
     if max(samples) >= 3000:
         return 1
     if min(samples) <= -3000:
         return -1
-    else:
-        return 0
+    return 0
 
 def get_path(filename):
     name, ext = os.path.splitext(filename)
-
     if platform.system() == "Darwin":
         bundle_dir = os.path.dirname(os.path.abspath(__file__))
         file = os.path.join(bundle_dir, f"{name}{ext}")
         return file if os.path.exists(file) else os.path.realpath(filename)
-    else:
-        return os.path.realpath(filename)
+    return os.path.realpath(filename)
 
 def restart_program():
     subprocess.Popen(['python', 'app.py'])
-    return
 
 def shutdown():
-    print('Shutting down server...')
+    logger.info('Shutting down server...')
     os._exit(0)
 
-def peakfinder(y_values, prominence, min_width):
-    # y * bin to give higher value toweards the right
+def peak_finder(y_values, prominence, min_width):
     y_bin = [y * i for i, y in enumerate(y_values)]
-    # Find all peaks of prominence
-    peaks, _ = find_peaks(y_bin, prominence=prominence, distance = 40)
-    # Get the fwhm for all foundpeaks
+    peaks, _ = find_peaks(y_bin, prominence=prominence, distance=40)
     widths, _, _, _ = peak_widths(y_values, peaks, rel_height=0.5)
-    # Filter out peaks where width >= min-width
     filtered_peaks = [p for i, p in enumerate(peaks) if widths[i] >= min_width * i]
-    # Define array
-    fwhm = []
-    # Get widths of filtered_peaks
-    for i in range(len(filtered_peaks)):
-        w, _, _, _ = peak_widths(y_values, [filtered_peaks[i]], rel_height=0.5)
-        w = np.round(w,1)
-        fwhm.append(w[0])
+    fwhm = [round(peak_widths(y_values, [p], rel_height=0.5)[0][0], 1) for p in filtered_peaks]
     return filtered_peaks, fwhm
-
 
 def gaussian_correl(data, sigma):
     correl_values = []
     data_len = len(data)
     std = math.sqrt(data_len)
     x_max = round(sigma * std)
-    gauss_values = [math.exp(-(k**2) / (2 * std**2)) for k in range(-x_max, x_max)]
+    gauss_values = [math.exp(-(k ** 2) / (2 * std ** 2)) for k in range(-x_max, x_max)]
     avg = sum(gauss_values) / len(gauss_values)
-
     for index in range(data_len):
         result_val = 0
         for k in range(-x_max, x_max):
             idx = index + k
             if 0 <= idx < data_len:
                 result_val += data[idx] * (gauss_values[k + x_max] - avg)
-
-        value = max(0, result_val)
-        correl_values.append(int(value))
-
+        correl_values.append(max(0, int(result_val)))
     max_data = max(data)
     max_correl_value = max(correl_values)
-    if max_correl_value != 0:
-        scaling_factor = 0.8 * max_data / max_correl_value
-    else: scaling_factor = 1
-        
-    correl_values = [int(value * scaling_factor) for value in correl_values]
+    scaling_factor = 0.8 * max_data / max_correl_value if max_correl_value != 0 else 1
+    return [int(value * scaling_factor) for value in correl_values]
 
-    return correl_values
+def clear_global_cps_list():
+    with global_vars.write_lock:
+        global_vars.global_cps = 0
+
+
+def handle_modal_confirmation(start_clicks, confirm_clicks, cancel_clicks, filename, is_open, suffix=''):
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+        raise PreventUpdate
+
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if button_id.startswith("start"):
+        file_exists = os.path.exists(f'{global_vars.data_directory}/{filename}{suffix}.json')
+
+        if file_exists:
+            return True, f'Overwrite "{filename}{suffix}"?'
+
+    elif button_id in ["confirm-overwrite-tab3", "cancel-overwrite-tab3"]:
+        return False, ''
+
+    return False, ''
+
 
 def start_recording(mode):
-    global run_flag
-    # Start the thread
-    run_flag.set()  # Set the Event to indicate recording should start
-    audio_record = threading.Thread(target=pc.pulsecatcher, args=(mode, run_flag, run_flag_lock))
-    audio_record.start()
-    clear_global_cps_list()
-    logger.info(f'Recording started in mode {mode}')
-    return
+
+    logger.info(f'functions start_recording({mode})')
+
+    stop_recording()
+    
+    clear_global_vars()
+
+    with global_vars.run_flag_lock:
+        global_vars.run_flag.set()  # Set the run flag
+        logger.info(f"Recording started in mode {mode}.")
+
+    if mode == 2:
+        # Start 2D spectrum recording logic
+        logger.info("Starting 2D spectrum recording...")
+        try:
+            if callable(pulsecatcher):
+                thread = threading.Thread(target=pulsecatcher, args=(2, global_vars.run_flag, global_vars.run_flag_lock))
+                thread.start()
+                logger.info("2D spectrum recording thread started.")
+            else:
+                logger.error("pulsecatcher is not callable.")
+        except Exception as e:
+            logger.error(f"Error starting 2D spectrum recording thread: {e}")
+
+    elif mode == 3:
+        # Start 3D spectrum recording logic
+        logger.info("Starting 3D spectrum recording...")
+        try:
+            if callable(pulsecatcher):
+                thread = threading.Thread(target=pulsecatcher, args=(3, global_vars.run_flag, global_vars.run_flag_lock))
+                thread.start()
+                logger.info("3D spectrum recording thread started.")
+            else:
+                logger.error("pulsecatcher is not callable.")
+        except Exception as e:
+            logger.error(f"Error starting 3D spectrum recording thread: {e}")
+
+    else:
+        logger.error("Invalid recording mode specified.")
+
 
 def stop_recording():
-    global run_flag
-    with run_flag_lock:
-        run_flag.clear() 
-    logger.info('Recording stopped')    
-    return    
+    global_vars.run_flag.clear()
+    logger.info('functions recording stopped')
+    return
 
 def export_csv(filename):
-    # Get the path to the user's download folder
     download_folder = os.path.expanduser("~/Downloads")
-    # Remove the ".json" extension from the filename
     base_filename = filename.rsplit(".", 1)[0]
-    # Give output file a name
     output_file = f'{base_filename}.csv'
-    # Load json file
     with open(f'{data_directory}/{filename}') as f:
         data = json.load(f)
-
-    if data["schemaVersion"]  == "NPESv2":
-        data = data["data"][0] # This makes it backwards compatible
-
-    # Extract data from json file
-    spectrum     = data["resultData"]["energySpectrum"]["spectrum"]
+    if data["schemaVersion"] == "NPESv2":
+        data = data["data"][0]
+    spectrum = data["resultData"]["energySpectrum"]["spectrum"]
     coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-    # Make sure coefficient[2] is not negative
     if coefficients[2] <= 0:
         coefficients[2] = 0
-    # Open file in Download directory
     with open(os.path.join(download_folder, output_file), "w", newline="") as f:
-        # Write to file
         writer = csv.writer(f)
-        # Write heading row
         writer.writerow(["bin", "counts"])
-        # Write each row
         for i, value in enumerate(spectrum):
-            # Calculate energies
-            e = round((i**coefficients[2] + i*coefficients[1]+coefficients[0]),2)
-            writer.writerow([e, value])   
-    return
+            e = round((i ** coefficients[2] + i * coefficients[1] + coefficients[0]), 2)
+            writer.writerow([e, value])
 
 def update_coeff(filename, coeff_1, coeff_2, coeff_3):
     with open(f'{data_directory}/{filename}.json') as f:
         data = json.load(f)
-
-    if data["schemaVersion"]  == "NPESv1":
-        coefficients    = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-        coefficients[0] = coeff_3
-        coefficients[1] = coeff_2
-        coefficients[2] = coeff_1
-
-    elif data["schemaVersion"]  == "NPESv2":
-        coefficients    = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-        coefficients[0] = coeff_3
-        coefficients[1] = coeff_2
-        coefficients[2] = coeff_1
-
+    if data["schemaVersion"] == "NPESv1":
+        coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+    elif data["schemaVersion"] == "NPESv2":
+        coefficients = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+    coefficients[0] = coeff_3
+    coefficients[1] = coeff_2
+    coefficients[2] = coeff_1
     with open(f'{data_directory}/{filename}.json', 'w') as f:
-        json.dump(data, f, indent=4)
-
-    return
+        json.dump(data, f)
+    # update global_vars
+    global_vars.coeff_1 = coeff_3
+    global_vars.coeff_2 = coeff_2 
+    global_vars.coeff_3 = coeff_1 
+    global_vars.coefficients_1 = [coeff_3, coeff_2, coeff_1]
 
 # removes the path from serial device list Mac only
 def cleanup_serial_options(options):
@@ -504,183 +506,112 @@ def cleanup_serial_options(options):
     for item in options:
         if 'label' in item and item['label'].startswith(prefix_to_remove):
             item['label'] = 'Serial # ' + item['label'][len(prefix_to_remove):]
+    return options
 
-    return options    
+import json
+import os
 
-def get_api_key(): # Fetch api_key from table user
-
+def get_api_key():
     try:
-        database    = get_path(f'{data_directory}/.data_v2.db')
-        conn        = sql.connect(database)
-        c           = conn.cursor()
-        query       = "SELECT api_key FROM user LIMIT 1"
-        # Carry out query
-        c.execute(query)
-        # assign api_key
-        api_key = c.fetchone() 
-        # return result
-        return api_key[0] if api_key else None
+        user_file_path = get_path(f'{data_directory}/_user.json')
+
+        if not os.path.exists(user_file_path):
+
+            logger.error(f"User file not found: {user_file_path}")
+            
+            return None
+
+        with open(user_file_path, 'r') as file:
+            user_data = json.load(file)
+
+        api_key = user_data.get('api_key', None)
+
+        return api_key
 
     except Exception as e:
-        print(f"code/functions/get_api_key() failed: {e}")
+
+        logger.error(f"code/functions/get_api_key() failed: {e}")
+
         return None
 
-    finally:
-        conn.close()
 
 def publish_spectrum(filename):
-
-    logger.info(f'Publish button clicked for {filename}')
-    # routing address
+    logger.info(f'functions.publish_spectrum {filename}')
     url = "https://gammaspectacular.com/spectra/publish_spectrum"
-
-    # gets client api
     api_key = get_api_key()
-
     logger.info(f'Api key obtained {api_key}')
-
-    # local file directory
     spectrum_file_path = f'{data_directory}/{filename}.json'
-
-    # Prepare the file and data payload for the POST request
     try:
         with open(spectrum_file_path, 'rb') as file:
-
             files = {'file': (filename, file)}
-            data  = {'api_key': api_key}
-            
-            # Sending a POST request to the server
+            data = {'api_key': api_key}
             response = req.post(url, files=files, data=data)
-
-            # Handle successful response
             if response.status_code == 200:
-
                 logger.info(f'{filename} Published ok')
-
                 return f'{filename}\npublished:\n{response}'
-
-            # Handle error in response
             else:
-                logger.info(f'code/functions/publish_spectrum {response.text}')
+                logger.error(f'code/functions/publish_spectrum {response.text}')
                 return f'Error from /code/functions/publish_spectrum: {response.text}'
-
-    # Handle request exception
     except req.exceptions.RequestException as e:
+        logger.error(f'code/functions/publish_spectrum: {e}')
         return f'code/functions/publish_spectrum: {e}'
-
     except FileNotFoundError:
-        logger.info(f'Error from /code/functions/publish_spectrum: {spectrum_file_path}')
+        logger.error(f'Error from /code/functions/publish_spectrum: {spectrum_file_path}')
         return f'Error from /code/functions/publish_spectrum: {spectrum_file_path}'
-
     except Exception as e:
-        logger.info(f'Error from /code/functions/publish_spectrum: {e}')
+        logger.error(f'Error from /code/functions/publish_spectrum: {e}')
         return f'Error from /code/functions/publish_spectrum: {e}'
 
 def update_json_notes(filename, spec_notes):
-
     try:
         with open(f'{data_directory}/{filename}.json') as f:
             data = json.load(f)
-
-        if data["schemaVersion"]  == "NPESv2":
-            
+        if data["schemaVersion"] == "NPESv2":
             data["data"][0]["sampleInfo"]["note"] = spec_notes
-
         else:
-            return "Wrong file format"    
-            
+            return "Wrong file format"
         with open(f'{data_directory}/{filename}.json', 'w') as f:
             json.dump(data, f, indent=4)
-
         return "Spec notes Written"
-
     except Exception as e:
-
-        logger.info(f'Error in /code/functions.update_json_notes {e}')
+        logger.error(f'Error in /code/functions.update_json_notes {e}')
+        return f'Error in /code/functions.update_json_notes {e}'
 
 def get_spec_notes(filename):
-
     try:
         with open(f'{data_directory}/{filename}.json') as f:
             data = json.load(f)
-
-        if data["schemaVersion"]  == "NPESv2":
-            spec_notes = data["data"][0]["sampleInfo"]["note"]
-
-        return spec_notes
-
+        if data["schemaVersion"] == "NPESv2":
+            return data["data"][0]["sampleInfo"]["note"]
     except:
-        
-        return 'Not writing'    
+        return 'Not writing'
 
 def fetch_json(file_id):
     url = f'https://www.gammaspectacular.com/spectra/files/{file_id}.json'
-    
     try:
         response = req.get(url)
-        response.raise_for_status()  # Raise an exception for HTTP errors (e.g., 404, 500)
-        
+        response.raise_for_status()
         if response.status_code == 200:
-            return response.json()  # Returns the JSON content of the response
-        else:
-            return None  # Handle unexpected status codes as needed
+            return response.json()
+        return None
     except req.exceptions.RequestException as e:
-        print(f"Error fetching JSON: {e}")
-        return None  # Handle network or request-related errors     
+        logger.error(f"Error fetching JSON: {e}")
+        return None
 
 def execute_serial_command(input_cmd):
-
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = input_cmd
         logger.info(f"Sending command {input_cmd} to device")
 
-        return
-
 def generate_device_settings_table():
-
     shproto.dispatcher.spec_stopflag = 0
-    dispatcher = threading.Thread(target=shproto.dispatcher.start)  
+    dispatcher = threading.Thread(target=shproto.dispatcher.start)
     dispatcher.start()
-
     time.sleep(0.1)
-
     dev_info = get_serial_device_information()
-
-    info_dict   = parse_device_info(dev_info)
-
-    # Assuming parsed_settings is your dictionary from the previous step
-    version     = info_dict.get('VERSION')
-    rise        = info_dict.get('RISE')
-    fall        = info_dict.get('FALL')
-    noise       = info_dict.get('NOISE')
-    frequency   = info_dict.get('F')
-    max_value   = info_dict.get('MAX')
-    hysteresis  = info_dict.get('HYST')
-    mode        = info_dict.get('MODE')
-    step        = info_dict.get('STEP')
-    temperature = info_dict.get('t')
-    pot1        = info_dict.get('POT')
-    pot2        = info_dict.get('POT2')
-    t1_status   = info_dict.get('T1')
-    t2_status   = info_dict.get('T2')
-    t3_status   = info_dict.get('T3')
-    prise       = info_dict.get('Prise')
-    srise       = info_dict.get('Srise')
-    output      = info_dict.get('OUT')
-    pfall       = info_dict.get('Pfall')
-    sfall       = info_dict.get('Sfall')
-    tc_status   = info_dict.get('TC')
-    tcpot_status= info_dict.get('TCpot')
-    tco         = info_dict.get('Tco')
-    tp          = info_dict.get('TP')
-    pileup      = info_dict.get('PileUp')
-    pileup_thr  = info_dict.get('PileUpThr')
-
+    info_dict = parse_device_info(dev_info)
     process_03('-cal')
-
-    serial      = shproto.dispatcher.serial_number
-
-
+    serial = shproto.dispatcher.serial_number
     table = dash_table.DataTable(
         columns=[
             {"id": "Setting", "name": "Firmware settings"},
@@ -688,63 +619,52 @@ def generate_device_settings_table():
             {"id": "Value", "name": "Value"}
         ],
         data=[
-            {"Setting": "Version", "cmd":"-", "Value": version},
-            {"Setting": "Serial number", "cmd":"status", "Value": serial},
-            {"Setting": "Samples for X (pulse rise)", "cmd":"-ris", "Value": rise},
-            {"Setting": "Samples for Y (pulse fall)", "cmd":"-fall", "Value": fall},
-            {"Setting": "Lower Limit Discriminator LLD", "cmd":"-nos", "Value": noise},
-            {"Setting": "ADC Sample Frequency", "cmd":"-frq", "Value": frequency},
-            {"Setting": "Max integral value", "cmd":"-max", "Value": max_value},
-            {"Setting": "Hysteresis value", "cmd":"-hyst", "Value": hysteresis},
-            {"Setting": "Working Mode [0, 1, 2]", "cmd":"-mode", "Value": mode},
-            {"Setting": "Discriminator step (>1)", "cmd":"-step", "Value": step},
-            {"Setting": "High Voltage (0-255)", "cmd":"-U", "Value": pot1},
-            {"Setting": "Baseline trim (0-255)", "cmd":"-V", "Value": pot2},
-            {"Setting": "Temperature sensor 1", "cmd":"status", "Value": f"{t1_status} C˚"},
-            {"Setting": "Energy Window (-win X1 X2)", "cmd":"-win", "Value": output},
-            #{"Setting": "Pulse Pile Up (PPU) rise", "Value": pfall},
-            #{"Setting": "Pulse Pile Up (PPU) fall", "Value": sfall},
-            {"Setting": "Temp. compensation status", "cmd":"status", "Value": tcpot_status},
-            {"Setting": "Temp. compensation table", "cmd":"status", "Value": tco},
-            #{"Setting": "Time between integral", "Value": tp},
+            {"Setting": "Version", "cmd": "-", "Value": info_dict.get('VERSION')},
+            {"Setting": "Serial number", "cmd": "status", "Value": serial},
+            {"Setting": "Samples for X (pulse rise)", "cmd": "-ris", "Value": info_dict.get('RISE')},
+            {"Setting": "Samples for Y (pulse fall)", "cmd": "-fall", "Value": info_dict.get('FALL')},
+            {"Setting": "Lower Limit Discriminator LLD", "cmd": "-nos", "Value": info_dict.get('NOISE')},
+            {"Setting": "ADC Sample Frequency", "cmd": "-frq", "Value": info_dict.get('F')},
+            {"Setting": "Max integral value", "cmd": "-max", "Value": info_dict.get('MAX')},
+            {"Setting": "Hysteresis value", "cmd": "-hyst", "Value": info_dict.get('HYST')},
+            {"Setting": "Working Mode [0, 1, 2]", "cmd": "-mode", "Value": info_dict.get('MODE')},
+            {"Setting": "Discriminator step (>1)", "cmd": "-step", "Value": info_dict.get('STEP')},
+            {"Setting": "High Voltage (0-255)", "cmd": "-U", "Value": info_dict.get('POT')},
+            {"Setting": "Baseline trim (0-255)", "cmd": "-V", "Value": info_dict.get('POT2')},
+            {"Setting": "Temperature sensor 1", "cmd": "status", "Value": f"{info_dict.get('T1')} C˚"},
+            {"Setting": "Energy Window (-win X1 X2)", "cmd": "-win", "Value": info_dict.get('OUT')},
+            {"Setting": "Temp. compensation status", "cmd": "status", "Value": info_dict.get('TCpot')},
+            {"Setting": "Temp. compensation table", "cmd": "status", "Value": info_dict.get('Tco')}
         ],
         style_cell={
             'textAlign': 'left',
-            'padding': '4px',  
-            'fontSize': '12px',  
-            'fontFamily': 'Arial'  
+            'padding': '4px',
+            'fontSize': '12px',
+            'fontFamily': 'Arial'
         },
         style_cell_conditional=[
             {'if': {'column_id': 'Setting'}, 'width': '60%'},
-            {'if': {'column_id': 'cmd'}, 'width':'10%'},
+            {'if': {'column_id': 'cmd'}, 'width': '10%'},
             {'if': {'column_id': 'Value'}, 'width': '30%'}
         ]
     )
-
     return table
 
-# Check if commands sent to processor is safe 
+# Check if commands sent to processor is safe
 def allowed_command(cmd):
-
     allowed_command_patterns = [
-    r"^-U[0-9]{1,3}$",  # Matches -U followed by up to three digits (0-255)
-    r"^-V[0-9]{1,3}$",  
-    r"^-sto$",
-    r"^-nos[0-9]{1,3}$" 
-    ]    
-
-    secret_prefix = "+"
-
+        r"^-U[0-9]{1,3}$",
+        r"^-V[0-9]{1,3}$",
+        r"^-sto$",
+        r"^-nos[0-9]{1,3}$"
+    ]
     if cmd is None or not isinstance(cmd, str):
         return False
-
     if cmd.startswith("+"):
         return True
-
     for pattern in allowed_command_patterns:
         if re.match(pattern, cmd):
-            return True 
-
+            return True
     return False
 
 def is_valid_json(file_path):
@@ -758,60 +678,196 @@ def is_valid_json(file_path):
     except (json.JSONDecodeError, FileNotFoundError):
         return False
 
-
 def get_options():
-        # Get all filenames in data folder and its subfolders
     files = [os.path.relpath(file, data_directory).replace("\\", "/")
              for file in glob.glob(os.path.join(data_directory, "**", "*.json"), recursive=True)]
-    # Add "i/" prefix to subfolder filenames for label and keep the original filename for value
-    options = [{'label': "~ " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json") 
-                else {'label': os.path.basename(file), 'value': file} for file in files]
-    # Filter out filenames ending with "-cps"
-    options = [opt for opt in options if not opt['value'].endswith("-cps.json")]
-    # Filter out filenames ending with "-3d"
+    options = [{'label': "~ " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json")
+               else {'label': os.path.basename(file), 'value': file} for file in files]
+    options = [opt for opt in options if not opt['value'].endswith("_cps.json")]
     options = [opt for opt in options if not opt['value'].endswith("_3d.json")]
-    # Sort options alphabetically by label
+    options = [opt for opt in options if not opt['value'].endswith("_settings.json")]
+    options = [opt for opt in options if not opt['value'].endswith("_user.json")]
     options_sorted = sorted(options, key=lambda x: x['label'])
-
     for file in options_sorted:
         file['label'] = file['label'].replace('.json', '')
         file['value'] = file['value'].replace('.json', '')
+    return options_sorted
 
-    return options_sorted    
-
-
-# Calibrates the x axis of the gaussian correlation
+# Calibrates the x-axis of the Gaussian correlation
 def calibrate_gc(gc, coefficients):
     channels = np.arange(len(gc))
     x_values = np.polyval(coefficients, channels)
-    # Combine x_values and gc counts into a list of tuples
     gc_calibrated = list(zip(x_values, gc))
     return gc_calibrated
 
 # Opens and reads the isotopes.json file
 def get_isotopes(file_path):
     with open(file_path, 'r') as file:
-        data = json.load(file)
-    return data
+        return json.load(file)
 
-# Finds the peaks in gc (gaussian correlation)
+# Finds the peaks in gc (Gaussian correlation)
 def find_peaks_in_gc(gc, sigma):
-    width = sigma * 2 
+    width = sigma * 2
     peaks, _ = find_peaks(gc, width=width)
     return peaks
 
-# Finds matching isotopes in the json data file
+# Finds matching isotopes in the JSON data file
 def matching_isotopes(gc_calibrated, peaks, data, sigma):
     matches = {}
     for idx, peak_idx in enumerate(peaks):
         x, y = gc_calibrated[peak_idx]
         if y > 4:
             matched_isotopes = [
-                isotope for isotope in data 
+                isotope for isotope in data
                 if abs(isotope['energy'] - x) <= sigma * 2
             ]
             if matched_isotopes:
                 matches[idx] = (x, y, matched_isotopes)
     return matches
+
+def load_histogram(filename):
+    data = {}
+    try:
+        with open(os.path.join(data_directory, filename + ".json"), 'r') as file:
+
+            data = json.load(file)
+
+        if data["schemaVersion"] == "NPESv2":
+            result_data = data["data"][0]["resultData"]["energySpectrum"]
+            global_vars.histogram = result_data["spectrum"]
+            global_vars.bins = result_data["numberOfChannels"]
+            global_vars.elapsed = result_data["measurementTime"]
+            global_vars.coefficients_1 = result_data["energyCalibration"]["coefficients"]
+            global_vars.counts = sum(global_vars.histogram)
+
+            return True
+        else:
+            logger.info("Unsupported schema version")
+            return False
+    except Exception as e:
+        logger.info(f"Error load_histogram({data}: {e})")
+        return False
+
+def load_histogram_2(filename):
+
+    try:
+        with open(os.path.join(data_directory, filename + ".json"), 'r') as file:
+
+            data = json.load(file)
+
+        if data["schemaVersion"] == "NPESv2":
+            result_data = data["data"][0]["resultData"]["energySpectrum"]
+            global_vars.histogram_2     = result_data["spectrum"]
+            global_vars.bins_2          = result_data["numberOfChannels"]
+            global_vars.elapsed_2       = result_data["measurementTime"]
+            global_vars.coefficients_2  = result_data["energyCalibration"]["coefficients"]
+            global_vars.counts_2        = result_data["validPulseCount"]
+            return True
+        else:
+            logger.info("Unsupported schema version")
+            return False
+
+    except Exception as e:
+
+        logger.info(f"Error loading histogram_2 from {filename}: {e}")
+        return False
+
+
+def load_histogram_3d(filename):
+    try:
+        file_path = os.path.join(global_vars.data_directory, filename + "_3d.json")
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+        
+        # Check for schema version
+        if data["schemaVersion"] in ["NPESv1", "NPESv2"]:
+            # Navigate to the resultData section
+            result_data = data["data"][0]["resultData"]["energySpectrum"]
+            
+            global_vars.bins = result_data["numberOfChannels"]
+            global_vars.elapsed = result_data["measurementTime"]
+            global_vars.counts = result_data["validPulseCount"]
+            global_vars.coefficients = result_data["energyCalibration"]["coefficients"]
+            
+            if result_data["spectrum"]:
+                global_vars.histogram_3d = result_data["spectrum"]
+                return True
+            else:
+                logger.info("Spectrum data is empty")
+                return False
+        else:
+            logger.info("Unsupported schema version")
+            return False
+    except json.JSONDecodeError as json_err:
+        logger.info(f"JSON decode error loading histogram_3d from {filename}: {json_err}")
+        return False
+    except FileNotFoundError as fnf_err:
+        logger.info(f"File not found error loading histogram_3d from {filename}: {fnf_err}")
+        return False
+    except KeyError as key_err:
+        logger.info(f"Key error loading histogram_3d from {filename}: {key_err}")
+        return False
+    except Exception as e:
+        logger.info(f"Error loading histogram_3d from {filename}: {e}")
+        return False
+
+
+def load_cps_file(filename):
+
+    data_directory  = global_vars.data_directory
+    cps_file_path   = os.path.join(data_directory, f"{filename}_cps.json")
+    logger.info(f'functions load_cps_file({cps_file_path})')
+
+    if not os.path.exists(cps_file_path):
+        raise FileNotFoundError(f"{cps_file_path} does not exist.")
+
+    try:
+        with open(cps_file_path, 'r') as file:
+            cps_data = json.load(file)
+
+            count_history = cps_data.get('count_history', [])
+            elapsed = cps_data.get('elapsed', 0)
+
+            # Flatten the nested list and ensure all values are integers
+            if isinstance(count_history, list):
+                valid_count_history = [int(item) for item in count_history if isinstance(item, int) and item >= 0]
+            else:
+                raise ValueError("Invalid format for 'cps' in JSON file. Expected a list of integers.")
+
+            # Update global variables
+            global_vars.count_history = valid_count_history
+            global_vars.elapsed = int(elapsed)
+
+            return cps_data
+
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Error decoding JSON from {cps_file_path}: {e}")
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while loading CPS data from {cps_file_path}: {e}")
+
+
+# clear variables
+def clear_global_vars():
+
+    with global_vars.write_lock:
+        global_vars.count_history   = []
+        global_vars.histogram_3d    = []
+        global_vars.counts          = 0
+        global_vars.cps             = 0
+        global_vars.elapsed         = 0
+        global_vars.histogram       = [0] * global_vars.bins
+
+
+# functions.py
+
+def reset_stores():
+    return {
+        'store_count_history': [],
+        'store_load_flag_tab3': False,
+        'store_load_flag_tab4': False,
+    }
+
+
+
 
 

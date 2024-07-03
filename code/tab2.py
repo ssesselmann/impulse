@@ -1,7 +1,7 @@
+# tab2.py
 import dash
 import plotly.graph_objs as go
 import pulsecatcher as pc
-import functions as fn
 import os
 import json
 import time
@@ -10,266 +10,221 @@ import sqlite3 as sql
 import dash_daq as daq
 import dash_bootstrap_components as dbc
 import audio_spectrum as asp
-
 import subprocess
 import serial.tools.list_ports
 import threading
 import logging
-
+import global_vars
 import shproto.dispatcher
 
-from dash import dcc, html, Input, Output, State, callback, Dash
+from dash import dcc, html, Input, Output, State, callback, Dash, callback_context
 from dash.dependencies import Input, Output, State
 from server import app
 from dash.exceptions import PreventUpdate
 from datetime import datetime
-from functions import is_valid_json
-from functions import execute_serial_command
-from functions import get_options
-from functions import calibrate_gc
-from functions import get_isotopes
-from functions import matching_isotopes
-from functions import find_peaks_in_gc
+
+# Importing store variables from server
+from server import (
+    store_device, 
+    store_filename, 
+    store_filename_2, 
+    store_bins,
+    store_bins_2, 
+    store_histogram, 
+    store_histogram_2, 
+    store_histogram_3d,
+    store_gaussian, 
+    store_coefficients, 
+    store_sigma, 
+    store_annotations,
+    store_confirmation_output, 
+    store_count_history
+)
+# Functions imported
+from functions import (
+    calibrate_gc, 
+    clear_global_cps_list, 
+    execute_serial_command, 
+    find_peaks_in_gc, 
+    gaussian_correl, 
+    get_device_number, 
+    get_isotopes, 
+    get_options, 
+    get_path, 
+    get_spec_notes, 
+    is_valid_json, 
+    load_histogram, 
+    load_histogram_2, 
+    matching_isotopes, 
+    peak_finder, 
+    publish_spectrum, 
+    start_recording, 
+    stop_recording, 
+    update_coeff, 
+    update_json_notes,
+    handle_modal_confirmation,
+    clear_global_vars
+    )
 
 logger = logging.getLogger(__name__)
-
-path            = None
-n_clicks        = None
-commands        = None
-cmd             = None
-schemaVersion   = None
-device          = None
-global_counts   = 0
-global_cps      = 0
-cps             = 0
-stop_event      = threading.Event()
-data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
-spec_notes      = ''
-write_lock      = threading.Lock()
-flag_file = 'i/tbl/gamma.json'
+device = None
+data_directory = global_vars.data_directory
 
 def show_tab2():
-    global global_counts
-    global cps_list
-    global device
+    options_sorted = get_options()
 
-    options_sorted  = get_options()
-    database        = fn.get_path(f'{data_directory}/.data_v2.db')
+    filename        = global_vars.filename
+    filename_2      = global_vars.comparison
+    device          = global_vars.device
+    sample_rate     = global_vars.sample_rate
+    chunk_size      = global_vars.chunk_size
+    threshold       = global_vars.threshold
+    tolerance       = global_vars.tolerance
+    bins            = global_vars.bins
+    bin_size        = global_vars.bin_size
+    max_counts      = global_vars.max_counts
+    sample_length   = global_vars.sample_length
+    calib_bin_1     = global_vars.calib_bin_1
+    calib_bin_2     = global_vars.calib_bin_2
+    calib_bin_3     = global_vars.calib_bin_3
+    calib_e_1       = global_vars.calib_e_1
+    calib_e_2       = global_vars.calib_e_2
+    calib_e_3       = global_vars.calib_e_3
+    coeff_1         = global_vars.coeff_1
+    coeff_2         = global_vars.coeff_2
+    coeff_3         = global_vars.coeff_3
+    peakfinder      = global_vars.peakfinder
+    sigma           = global_vars.sigma
+    max_seconds     = global_vars.max_seconds
+    t_interval      = global_vars.t_interval
+    compression     = global_vars.compression
 
-    conn            = sql.connect(database)
-    c               = conn.cursor()
-    query           = "SELECT * FROM settings "
-    c.execute(query) 
+    if device <= 100:
+        global_vars.bins = bins
+    else:
+        global_vars.bins = int(8192/compression)    
 
-    settings        = c.fetchall()[0]
-    filename        = settings[1]
-    device          = settings[2]             
-    sample_rate     = settings[3]
-    chunk_size      = settings[4]
-    threshold       = settings[5]
-    tolerance       = settings[6]
-    bins            = settings[7]
-    bin_size        = settings[8]
-    max_counts      = settings[9]
-    shapestring     = settings[10]
-    sample_length   = settings[11]
-    calib_bin_1     = settings[12]
-    calib_bin_2     = settings[13]
-    calib_bin_3     = settings[14]
-    calib_e_1       = settings[15]
-    calib_e_2       = settings[16]
-    calib_e_3       = settings[17]
-    coeff_1         = settings[18]
-    coeff_2         = settings[19]
-    coeff_3         = settings[20]
-    filename2       = settings[21]
-    peakfinder      = settings[23]
-    sigma           = settings[25]
-    max_seconds     = settings[26]
-    t_interval      = settings[27]
-    compression     = settings[29]
-
-    millisec        = t_interval*1000
-
-    spec_notes      = fn.get_spec_notes(filename)
+    millisec = t_interval * 1000
+    spec_notes = get_spec_notes(filename)
 
     if device >= 100:
-        serial      = 'block'
-        audio       = 'none'
+        serial = 'block'
+        audio = 'none'
     else:
-        serial      = 'none'
-        audio       = 'block'
+        serial = 'none'
+        audio = 'block'
 
-    if max_counts == 0:
-        counts_warning  = 'red'
-    else: 
-        counts_warning  = 'white'    
-
-    if max_seconds == 0:
-        seconds_warning = 'red'
-    else: 
-        seconds_warning = 'white'  
+    counts_warning = 'red' if max_counts == 0 else 'white'
+    seconds_warning = 'red' if max_seconds == 0 else 'white'
 
     html_tab2 = html.Div(id='tab2', children=[
         html.Div(id='polynomial', children=''),
         html.Div(id='output-roi', children=''),
-        html.Div(id='bar_chart_div', # Histogram Chart
-            children=[
-                dcc.Graph(id='bar-chart', figure={},),
-                dcc.Interval(id='interval-component', interval=millisec, n_intervals=0) # Refresh rate 1s.
-            ]),
+
+        html.Div(id='bar_chart_div', children=[
+            
+            dcc.Interval(id='interval-component', interval=millisec, n_intervals=0),  # Refresh rate 1s.
+            dcc.Graph(id='bar_chart'),
+        ]),
 
         html.Div(id='t2_filler_div', children=''),
-        #Start button
-        html.Div(id='t2_setting_div1', children=[
-            html.Button('START', id='start'),
-            html.Div(id='start_text', children=''),
-            html.Div(id='counts', children= ''),
-            html.Div(''),
-            html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1,  readOnly=False, value=max_counts, className='input',style={'background-color': counts_warning} )]),
-            ]),
 
-        html.Div(id='t2_setting_div2', children=[            
-            html.Button('STOP', id='stop'), 
-            html.Div(id='stop_text', children=''),
-            html.Div(id='elapsed', children= '' ),
-            html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1,  readOnly=False, value=max_seconds, className='input', style={'background-color': seconds_warning} )]),
+        html.Div(id='t2_setting_div1', children=[
+            html.Button('START', id='start', n_clicks=0),
+            html.Div(id='start-text', children=''),
+            html.Div(id='counts-output', children=''),
+            html.Div(''),
+            html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1, readOnly=False, value=max_counts, className='input', style={'background-color': counts_warning})]),
+        ]),
+
+        html.Div(id='t2_setting_div2', children=[
+            dcc.Store(id='store-device', data=device),
+            html.Button('STOP', id='stop'),
+            html.Div(id='stop-text', children=''),
+            html.Div(id='elapsed', children=''),
+            html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1, readOnly=False, value=max_seconds, className='input', style={'background-color': seconds_warning})]),
             html.Div(id='cps', children=''),
-            ]),
+        ]),
 
         html.Div(id='t2_setting_div3', children=[
             html.Div(id='compression_div', children=[
-                html.Div(['Resolution:', dcc.Dropdown(id='compression',
-                    options=[
-                        {'label': '512 Bins', 'value': '16'},
-                        {'label': '1024 Bins', 'value': '8'},
-                        {'label': '2048 Bins', 'value': '4'},
-                        {'label': '4096 Bins', 'value': '2'},
-                        {'label': '8192 Bins', 'value': '1'},
-                    ],
-                    value=compression,
-                    className='dropdown')
-                    ],
-                     style={'display': serial}
-                     ),
+                html.Div(['Resolution:', dcc.Dropdown(id='compression', options=[
+                    {'label': '512 Bins', 'value': '16'},
+                    {'label': '1024 Bins', 'value': '8'},
+                    {'label': '2048 Bins', 'value': '4'},
+                    {'label': '4096 Bins', 'value': '2'},
+                    {'label': '8192 Bins', 'value': '1'},
+                ], value=compression, className='dropdown')], style={'display': serial}),
 
-                html.Div(['Select existing file:', 
-                    dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, className='dropdown', optionHeight=40)
-                ]),
+                html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, className='dropdown', optionHeight=40)]),
                 
-                html.Div(['Or create new file:', 
-                    dcc.Input(id='filename', type='text', value=filename, className='input', placeholder='Enter new filename')
-                ]),
+                html.Div(['Or create new file:', dcc.Input(id='filename', type='text', value=filename, className='input', placeholder='Enter new filename')]),
                 
-                # Overwrite confirmation modal
                 dbc.Modal([
                     dbc.ModalBody(id='modal-body'),
                     dbc.ModalFooter([
                         dbc.Button("Overwrite", id="confirm-overwrite", className="ml-auto", n_clicks=0),
                         dbc.Button("Cancel", id="cancel-overwrite", className="ml-auto", n_clicks=0),
                     ]),
-                    ], 
-                    id='modal-overwrite', 
-                    is_open=False,
-                    centered=True,
-                    size="md",
-                    className="custom-modal",
-                    ),
+                ], id='modal-overwrite', is_open=False, centered=True, size="md", className="custom-modal"),
                 html.Div(id='start_process_flag', style={'display': 'none'}),
                 html.Div(['Number of bins:', dcc.Input(id='bins', type='number', value=bins)], className='input', style={'display': audio}),
                 html.Div(['Bin size:', dcc.Input(id='bin_size', type='number', value=bin_size)], className='input', style={'display': audio}),
             ]),
         ]),
 
-        # this part switches depending which device is connected ---------------
-
         html.Div(id='t2_setting_div4', children=[
-            html.Div(['Serial Command:', dcc.Dropdown(
-                id='selected_cmd', 
-                options=[
-                    {'label': 'Pause MCA'         , 'value': '-sto'},
-                    {'label': 'Restart MCA'       , 'value': '-sta'},
-                    {'label': 'Reset histogram  ' , 'value': '-rst'},
-                ],
-                placeholder='Select command',
-                value=commands[0] if commands else None, # Check if commands is not None before accessing its elements
-                className='dropdown',
-            )], style={'display':serial}),  
-
+            html.Div(['Serial Command:', dcc.Dropdown(id='selected_cmd', options=[
+                {'label': 'Pause MCA', 'value': '-sto'},
+                {'label': 'Restart MCA', 'value': '-sta'},
+                {'label': 'Reset histogram', 'value': '-rst'},
+            ], placeholder='Select command', value=None, className='dropdown')], style={'display': serial}),
             html.Div(id='cmd_text', children='', style={'display': 'none'}),
-            html.Div(['LLD Threshold:'      , dcc.Input(id='threshold'  , type='number', value=threshold, className='input', style={'height':'35px'})], style={'display':audio}),
-            html.Div(['Shape Tolerance:'    , dcc.Input(id='tolerance'  , type='number', value=tolerance, className='input' )], style={'display':audio}),
-            html.Div(['Update Interval(s)'  , dcc.Input(id='t_interval' , type='number', step=1,  readOnly=False, value=t_interval, className='input' )]),
+            html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold, className='input', style={'height': '35px'})], style={'display': audio}),
+            html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance, className='input')], style={'display': audio}),
+            html.Div(['Update Interval(s)', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval, className='input')]),
+        ], style={'width': '10%'}),
 
-        ],style={'width':'10%', } 
-        ),
-
-        # ------------------------------------------------------
-        
         html.Div(id='t2_setting_div5', children=[
             html.Div('Comparison'),
-            html.Div(dcc.Dropdown(
-                    id='filename2',
-                    options=options_sorted,
-                    placeholder='Select comparison',
-                    value=filename2,
-                    className='dropdown',
-                    optionHeight=40
-                    )),
+            html.Div(dcc.Dropdown(id='filename_2', options=options_sorted, placeholder='Select comparison', value=filename_2, className='dropdown', optionHeight=40)),
+            html.Div(['Show Comparison', daq.BooleanSwitch(id='compare_switch', on=False, color='purple')]),
+            html.Div(['Subtract Comparison', daq.BooleanSwitch(id='difference_switch', on=False, color='purple')]),
+        ]),
 
-            html.Div(['Show Comparison'      , daq.BooleanSwitch(id='compare_switch',on=False, color='purple',)]),
-            html.Div(['Subtract Comparison'  , daq.BooleanSwitch(id='difference_switch',on=False, color='purple',)]),
-
-            ]),
-
-        html.Div(id='t2_setting_div6'   , children=[
-            html.Div(['Energy by bin'   , daq.BooleanSwitch(id='epb_switch',on=False, color='purple',)]),
-            html.Div(['Show log(y)'     , daq.BooleanSwitch(id='log_switch',on=False, color='purple',)]),
-            html.Div(['Calibration'     , daq.BooleanSwitch(id='cal_switch',on=False, color='purple',)]),
-            html.Div(['Coincidence'     , daq.BooleanSwitch(id='mode-switch',on=False, color='purple',)]),
-            ]), 
+        html.Div(id='t2_setting_div6', children=[
+            html.Div(['Energy by bin', daq.BooleanSwitch(id='epb_switch', on=False, color='purple')]),
+            html.Div(['Show log(y)', daq.BooleanSwitch(id='log_switch', on=False, color='purple')]),
+            html.Div(['Calibration', daq.BooleanSwitch(id='cal_switch', on=False, color='purple')]),
+            html.Div(['Coincidence', daq.BooleanSwitch(id='mode-switch', on=False, color='purple')]),
+        ]),
 
         html.Div(id='t2_setting_div7', children=[
-            html.Button('Sound <)' , id='soundbyte', className='action_button'),
+            html.Button('Sound <)', id='soundbyte', className='action_button'),
             html.Div(id='audio', children=''),
             html.Button('Update calib.', id='update_calib_button', className='action_button'),
             html.Div(id='update_calib_message', children=''),
-            dbc.Button("Publish Spectrum", id="publish-button", color="primary", className="action_button"),
-            
-            dbc.Modal(
-                children=[
-                    dbc.ModalBody(f"Are you sure you want to publish \"{filename}\" spectrum?"),
-                    dbc.ModalFooter([
-                        dbc.Button("Confirm", id="confirm-publish", className="ml-auto", color="primary"),
-                        dbc.Button("Cancel", id="cancel-publish", className="mr-auto", color="secondary"),
-                        ],
-                    ),
-                ],
-                id="confirmation-modal",
-                centered=True,
-                size="md",
-                className="custom-modal", 
-            ),
-            dcc.Store(id="confirmation-output", data=''), # Stores output from modal
+            dbc.Button("Publish spectrum", id="publish-button", color="primary", className="action_button"),
+            dbc.Modal(children=[
+                dbc.ModalBody(f"Are you sure you want to publish \"{filename}\" spectrum?"),
+                dbc.ModalFooter([
+                    dbc.Button("Confirm", id="confirm-publish", className="ml-auto", color="primary"),
+                    dbc.Button("Cancel", id="cancel-publish", className="mr-auto", color="secondary"),
+                ])], id="confirmation-modal", centered=True, size="md", className="custom-modal"),
 
-            # This section relates to the isotope flag button
+            dcc.Store(id="confirmation-output", data=''),
             html.Button('isotope flags', id='toggle-annotations-button', n_clicks=0, className="action_button"),
-            dcc.Store(id='store-coefficients', data=[1, 0, 0]), # stores polynomial coefficients
-            dcc.Store(id='store-gc'), # stores gaussian correlation 
-            dcc.Store(id='store-annotations', data=[]), # stores annotations 
+            dcc.Store(id='store-coefficients', data=[1, 0, 0]),
+            dcc.Store(id='store-gaussian'),
+            dcc.Store(id='store-annotations', data=[]),
             html.Div('Gaussian (sigma)'),
-            html.Div(dcc.Slider(id='sigma', min=0 ,max=3, step=0.25, value= sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
-            dcc.Dropdown(id='flags',
-                    options=[
-                        {'label': 'gamma flags'       , 'value': 'i/tbl/gamma.json'},
-                        {'label': 'x-ray flags'       , 'value': 'i/tbl/xray.json'},
-                        {'label': 'n-capture flags'   , 'value': 'i/tbl/ncapture.json'},
-                    ],
-                    style={'height': '15px', 'fontSize': '12px', 'borderwidth': '0px'},
-                    value=flag_file,
-                    className='dropdown', 
-                    optionHeight=15)
-            ]),
+            html.Div(dcc.Slider(id='sigma', min=0, max=3, step=0.25, value=sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
+            dcc.Dropdown(id='flags', options=[
+                {'label': 'gamma flags', 'value': 'i/tbl/gamma.json'},
+                {'label': 'x-ray flags', 'value': 'i/tbl/xray.json'},
+                {'label': 'n-capture flags', 'value': 'i/tbl/ncapture.json'},
+            ], style={'height': '15px', 'fontSize': '12px', 'borderwidth': '0px'}, value='i/tbl/gamma.json', className='dropdown', optionHeight=15),
+        ]),
 
         html.Div(id='t2_setting_div8', children=[
             html.Div('Calibration Bins'),
@@ -277,53 +232,50 @@ def show_tab2():
             html.Div(dcc.Input(id='calib_bin_2', type='number', value=calib_bin_2, className='input')),
             html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3, className='input')),
             html.Div('peakfinder'),
-            html.Div(dcc.Slider(id='peakfinder', min=0 ,max=1, step=0.1, value= peakfinder, marks={0:'0', 1:'1'})),
-            ]),
+            html.Div(dcc.Slider(id='peakfinder', min=0, max=1, step=0.1, value=peakfinder, marks={0: '0', 1: '1'})),
+        ]),
 
         html.Div(id='t2_setting_div9', children=[
             html.Div('Energies'),
             html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1, className='input')),
             html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2, className='input')),
-            html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3, className='input')),            
-            
+            html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3, className='input')),
             html.Div(id='specNoteDiv', children=[
-                dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='Spectrum notes', cols=20, rows=6)], style={'marginTop':'15px', 'fontSize':'12px'}),
-                html.Div(id='notes-warning', children=['Update notes after recording !']),
-                html.Div(id='spec-notes-output', children='', style={'visibility':'hidden'}),
-            
-            ]),
+                dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='spectrum notes', cols=20, rows=6)], style={'marginTop': '15px', 'fontSize': '12px'}),
+            html.Div(id='notes-warning', children=['Update notes after recording !']),
+            html.Div(id='spec-notes-output', children='', style={'visibility': 'hidden'}),
+        ]),
 
-        html.Div(children=[ html.Img(id='footer_tab2', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
-        
-        html.Div(id='subfooter', children=[
-            ]),
-
-    ]) # End of tab 2 render
+        html.Div(children=[html.Img(id='footer_tab2', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
+        html.Div(id='subfooter', children=[]),
+    ])  # End of tab 2 render
 
     return html_tab2
 
-# This callback just inserts the filename into the input field
 @app.callback(
-    Output('filename', 'value'),
-    [Input('filenamelist', 'value')],
-    [State('filename', 'value')]
+    Output('filename'       , 'value'),
+    [Input('filenamelist'   , 'value')],
+    [State('filename'       , 'value')]
 )
 def update_filename_from_dropdown(selected_file, current_filename):
     if selected_file:
+        load_histogram(selected_file)
         return selected_file
     return current_filename
 
-# START BUTTON callback - pop up warning
+
+
+# Modal
 @app.callback(
-    Output('modal-overwrite', 'is_open'),
-    Output('modal-body', 'children'),
-    [Input('start', 'n_clicks'), 
-     Input('confirm-overwrite', 'n_clicks'), 
-     Input('cancel-overwrite', 'n_clicks')],
-    [State('filename', 'value'),
-     State('modal-overwrite', 'is_open')]
+    [Output('modal-overwrite'   , 'is_open'),
+     Output('modal-body'        , 'children')],
+    [Input('start'              , 'n_clicks'), 
+     Input('confirm-overwrite'  , 'n_clicks'), 
+     Input('cancel-overwrite'   , 'n_clicks')],
+    [State('filename', 'value') , 
+     State('modal-overwrite'    , 'is_open')]
 )
-def confirm_with_user(start_clicks, confirm_clicks, cancel_clicks, filename, is_open):
+def confirm_with_user_2d(start_clicks, confirm_clicks, cancel_clicks, filename, is_open):
     ctx = dash.callback_context
 
     if not ctx.triggered:
@@ -332,51 +284,45 @@ def confirm_with_user(start_clicks, confirm_clicks, cancel_clicks, filename, is_
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     if button_id == "start":
-        file_exists = os.path.exists(f'{data_directory}/{filename}.json')
-        # Open the modal only if the file exists
-        if file_exists:
-            return True, f'Overwrite "{filename}"?'
+        file_exists = os.path.exists(f'{global_vars.data_directory}/{filename}.json')
 
-    # Close the modal if either "confirm-overwrite" or "cancel-overwrite" is clicked
-    elif button_id in ["confirm-overwrite", "cancel-overwrite"]:
+        if file_exists:
+            return True, f'Overwrite "{filename}.json"?'
+
+    elif button_id in ["cancel-overwrite", "cancel-overwrite"]:
         return False, ''
 
-    return False, ''  # Default case to ensure modal is closed if no conditions above are met
+    return False, ''
 
-# Conditional Start function
+#start
 @app.callback(
-    Output('start_text', 'children'),
-    [Input('confirm-overwrite', 'n_clicks'),
-     Input('start', 'n_clicks')], 
-    [State('filename', 'value'),
-     State('compression', 'value'),
-     State('t_interval', 'value'),
-     State('mode-switch', 'on')]  
+    Output('start-text'         , 'children'),
+    [Input('confirm-overwrite'  , 'n_clicks'),
+     Input('start'              , 'n_clicks')],
+    [State('filename'           , 'value'),
+     State('compression'        , 'value'),
+     State('t_interval'         , 'value'),
+     State('mode-switch'        , 'on'),
+     State('store-device'       , 'data')]
 )
-def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression, t_interval, mode_switch):
-    fn.clear_global_cps_list()
-
+def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t_interval, mode_switch, dn):
     ctx = dash.callback_context
 
     if not ctx.triggered:
         raise PreventUpdate
 
-    if mode_switch:
-        mode = 4
-    else:
-        mode = 2        
+    mode = 4 if mode_switch else 2
+
+    clear_global_vars()
 
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
     trigger_value = ctx.triggered[0]['value']
-    file_exists = os.path.exists(f'{data_directory}/{filename}.json')
+    file_exists = os.path.exists(f'{global_vars.data_directory}/{filename}.json')
 
     if trigger_value == 0:
         raise PreventUpdate
 
     if (trigger_id == 'confirm-overwrite') or (trigger_id == 'start' and not file_exists):
-
-        dn = fn.get_device_number()
-
         if dn >= 100:
             try:
                 shproto.dispatcher.spec_stopflag = 0
@@ -384,123 +330,109 @@ def start_new_or_overwrite(confirm_clicks, start_clicks, filename, compression, 
                 dispatcher.start()
 
                 time.sleep(0.1)
-
-                # Reset spectrum
-                command = '-rst'
-                shproto.dispatcher.process_03(command)
-                logger.info(f'tab2 sends command {command}')
+                shproto.dispatcher.process_03('-rst')
+                logger.info(f'tab2 sends reset command -rst')
 
                 time.sleep(0.1)
-
-                # Start multichannel analyser
-                command = '-sta'
-                shproto.dispatcher.process_03(command)
-                logger.info(f'tab2 sends command {command}')
+                shproto.dispatcher.process_03('-sta')
+                logger.info(f'tab2 sends start command -sta')
 
                 time.sleep(0.1)
-
-                shproto.dispatcher.process_01(filename, compression, "GS-MAX or ATOM-NANO", t_interval)
-                logger.info(f'Serial recording started')
+                shproto.dispatcher.process_01(filename, compression, "MAX", t_interval)
+                logger.info(f'tab2 calls process_01(){filename}, {compression}, MAX, {t_interval}')
 
                 time.sleep(0.1)
 
             except Exception as e:
-                logger.error(f'tab 2 update_output() error {e}')
-                return f"Error: {str(e)}"
+                logger.error(f'tab 2 start_new_or_overwrite() error {e}')
+                return f"tab2 Error: {str(e)}"
         else:
-            fn.start_recording(mode)
-            logger.info(f'Tab2 fn.start_recording(mode {mode}) passed.') 
-
-        return
+            start_recording(mode)
+            logger.info(f'tab2 fn.start_recording(mode {mode}) passed.')
+        return ""
 
     raise PreventUpdate
 
-# STOP BUTTON callback
-@app.callback(Output('stop_text'  ,'children'),
-              [Input('stop'      ,'n_clicks')],
-              [State('filename'   , 'value')])
-def stop_button(n_clicks, filename):
-
+# Stop Button function--------------
+@app.callback(
+    Output('stop-text', 'children'),
+    [Input('stop', 'n_clicks')],
+    [State('store-device', 'data')]
+)
+def stop_button(n_clicks, dn):
     if n_clicks is None:
         raise PreventUpdate
 
-    dn = fn.get_device_number()
+    logger.info('tab2 stop button. clicked')
+
+    if dn is None:
+        logger.error('Device number is None')
+        raise PreventUpdate
 
     if dn >= 100:
-        # Stop Spectrum 
+        logger.info('tab2 stop_button shproto.dispatcher')
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
         time.sleep(0.1)
-        logger.info('Stop button clicked (tab2) serial device')
-        return
-
     else:
-        fn.stop_recording()
-        logger.info('Stop button clicked (tab2) audio device')
-        return
+        stop_recording()
+        logger.info('tab2 stop_recording() for audio device')
+    return
 
-# Update Histogram Callback -------------------------------------
 
-@app.callback([ Output('bar-chart'          ,'figure'), 
-                Output('counts'             ,'children'),
-                Output('elapsed'            ,'children'),
-                Output('cps'                ,'children'),
-                Output('store-gc'           ,'data'),
-                Output('store-coefficients' ,'data')],
-               [Input('interval-component'  ,'n_intervals'),
-                Input('bar-chart'           ,'relayoutData'),
-                Input('store-annotations'   ,'data')], 
-                [State('filename'           ,'value'),
-                State('epb_switch'          ,'on'),
-                State('log_switch'          ,'on'),
-                State('cal_switch'          ,'on'),
-                State('filename2'           ,'value'),
-                State('compare_switch'      ,'on'),
-                State('difference_switch'   ,'on'),
-                State('peakfinder'          ,'value'),
-                State('sigma'               ,'value'),
-                State('max_seconds'         ,'value'),
-                State('max_counts'          ,'value'),
-                State('mode-switch'         , 'on')])
-def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, cal_switch, filename2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts, mode_switch):
+# UPDATE GRAPH ----------------------------------
 
-    if device is not None and isinstance(device, int):
-        if device > 100:
-            from shproto.dispatcher import cps
-        elif device < 100:
-            from pulsecatcher import mean_cps
-            cps = mean_cps
-        else:
-            cps = 0    
-    else:
-        cps = 0        
+@app.callback([
+               Output('bar_chart'           , 'figure'), 
+               Output('counts-output'       , 'children'),
+               Output('elapsed'             , 'children'),
+               Output('cps'                 , 'children'),
+               Output('store-gaussian'      , 'data'),
+               Output('store-coefficients'  , 'data')],
+              [Input('interval-component'   , 'n_intervals'),
+               Input('bar_chart'            , 'relayoutData'),
+               Input('store-annotations'    , 'data')], 
+              [State('filename'             , 'value'),
+               State('epb_switch'           , 'on'),
+               State('log_switch'           , 'on'),
+               State('cal_switch'           , 'on'),
+               State('filename_2'            , 'value'),
+               State('compare_switch'       , 'on'),
+               State('difference_switch'    , 'on'),
+               State('peakfinder'           , 'value'),
+               State('sigma'                , 'value'),
+               State('max_seconds'          , 'value'),
+               State('max_counts'           , 'value'),
+               State('mode-switch'          , 'on')]
+               )
+def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, cal_switch, filename_2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts, mode_switch):
+        
+    ctx = callback_context
 
-    if mode_switch:
-        coincidence = 'coincidence<br>(left if right)'
-    else:
-        coincidence = ""  
+    # Check if the triggered input is the compare_switch
+    if ctx.triggered and 'compare_switch' in ctx.triggered[0]['prop_id']:
+        if compare_switch:
+            try:
+                load_histogram_2(filename_2)
+            except Exception as e:
+                logger.info(f'tab2 failed to load {filename_2}: {e}')    
 
-    annotations = []
-    coefficients= []
-    lines       = []
-    gc          = []
-    title_text  = ''
-    now         = datetime.now()
-    time        = now.strftime('%d/%m/%Y')
-    histogram1  = fn.get_path(f'{data_directory}/{filename}.json')
-
-    if not os.path.exists(histogram1):
-        filename = ''
+    cps             = global_vars.cps
+    coincidence     = 'coincidence<br>(left if right)' if mode_switch else ""
+    annotations     = []
+    coefficients    = []
+    prominence      = 0
+    lines           = []
+    gaussian        = []
+    now             = datetime.now()
+    time_str        = now.strftime('%d/%m/%Y')
 
     layout = go.Layout(
-        paper_bgcolor = 'white', 
-        plot_bgcolor = '#f0f0f0',
+        paper_bgcolor='white',
+        plot_bgcolor='#f0f0f0',
         showlegend=False,
-        height=460, 
-        margin_t=20,
-        margin_b=0,
-        margin_l=0,
-        margin_r=0,
+        height=460,
+        margin=dict(t=20, b=0, l=0, r=0),
         autosize=True,
         yaxis=dict(range=[0, 'auto']),
         xaxis=dict(range=[0, 'auto']),
@@ -511,255 +443,181 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
 
     fig = go.Figure(layout=layout)
 
-    if os.path.exists(histogram1) and is_valid_json(histogram1):
-        with open(histogram1, "r") as f:
-            with write_lock:
-                data = json.load(f)
+    if compare_switch:
+        try:
+            load_histogram_2(filename_2)
+        except:
+            logger.info(f'tab2 failed to load {histogram_2}')
 
-        if data["schemaVersion"]  == "NPESv2":
-            data = data["data"][0] # This makes it backwards compatible
+    if global_vars.counts > 0:
 
-        numberOfChannels    = data["resultData"]["energySpectrum"]["numberOfChannels"]
-        validPulseCount     = data["resultData"]["energySpectrum"]["validPulseCount"]
-        elapsed             = data["resultData"]["energySpectrum"]["measurementTime"]
-        polynomialOrder     = data["resultData"]["energySpectrum"]["energyCalibration"]["polynomialOrder"]
-        coefficients        = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-        spectrum            = data["resultData"]["energySpectrum"]["spectrum"]
-        coefficients        = coefficients[::-1] # Reverse order   
-        mu                  = 0
-        prominence          = 0.5
+        coefficients = global_vars.coefficients_1
+
+        prominence = 0.5
 
         if sigma == 0:
-            gc = []
-        else:  
-            gc = fn.gaussian_correl(spectrum, sigma)
+            gaussian = []
+        else:
+            gaussian = gaussian_correl(global_vars.histogram, sigma)
 
-        x = list(range(numberOfChannels))
-        y = spectrum
+        x = list(range(global_vars.bins))
+        y = global_vars.histogram
         max_value = np.max(y)
-
         if max_value == 0:
             max_value = 10
         
         max_log_value = np.log10(max_value)
 
         if cal_switch:
-            x = np.polyval(np.poly1d(coefficients), x)
+            x = np.polyval(np.poly1d(global_vars.coefficients_1), x)
 
         if epb_switch:
-            y = [i * count for i, count in enumerate(spectrum)]
-            gc = [i * count for i, count in enumerate(gc)]
+            y = [i * count for i, count in enumerate(global_vars.histogram)]
+            gaussian = [i * count for i, count in enumerate(gaussian)]
 
         trace1 = go.Bar(
             x=x, 
             y=y, 
-            marker={
-                'color': 'black',
-                'line': {
-                    'color': 'black',  # Customize the border color here
-                    'width': 0.5          # Customize the border width here
-                }
-            },
-            width=1.0  # Set the width of the bars
-        )  
-
-        fig.add_trace(trace1)      
-
+            marker={'color': 'black', 'line': {'color': 'black', 'width': 0.5}},
+            width=1.0
+        )
+        fig.add_trace(trace1)
     else:
         filename = 'no filename'
-        prominence = 0
-        elapsed = 0
-        validPulseCount = 0
-
         y = [0]
         x = [0]
-
         trace1 = go.Bar(
-            x=[0],  # Minimal data for the dummy trace
+            x=[0],
             y=[0],
-            marker={
-                'color': 'rgba(255,0,0,0.5)',  # Semi-transparent red marker
-                'line': {
-                    'color': 'rgba(255,0,0,0.5)',  # Customize the border color here
-                    'width': 0.5  # Customize the border width here
-                }
-            },
-            width=1.0  # Set the width of the bars
-        )  
+            marker={'color': 'rgba(255,0,0,0.5)', 'line': {'color': 'rgba(255,0,0,0.5)', 'width': 0.5}},
+            width=1.0
+        )
+        fig.add_trace(trace1)
 
-    # Annotations
-    peaks, fwhm = fn.peakfinder(y, prominence, peakfinder)
-    num_peaks = len(peaks)
-    annotations = []
-    lines = []
+    peaks, fwhm = peak_finder(y, prominence, peakfinder)
 
-    for i in range(num_peaks):
+    for i in range(len(peaks)):
         peak_value = peaks[i]
-        counts = y[peaks[i]]
+        bin_counts = y[peaks[i]]
         x_pos = peaks[i]
         y_pos = y[peaks[i]]
         y_pos_ann = y_pos + int(y_pos / 10)
         resolution = (fwhm[i] / peaks[i]) * 100
 
         if y_pos_ann > (max_value * 0.9):
-            y_pos_ann = int(y_pos_ann - max_value * 0.03)
+            y_pos_ann -= int(max_value * 0.03)
 
         if cal_switch:
-            peak_value = np.polyval(np.poly1d(coefficients), peak_value)
+            peak_value = np.polyval(np.poly1d(global_vars.coefficients_1), peak_value)
             x_pos = peak_value
 
         if log_switch:
             y_pos_ann = np.log10(y_pos)
 
         if peakfinder > 0:
-            annotations.append(
-                dict(
-                    x=x_pos,
-                    y=y_pos_ann,
-                    xref='x',
-                    yref='y',
-                    text=f'Y{counts}<br>X{peak_value:.1f}<br>{resolution:.1f}%',
-                    align='center',
-                    showarrow=True,
-                    arrowhead=0,
-                    ax=0,
-                    ay=-40,
-                )
-            )
+            annotations.append(dict(
+                x=x_pos,
+                y=y_pos_ann,
+                xref='x',
+                yref='y',
+                text=f'Y{bin_counts}<br>X{peak_value:.1f}<br>{resolution:.1f}%',
+                align='center',
+                showarrow=True,
+                arrowhead=0,
+                ax=0,
+                ay=-40,
+            ))
 
-            lines.append(
-                dict(
-                    type='line',
-                    x0=x_pos,
-                    y0=0,
-                    x1=x_pos,
-                    y1=y_pos,
-                    line=dict(
-                        color='red',
-                        width=1,
-                        dash='dot'
-                    )
-                )
-            )  
-                
-    # Append isotope annotations
+            lines.append(dict(
+                type='line',
+                x0=x_pos,
+                y0=0,
+                x1=x_pos,
+                y1=y_pos,
+                line=dict(color='red', width=1, dash='dot')
+            ))
+
     if isotopes:
         annotations.extend(isotopes)
 
-    # Add annotations to the figure
     fig.update_layout(
         annotations=annotations,
         title={
-            'text': f'{filename}<br>{time}<br>{validPulseCount} counts<br>{elapsed} seconds<br>{coincidence}',
+            'text': f'{filename}<br>{time_str}<br>{global_vars.counts} counts<br>{global_vars.elapsed} seconds<br>{coincidence}',
             'x': 0.85,
             'y': 0.9,
             'xanchor': 'center',
             'yanchor': 'top',
             'font': {'family': 'Arial', 'size': 14, 'color': 'black'},
-        }
+        },
+        shapes=lines
     )
 
-    # Add lines (shapes) to the figure
-    fig.update_layout(shapes=lines)     
+    steps   = (global_vars.elapsed / global_vars.elapsed_2) if global_vars.elapsed > 0 and global_vars.elapsed_2 > 0 else 0.1
 
-    # Histogram 2
-    histogram2 = fn.get_path(f'{data_directory}/{filename2}.json')
+    x2      = list(range(global_vars.bins_2))
 
-    if os.path.exists(histogram2) and is_valid_json(histogram1):
-        with open(histogram2, "r") as f:
-            data_2 = json.load(f)
+    y2      = [int(n * steps) for n in global_vars.histogram_2]
 
-            schema_version = data_2["schemaVersion"]
+    if filename_2:
 
-            if schema_version == "NPESv2":
-                data_2 = data_2["data"][0]  # This makes it backwards compatible
+        if cal_switch:
+            x2 = np.polyval(np.poly1d(global_vars.coefficients_2), x2)
 
-            numberOfChannels_2 = data_2["resultData"]["energySpectrum"]["numberOfChannels"]
-            elapsed_2 = data_2["resultData"]["energySpectrum"]["measurementTime"]
-            spectrum_2 = data_2["resultData"]["energySpectrum"]["spectrum"]
-            coefficients_2 = data_2["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+        if log_switch:
+            y2 = [x * 0.5 for x in y2]
 
-            if elapsed > 0 and elapsed_2 > 0:
-                steps = (elapsed / elapsed_2)
-            else:
-                steps = 0.1    
+        if epb_switch:
+            y2 = [i * n * steps for i, n in enumerate(global_vars.histogram_2)]
 
-            x2 = list(range(numberOfChannels_2))
-            y2 = [int(n * steps) for n in spectrum_2]
+        trace2 = go.Scatter(
+            x=x2, 
+            y=y2, 
+            marker={'color': 'red', 'line': {'color': 'red', 'width': 0.5}},
+        )
 
-            if cal_switch:
-                x2 = np.polyval(np.poly1d(coefficients_2), x2)
-
-            if log_switch:
-                y2 = [x * 0.5 for x in y2]    
-
-            if epb_switch:
-                y2 = [i * n * steps for i, n in enumerate(spectrum_2)]
-
-            trace2 = go.Scatter(
-                x=x2, 
-                y=y2, 
-                marker={
-                    'color': 'red',  # Semi-transparent red marker
-                    'line': {
-                        'color': 'red',  # Customize the border color here
-                        'width': 0.5  # Customize the border width here
-                    }
-                },
+        if sigma != 0:
+            trace4 = go.Bar(
+                x=x,
+                y=gaussian,
+                marker={'color': 'red', 'line': {'color': 'red', 'width': 0.5}},
+                width=1.0
             )
+            fig.add_trace(trace4)
 
-    if sigma == 0:
-        trace4 = {}
-    else:
-        trace4 = go.Bar(
-            x=x,
-            y=gc,
-            marker={
-                'color': 'red',
-                'line': {
-                    'color': 'red',  # Customize the border color here
-                    'width': 0.5  # Customize the border width here
-                }
-            },
-            width=1.0  # Set the width of the bars
-        )
-        fig.add_trace(trace4)
+        if compare_switch: 
+            fig.add_trace(trace2)
+            fig.update_layout(xaxis=dict(autorange=False))
 
-    if compare_switch and os.path.exists(histogram2): 
-        fig.add_trace(trace2)
-        fig.update_layout(xaxis=dict(autorange=False))
+        if difference_switch:
+            y3 = [a - b for a, b in zip(y, y2)]
+            trace3 = go.Bar(
+                x=x,
+                y=y3,
+                marker={'color': 'green', 'line': {'color': 'green', 'width': 0.5}},
+                width=1.0
+            )
+            fig = go.Figure(data=[trace3], layout=layout)
+            fig.update_layout(yaxis=dict(autorange=True, range=[min(y3), max(y3)]))
 
-    if difference_switch:
-        y3 = [a - b for a, b in zip(y, y2)]
-        trace3 = go.Bar(
-            x=x,
-            y=y3,
-            marker={
-                'color': 'green',
-                'line': {
-                    'color': 'green',  # Customize the border color here
-                    'width': 0.5  # Customize the border width here
-                }
-            },
-            width=1.0  # Set the width of the bars
-        )
-        fig = go.Figure(data=[trace3], layout=layout)
-        fig.update_layout(yaxis=dict(autorange=True, range=[min(y3), max(y3)]))
-
-    if not difference_switch:
-        fig.update_layout(yaxis=dict(autorange=True))
+        if not difference_switch:
+            fig.update_layout(yaxis=dict(autorange=True))
 
     if log_switch:
-        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0.1, max_log_value + 0.3])) 
+        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0.1, max_log_value + 0.3]))
     else:
         fig.update_layout(yaxis=dict(autorange=True, type='linear', range=[0, max(y)]))
 
-    # Check if user has selected a region of interest and calculate visible counts
     if relayoutData and 'xaxis.range[0]' in relayoutData and 'xaxis.range[1]' in relayoutData:
+
         x0, x1 = relayoutData['xaxis.range[0]'], relayoutData['xaxis.range[1]']
+
         visible_counts = sum(count for count, bin in zip(y, x) if x0 <= bin <= x1)
+
         if difference_switch:
+
             visible_counts = sum(count for count, bin in zip(y3, x) if x0 <= bin <= x1)
+
         fig.add_annotation(
             x=0.95, xref="paper",
             y=0.8, yref="paper",
@@ -770,33 +628,33 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             bgcolor="white",
             bordercolor="lightgray",
             borderwidth=1
-        )   
+        )
 
-    return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}', gc, coefficients
+    return fig, f'{global_vars.counts}', f'{global_vars.elapsed}', f'cps {cps}', gaussian, coefficients
 
 
+# SAVE SETTINGS ------------------------------------    
 
-# UPDATE SETTINGS callback
 @app.callback(
-    Output('polynomial', 'children'),
-    [Input('bins', 'value'),
-     Input('bin_size', 'value'),
-     Input('max_counts', 'value'),
-     Input('max_seconds', 'value'),
-     Input('filename', 'value'),
-     Input('filename2', 'value'),
-     Input('threshold', 'value'),
-     Input('tolerance', 'value'),
-     Input('calib_bin_1', 'value'),
-     Input('calib_bin_2', 'value'),
-     Input('calib_bin_3', 'value'),
-     Input('calib_e_1', 'value'),
-     Input('calib_e_2', 'value'),
-     Input('calib_e_3', 'value'),
-     Input('peakfinder', 'value'),
-     Input('sigma', 'value'),
-     Input('t_interval', 'value'),
-     Input('compression', 'value')]
+    Output('polynomial'     , 'children'),
+    [Input('bins'           , 'value'),
+     Input('bin_size'       , 'value'),
+     Input('max_counts'     , 'value'),
+     Input('max_seconds'    , 'value'),
+     Input('filename'       , 'value'),
+     Input('filename_2'     , 'value'),
+     Input('threshold'      , 'value'),
+     Input('tolerance'      , 'value'),
+     Input('calib_bin_1'    , 'value'),
+     Input('calib_bin_2'    , 'value'),
+     Input('calib_bin_3'    , 'value'),
+     Input('calib_e_1'      , 'value'),
+     Input('calib_e_2'      , 'value'),
+     Input('calib_e_3'      , 'value'),
+     Input('peakfinder'     , 'value'),
+     Input('sigma'          , 'value'),
+     Input('t_interval'     , 'value'),
+     Input('compression'    , 'value')]
 )
 def save_settings(*args):
     n_clicks = args[0]
@@ -804,7 +662,6 @@ def save_settings(*args):
     if n_clicks is None and not shproto.dispatcher.calibration_updated:
         raise PreventUpdate
 
-    # Initialize x_bins and x_energies
     x_bins      = []
     x_energies  = []
 
@@ -816,119 +673,110 @@ def save_settings(*args):
             polynomial_fn = np.poly1d(shproto.dispatcher.calibration[::-1])
             x_energies = [polynomial_fn(x_bins_default[0]), polynomial_fn(x_bins_default[1]), polynomial_fn(x_bins_default[2])]
     else:
-        x_bins      = [args[8], args[9], args[10]]
-        x_energies  = [args[11], args[12], args[13]]
-
+        x_bins = [args[8], args[9], args[10]]
+        x_energies = [args[11], args[12], args[13]]
 
     coefficients = np.polyfit(x_bins, x_energies, 2)
+
+    global_vars.coefficients = coefficients
+
     polynomial_fn = np.poly1d(coefficients)
 
-
-    database = fn.get_path(f'{data_directory}/.data_v2.db')
-    conn = sql.connect(database)
-    c = conn.cursor()
-
-    query = f"""UPDATE settings SET 
-                bins={args[0]}, 
-                bin_size={args[1]}, 
-                max_counts={args[2]}, 
-                max_seconds={args[3]},
-                name='{args[4]}', 
-                comparison='{args[5]}',
-                threshold={args[6]}, 
-                tolerance={args[7]}, 
-                calib_bin_1={x_bins[0]},
-                calib_bin_2={x_bins[1]},
-                calib_bin_3={x_bins[2]},
-                calib_e_1={x_energies[0]},
-                calib_e_2={x_energies[1]},
-                calib_e_3={x_energies[2]},
-                peakfinder={args[14]},
-                sigma={args[15]},
-                t_interval={args[16]},
-                coeff_1={float(coefficients[0])},
-                coeff_2={float(coefficients[1])},
-                coeff_3={float(coefficients[2])},
-                compression={args[17]}
-                WHERE id=0;"""
+    global_vars.bins        = args[0]
+    global_vars.bin_size    = args[1]
+    global_vars.max_counts  = args[2]
+    global_vars.max_seconds = args[3]
+    global_vars.filename    = args[4]
+    global_vars.comparison  = args[5]
+    global_vars.threshold   = args[6]
+    global_vars.tolerance   = args[7]
+    global_vars.calib_bin_1 = x_bins[0]
+    global_vars.calib_bin_2 = x_bins[1]
+    global_vars.calib_bin_3 = x_bins[2]
+    global_vars.calib_e_1   = x_energies[0]
+    global_vars.calib_e_2   = x_energies[1]
+    global_vars.calib_e_3   = x_energies[2]
+    global_vars.peakfinder  = args[14]
+    global_vars.sigma       = args[15]
+    global_vars.t_interval  = args[16]
+    global_vars.coeff_1     = float(coefficients[0])
+    global_vars.coeff_2     = float(coefficients[1])
+    global_vars.coeff_3     = float(coefficients[2])
+    global_vars.compression = args[17]
     
-    c.execute(query)
-    conn.commit()
 
-    logger.info(f'(Settings updated from tab2)')
+    global_vars.save_settings_to_json()
+    
+    logger.info(f'Settings updated from tab2')
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
 
-# PLAY SOUND callback
-@app.callback( Output('audio'       ,'children'),
-                [Input('soundbyte'  ,'n_clicks')],
-                [State('filename'   ,'value')])    
+
+# Callback for playing sound
+@app.callback(Output('audio', 'children'),
+              [Input('soundbyte', 'n_clicks')],
+              [State('filename', 'value')])    
+
 def play_sound(n_clicks, filename):
     if n_clicks is None:
         raise PreventUpdate
 
-    if os.path.exists( f'{data_directory}/{filename}.wav'):
+    if os.path.exists(f'{data_directory}/{filename}.wav'):
         asp.play_wav_file(filename)
         logger.info(f'Playing existing wav file: {filename}.wav')
         return
     else:
-        spectrum = []
-        histogram = fn.get_path(f'{data_directory}/{filename}.json')
-
-        if os.path.exists(histogram):
-                with open(histogram, "r") as f:
-                    data     = json.load(f)
-                    spectrum = data["data"][0]["resultData"]["energySpectrum"]["spectrum"]
-
-        gc = fn.gaussian_correl(spectrum, 1)
+        gaussian = gaussian_correl(global_vars.histogram, 1)
         logger.info('calculating gaussian correlation')
 
-        asp.make_wav_file(filename, gc)
+        asp.make_wav_file(filename, gaussian)
         logger.info('Converting gaussian correlation to wav file')
 
         asp.play_wav_file(filename)
         logger.info(f'Playing soundfile {filename}.wav')
         return
 
-# UPDATE CALIBRATION OF EXISTING SPECTRUM callback
 @app.callback(
-    Output('update_calib_message'   ,'children'),
-    [Input('update_calib_button'    ,'n_clicks'),
-    Input('filename'                ,'value')]
+    Output('update_calib_message', 'children'),
+    [Input('update_calib_button', 'n_clicks'),
+     Input('filename', 'value')]
 )
 def update_current_calibration(n_clicks, filename):
     if n_clicks is None:
         raise PreventUpdate
     else:
-        settings = fn.load_settings()
-        coeff_1 = round(settings[18], 6)
-        coeff_2 = round(settings[19], 6)
-        coeff_3 = round(settings[20], 6)
+        coeff_1 = round(global_vars.coeff_1, 6)
+        coeff_2 = round(global_vars.coeff_2, 6)
+        coeff_3 = round(global_vars.coeff_3, 6)
 
-        with write_lock:
-            fn.update_coeff(filename, coeff_1, coeff_2, coeff_3)
+        with global_vars.write_lock:
+            update_coeff(filename, coeff_1, coeff_2, coeff_3)
 
         logger.info(f'Calibration updated tab2: {filename, coeff_1, coeff_2, coeff_3}')
         return f"Update {n_clicks}"
 
-# MAX Dropdown callback
 @app.callback(
     Output('cmd_text'       , 'children'),
     [Input('selected_cmd'   , 'value')],
-    [State('tabs'            ,'value')]
+    [State('tabs'           , 'value')]
 )
 def update_output(selected_cmd, active_tab):
-    if active_tab != 'tab_2':  # only update the chart when "tab4" is active
+
+    if active_tab != 'tab_2':
         raise PreventUpdate
 
-    logger.info(f'Command selected tab2: {selected_cmd}')
+    logger.info(f'tab2 command sent: {selected_cmd}')
+
     try:
         shproto.dispatcher.process_03(selected_cmd)
+
         return f'Cmd: {selected_cmd}'
+
     except Exception as e:
+
         logging.error(f"Error in update_output tab2: {e}")
+
         return "An error occurred."
 
-# Callback to publish spectrum to web with confirm message
 @app.callback(
     Output("confirmation-modal", "is_open"),
     [Input("publish-button", "n_clicks"),
@@ -939,98 +787,108 @@ def update_output(selected_cmd, active_tab):
 def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_publish_clicks, is_open):
     ctx = dash.callback_context
 
-    if not ctx.triggered_id:
-        button_id = None
-    else:
-        button_id = ctx.triggered_id.split(".")[0]
+    if not ctx.triggered:
+        return is_open
+
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     if button_id == "publish-button" and open_button_clicks:
         return not is_open
     elif button_id in ["confirm-publish", "cancel-publish"]:
         return not is_open
-    else:
-        return is_open
+    return is_open
+
 
 @app.callback(
-    Output("confirmation-output", "children"),
+    Output("store-confirmation-output", "data"),
     [Input("confirm-publish", "n_clicks"),
-     Input("cancel-publish", "n_clicks"),
-     State("filename", "value")]
+     Input("cancel-publish", "n_clicks")],
+    [State("filename", "value")]
 )
 def display_confirmation_result(confirm_publish_clicks, cancel_publish_clicks, filename):
+
     ctx = dash.callback_context
 
-    if not ctx.triggered_id:
-        button_id = None
-    else:
-        button_id = ctx.triggered_id.split(".")[0]
-
-    if button_id == "confirm-publish" and confirm_publish_clicks:
-        logger.info(f'Confirm publish for: {filename}')
-        response_message = fn.publish_spectrum(filename)
-        logger.info(f'{filename} published')
-        return f'{filename} \nPublished'
-    elif button_id == "cancel-button" and cancel_publish_clicks:
-        logger.info(f'Publish cancelled')
-        return "You canceled!"
-    else:
+    if not ctx.triggered:
         return ""
 
-# Update Spectrum Notes callback
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    
+
+    if button_id == "confirm-publish" and confirm_publish_clicks:
+
+        logger.info(f'tab2 user confirmed publishing of {filename}')
+
+        response_message = publish_spectrum(filename)
+
+        logger.info(f'{filename} published successfully')
+
+        return f'{filename} \nPublished'
+
+    elif button_id == "cancel-publish" and cancel_publish_clicks:
+
+        logger.info(f'Publish cancelled')
+
+        return "You canceled!"
+    return ""
+
+
 @app.callback(
-    Output('spec-notes-output', 'children'),
-    [Input('spec-notes-input', 'value'),
-     Input('filename', 'value')],
+    Output('spec-notes-output'  , 'children'),
+    [Input('spec-notes-input'   , 'value'),
+     Input('filename'           , 'value')],
 )
 def update_spectrum_notes(spec_notes, filename):
-    with write_lock:
-        fn.update_json_notes(filename, spec_notes)
-    logger.info(f'Spectrum notes updated {spec_notes}')
+
+    if os.path.exists(f'{data_directory}/{filename}.json'):
+
+        with global_vars.write_lock:
+            
+            update_json_notes(filename, spec_notes)
+
+        logger.info(f'Spectrum notes updated {spec_notes}')
+
     return spec_notes
 
 app.layout = show_tab2()
 
-
-# This callback looks up the table of isotopes.json and generates annotations file
-# These annotations can be turned on or off with a button
-# Isotope suggestions will only work if spectrum is calibrated and with sigma not zero.
-
 @app.callback(
-    Output('store-annotations', 'data') ,
+    Output('store-annotations'          , 'data'),
     Output('toggle-annotations-button'  , 'children'),
-    Output('flags'                  , 'value'),
+    Output('flags'                      , 'value'),
     Input('toggle-annotations-button'   , 'n_clicks'),
     Input('flags'                       , 'value'),
-    State('store-gc'                    , 'data'),
+    State('store-gaussian'              , 'data'),
     State('store-coefficients'          , 'data'),
     State('sigma'                       , 'value'),
     State('cal_switch'                  , 'on')
 )
-def toggle_annotations(n_clicks, flags, gc, coefficients, sigma, cal_switch):
+def toggle_annotations(n_clicks, flags, gaussian, coefficients, sigma, cal_switch):
     if n_clicks is None:
         raise PreventUpdate
 
     n_clicks += 1
 
-    # When n_clicks is odd, clear annotations; when even, calculate annotations
     if n_clicks % 2 == 0:
-        if gc is not None and coefficients is not None:
-            path_isotopes = os.path.join(data_directory, flags)
-            gc_calibrated = calibrate_gc(gc, coefficients)
-            peaks = find_peaks_in_gc(gc, sigma=sigma)
-            isotopes_data = get_isotopes(path_isotopes)  # Adjust the path as needed
-            matches = matching_isotopes(gc_calibrated, peaks, isotopes_data, sigma)
-            annotations = []
+        if gaussian is not None and coefficients is not None:
+
+            path_isotopes   = os.path.join(data_directory, flags)
+            gc_calibrated   = calibrate_gc(gaussian, coefficients)
+            peaks           = find_peaks_in_gc(gaussian, sigma=sigma)
+            isotopes_data   = get_isotopes(path_isotopes)
+            matches         = matching_isotopes(gc_calibrated, peaks, isotopes_data, sigma)
+            annotations     = []
 
             for idx, (x, y, isotopes) in matches.items():
                 isotope_names = ', '.join([isotope['isotope'] for isotope in isotopes])
-                y_pos = 0.85 - ((idx % 16) * 0.03) # Start at 0.9 and move down by 0.03 for each idx
+                y_pos = 0.85 - ((idx % 16) * 0.03)
                 annotations.append(
                     dict(
                         x=x,
                         y=y_pos,
                         xref='x',
-                        yref='paper',  # Use paper coordinates for y-axis
+                        yref='paper',
                         text=isotope_names,
                         showarrow=True,
                         arrowhead=None,
@@ -1044,19 +902,16 @@ def toggle_annotations(n_clicks, flags, gc, coefficients, sigma, cal_switch):
                     )
                 )
 
-            if cal_switch == False or sigma ==0:
+            if not cal_switch or sigma == 0:
                 return [], '! Turn on calib first', flags
 
-            else:
-                return annotations, 'Isotope Flags On', flags
+            return annotations, 'Isotope Flags On', flags
 
         return [], '', flags
 
-    else:
-        return [], 'Isotopes Flags off', flags
-
-
-    
+    return [], 'Isotopes Flags off', flags
 
 if __name__ == '__main__':
     app.run_server(debug=True)
+
+# -- End of tab2.py --

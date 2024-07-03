@@ -1,11 +1,11 @@
 import pyaudio
 import wave
 import os
-import sqlite3 as sql
 import pandas as pd
 import numpy as np
 import logging
 import time
+import global_vars
 from functions import get_path
 
 # Setup logging
@@ -15,12 +15,12 @@ logging.basicConfig(level=logging.DEBUG)
 sc_info = []
 
 # Define the directory where data files are stored
-data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
+data_directory = os.path.join(os.path.expanduser("~"), "impulse_files")
 
 def determine_pulse_sign(pulse):
     """Determine if the pulse is predominantly positive or negative."""
     sc_info.append('Checking pulse polarity')
-    time.sleep(1)
+    time.sleep(0.5)
     return np.mean(pulse) > 0
 
 def encode_pulse_sign(left_sign, right_sign):
@@ -29,8 +29,7 @@ def encode_pulse_sign(left_sign, right_sign):
     right_digit = 1 if right_sign else 2
 
     sc_info.append(f'Saving pulse polarity')
-
-    time.sleep(1)
+    time.sleep(0.5)
 
     return left_digit * 10 + right_digit
 
@@ -103,43 +102,37 @@ def capture_pulse_polarity(stereo, sample_rate, chunk_size, device, sample_lengt
 
     return pulse_sign_left, pulse_sign_right
 
-
-
 def shapecatcher(stereo):
-    # Connect to the database and get settings
-    database = get_path(f'{data_directory}/.data_v2.db')
-    shapecsv = get_path(f'{data_directory}/shape.csv')
+    # Load settings from JSON
+    global_vars.load_settings_from_json()
 
-    conn = sql.connect(database)
-    c = conn.cursor()
-    c.execute("SELECT * FROM settings")
-    settings = c.fetchall()[0]
-
-    # Extract settings from the database
-    name = settings[1]
-    device = settings[2]
-    sample_rate = settings[3]
-    chunk_size = settings[4]
-    threshold = 1000  # Hard coded for shapecatcher only
-    tolerance = settings[6]
-    bins = settings[7]
-    bin_size = settings[8]
-    max_counts = settings[9]
-    shapecatches = settings[10]
-    sample_length = settings[11]
-    peakshift = settings[28]
-    peak = int((sample_length - 1) / 2) + peakshift
+    # Extract settings from global_vars
+    name            = global_vars.filename
+    device          = global_vars.device
+    sample_rate     = global_vars.sample_rate
+    chunk_size      = global_vars.chunk_size
+    threshold       = 1000  # Hard coded for shapecatcher only
+    tolerance       = global_vars.tolerance
+    bins            = global_vars.bins
+    bin_size        = global_vars.bin_size
+    max_counts      = global_vars.max_counts
+    shapecatches    = global_vars.shapecatches
+    sample_length   = global_vars.sample_length
+    peakshift       = global_vars.peakshift
+    peak            = int((sample_length - 1) / 2) + peakshift
 
     logger.info(f'Shapecatcher threshold fixed at {threshold}')
     logger.info(f'Shapecatcher says Stereo is {stereo}')
+
 
     if stereo:
         sc_info.append(f'Preparing for {sample_rate} kHz stereo')
     else:
         sc_info.append(f'Preparing for {sample_rate} kHz mono')
 
-    time.sleep(1)
+    time.sleep(0.5)
 
+    
     # First, determine the pulse polarity
     pulse_sign_left, pulse_sign_right = capture_pulse_polarity(
         stereo, sample_rate, chunk_size, device, sample_length, peak, threshold)
@@ -157,12 +150,9 @@ def shapecatcher(stereo):
 
     logging.info(f"Encoded Pulse Sign: {encoded_pulse_sign}")
 
-    # Save the encoded pulse sign to the database
-    conn = sql.connect(database)
-    c = conn.cursor()
-    c.execute("UPDATE settings SET flip = ? WHERE id = ?", (encoded_pulse_sign, settings[0]))
-    conn.commit()
-    conn.close()
+    # Save the encoded pulse sign to global_vars and JSON
+    global_vars.flip = encoded_pulse_sign
+    global_vars.save_settings_to_json()
 
     # Reinitialize PyAudio for shape catching
     p = pyaudio.PyAudio()
@@ -220,7 +210,7 @@ def shapecatcher(stereo):
                 break
 
         sc_info.append(f'Calculating mean shape')
-        time.sleep(1)
+        time.sleep(0.5)
 
         # Calculate average pulses
         pulses_sum_left = [int(sum(x) / len(x)) for x in zip(*pulse_list_left)] if pulse_list_left else []
@@ -245,6 +235,7 @@ def shapecatcher(stereo):
         sc_info.append(f'Saving shape.csv')
 
         # Save DataFrame to CSV, include index as the first column (row numbers)
+        shapecsv = get_path(f'{data_directory}/shape.csv')
         df.to_csv(shapecsv, index=True, index_label='Row')
 
     finally:
@@ -256,5 +247,3 @@ def shapecatcher(stereo):
         sc_info.append(f' ')
 
     return pulses_sum_left, pulses_sum_right
-
-

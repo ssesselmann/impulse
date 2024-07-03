@@ -10,10 +10,9 @@ import shproto.port
 import logging
 import os
 import platform
-import functions as fn
+import global_vars
 from struct import *
 from datetime import datetime
-
 
 max_bins            = 8192
 logger              = logging.getLogger(__name__)
@@ -37,14 +36,13 @@ lost_impulses       = 0
 last_counts         = 0
 data_directory      = None
 cps_list            = []
-
 serial_number       = ""
 calibration         = [0., 1., 0., 0., 0.]
 calibration_updated = 0
 calibration_lock    = threading.Lock()
 inf_str             = ''
-
-logger = logging.getLogger(__name__)
+data_directory      = global_vars.data_directory
+logger              = logging.getLogger(__name__)
 
 # This function communicates with the device
 def start(sn=None):
@@ -71,7 +69,6 @@ def start(sn=None):
             time.sleep(0.1)
             continue
         READ_BUFFER = max(nano.in_waiting, READ_BUFFER)
-        #rx_byte_arr = nano.read(size=READ_BUFFER)
         try:
             rx_byte_arr = nano.read(size=READ_BUFFER)
         except serial.SerialException as e:
@@ -94,30 +91,30 @@ def start(sn=None):
                     resp_lines = resp_decoded.splitlines()
                     if re.search('^VERSION', resp_decoded):
                         shproto.dispatcher.inf_str = resp_decoded
-                        shproto.dispatcher.inf_str = re.sub(r'\[[^]]*\]', '...', shproto.dispatcher.inf_str, count = 2)
+                        shproto.dispatcher.inf_str = re.sub(r'\[[^]]*\]', '...', shproto.dispatcher.inf_str, count=2)
                         logger.info("Got nano-pro settings: {}".format(shproto.dispatcher.inf_str))
                 except UnicodeDecodeError:
-                    logger.info("Unknown non-text response in dispatecher line 100")
+                    logger.info("Unknown non-text response in dispatcher line 100")
 
                 if len(resp_lines) == 40:
-                    shproto.dispatcher.serial_number = "{}".format(resp_lines[39]);
+                    shproto.dispatcher.serial_number = "{}".format(resp_lines[39])
                     logger.info("Found nano-pro serial # {}".format(shproto.dispatcher.serial_number))
-                    b_str =  ''
+                    b_str = ''
                     for b in resp_lines[0:10]:
                         b_str += b
                     crc = binascii.crc32(bytearray(b_str, 'ascii')) % 2**32
-                    if (crc == int(resp_lines[10],16)):
+                    if crc == int(resp_lines[10], 16):
                         with shproto.dispatcher.calibration_lock:
-                            shproto.dispatcher.calibration[0] = unpack('d', int((resp_lines[0] + resp_lines[1]),16).to_bytes(8, 'little'))[0]
-                            shproto.dispatcher.calibration[1] = unpack('d', int((resp_lines[2] + resp_lines[3]),16).to_bytes(8, 'little'))[0]
-                            shproto.dispatcher.calibration[2] = unpack('d', int((resp_lines[4] + resp_lines[5]),16).to_bytes(8, 'little'))[0]
-                            shproto.dispatcher.calibration[3] = unpack('d', int((resp_lines[6] + resp_lines[7]),16).to_bytes(8, 'little'))[0]
-                            shproto.dispatcher.calibration[4] = unpack('d', int((resp_lines[8] + resp_lines[9]),16).to_bytes(8, 'little'))[0]
+                            shproto.dispatcher.calibration[0] = unpack('d', int((resp_lines[0] + resp_lines[1]), 16).to_bytes(8, 'little'))[0]
+                            shproto.dispatcher.calibration[1] = unpack('d', int((resp_lines[2] + resp_lines[3]), 16).to_bytes(8, 'little'))[0]
+                            shproto.dispatcher.calibration[2] = unpack('d', int((resp_lines[4] + resp_lines[5]), 16).to_bytes(8, 'little'))[0]
+                            shproto.dispatcher.calibration[3] = unpack('d', int((resp_lines[6] + resp_lines[7]), 16).to_bytes(8, 'little'))[0]
+                            shproto.dispatcher.calibration[4] = unpack('d', int((resp_lines[8] + resp_lines[9]), 16).to_bytes(8, 'little'))[0]
                             shproto.dispatcher.calibration_updated = 1
                         logger.info("Got calibration: {}".format(shproto.dispatcher.calibration))
                     else:
-                        logger.info("Wrong crc for calibration values got: {:08x} expected: {:08x}".format(int(resp_lines[10],16), crc))
-	
+                        logger.info("Wrong crc for calibration values got: {:08x} expected: {:08x}".format(int(resp_lines[10], 16), crc))
+
                 response.clear()
             elif response.cmd == shproto.MODE_HISTOGRAM:
                 shproto.dispatcher.pkts01 += 1
@@ -133,12 +130,11 @@ def start(sn=None):
                                     ((response.payload[i * 4 + 5]) << 24)
                             shproto.dispatcher.histogram[index] = value & 0x7FFFFFF
                 response.clear()
-            elif response.cmd == shproto.MODE_PULSE: ### debug mode, pulse shape
+            elif response.cmd == shproto.MODE_PULSE:  # debug mode, pulse shape
                 if pulse_file_opened != 1:
                     fd_pulses = open("/tmp/pulses.csv", "w+")
                     pulse_file_opened = 1
 
-                #print("<< got pulse", fd_pulses)
                 shproto.dispatcher.pkts01 += 1
                 offset = response.payload[0] & 0xFF | ((response.payload[1] & 0xFF) << 8)
                 count = int((response.len - 2) / 2)
@@ -152,7 +148,6 @@ def start(sn=None):
                     fd_pulses.writelines("{:d} ".format(value & 0x7FFFFFF))
                 fd_pulses.writelines("\n")
                 fd_pulses.flush()
-                # print("len: ", count, "shape: ", pulse)
                 response.clear()
             elif response.cmd == shproto.MODE_STAT:
                 shproto.dispatcher.pkts04 += 1
@@ -172,46 +167,54 @@ def start(sn=None):
                                                        ((response.payload[13] & 0xFF) << 24)
                 if response.len >= (15 + 2):
                     shproto.dispatcher.total_pulse_width = (response.payload[14] & 0xFF) | \
-                                                       ((response.payload[15] & 0xFF) << 8) | \
-                                                       ((response.payload[16] & 0xFF) << 16) | \
-                                                       ((response.payload[17] & 0xFF) << 24)
+                                                           ((response.payload[15] & 0xFF) << 8) | \
+                                                           ((response.payload[16] & 0xFF) << 16) | \
+                                                           ((response.payload[17] & 0xFF) << 24)
                 response.clear()
             else:
-                print("Wtf received: cmd:{}\r\npayload: {}".format(response.cmd, response.payload))
+                logger.info("Received: cmd:{}\r\npayload: {}".format(response.cmd, response.payload))
                 response.clear()
     nano.close()
 
-# This function writes the 2D spectrum to a JSON file
+
 
 def process_01(filename, compression, device, t_interval):  # Compression reduces the number of channels by 8, 4, or 2
-    logger.debug(f'dispatcher.process_01({filename})')
+    logger.info(f'dispatcher.process_01({filename})')
 
-    global counts
-    global last_counts
+    global counts, last_counts
 
-    counts          = 0
-    last_counts     = 0
-    compression     = int(compression)
-    t0              = time.time()
-    elapsed              = 0
-    compressed_bins = int(max_bins / compression)
+    counts              = 0
+    last_counts         = 0
+    compression         = int(compression)
+    max_bins            = 8192
+    global_vars.bins    = int(max_bins / compression)
+    t0                  = time.time()
+    elapsed             = 0
+    compressed_bins     = int(max_bins / compression)
 
-    settings        = fn.load_settings()
-    max_counts      = settings[9]
-    coeff_1         = settings[18]
-    coeff_2         = settings[19]
-    coeff_3         = settings[20]
-    max_seconds     = settings[26]
-
+    # Load settings from global_vars
+    max_counts          = global_vars.max_counts
+    coeff_1             = global_vars.coeff_1
+    coeff_2             = global_vars.coeff_2
+    coeff_3             = global_vars.coeff_3
+    max_seconds         = global_vars.max_seconds
+    t_interval          = global_vars.t_interval
 
     # Define the histogram list
-    hst             = [0] * max_bins  # Initialize the original histogram list
+    hst                 = [0] * max_bins  # Initialize the original histogram list
+
+    # Initialize last update and save times
+    last_update_time    = time.time()
+    last_save_time      = time.time()
+
+    # Initialize count history
+    count_history       = []
 
     while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag) and (counts < max_counts and elapsed <= max_seconds):
 
         time.sleep(t_interval)
 
-        # Get the current time
+        # Get the devicetime
         t1 = time.time()
 
         # Calculate the time difference
@@ -235,112 +238,143 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
 
         cps = (counts - last_counts)  # Strictly not cps but counts per loop in this while loop!! (need to fix)
 
-        data = {
-            "schemaVersion": "NPESv2",
-            "data": [
-                {
-                    "deviceData": {
-                        "softwareName": "IMPULSE",
-                        "deviceName": "{}{}".format(device, shproto.dispatcher.serial_number)
-                    },
-                    "sampleInfo": {
-                        "name": filename,
-                        "location": "",
-                        "note": ""
-                    },
-                    "resultData": {
-                        "startTime": start_time.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-                        "endTime": end_time.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-                        "energySpectrum": {
-                            "numberOfChannels": compressed_bins,
-                            "energyCalibration": {
-                                "polynomialOrder": 2,
-                                "coefficients": [coeff_3, coeff_2, coeff_1]
-                            },
-                            "validPulseCount": counts,
-                            "measurementTime": elapsed,
-                            "spectrum": compressed_hst
+        # Append CPS to count history
+        count_history.append(cps)
+
+        # Update global variables once per second
+        if t1 - last_update_time >= 1 * t_interval:
+            with global_vars.write_lock:
+                global_vars.cps             = cps
+                global_vars.counts          = counts
+                global_vars.elapsed         = elapsed
+                global_vars.count_history   = count_history  # Update count history
+                global_vars.histogram       = compressed_hst
+
+
+            last_update_time = t1
+
+        # Save JSON files once every 60 seconds
+        if t1 - last_save_time >= 60 or shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag:
+
+            logger.info(f'shproto process_01 attempting to save {filename}.json')
+
+            data = {
+                "schemaVersion": "NPESv2",
+                "data": [
+                    {
+                        "deviceData": {
+                            "softwareName": "IMPULSE",
+                            "deviceName": "{}{}".format(device, shproto.dispatcher.serial_number)
+                        },
+                        "sampleInfo": {
+                            "name": filename,
+                            "location": "",
+                            "note": ""
+                        },
+                        "resultData": {
+                            "startTime": start_time.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                            "endTime": end_time.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                            "energySpectrum": {
+                                "numberOfChannels": compressed_bins,
+                                "energyCalibration": {
+                                    "polynomialOrder": 2,
+                                    "coefficients": [coeff_3, coeff_2, coeff_1]
+                                },
+                                "validPulseCount": counts,
+                                "measurementTime": elapsed,
+                                "spectrum": compressed_hst
+                            }
                         }
                     }
-                }
-            ]
-        }
+                ]
+            }
 
+            json_data = json.dumps(data, separators=(",", ":"))
 
-        json_data = json.dumps(data, separators=(",", ":"))
+            # Construct the full path to the file
+            file_path = os.path.join(global_vars.data_directory, f'{filename}.json')
 
-        # Construct the full path to the file
-        file_path = os.path.expanduser('~/impulse_data/' + filename + '.json')
+            logger.info(f'file path = {file_path}')
 
-        # Open the JSON file in "write" mode for each iteration
-        with open(file_path, "w") as wjf:
-            wjf.write(json_data)
+            # Open the JSON file in "write" mode for each iteration
+            with open(file_path, "w") as wjf:
+                wjf.write(json_data)
 
-        fn.write_cps_json(filename, cps, elapsed)
+            # Save CPS data to a separate JSON file
+            cps_data = {
+                "filename": filename,
+                "count_history": count_history,
+                "elapsed": elapsed
+            }
+
+            cps_file_path = os.path.join(global_vars.data_directory, f'{filename}_cps.json')
+
+            logger.info(f'CPS file path = {cps_file_path}')
+
+            # Open the CPS JSON file in "write" mode for each iteration
+            with open(cps_file_path, "w") as cps_wjf:
+                json.dump(cps_data, cps_wjf)
+
+            last_save_time = t1
 
         last_counts = counts
 
-    return    
+    return
 
-# This function writes the 3D spectrum to a JSON file------------------------------- 3d Function
 
-def process_02(filename, compression, t_interval):
-    logger.info(f'dispatcher.process_01({filename})')
 
-    global counts
-    global last_counts
-    global total_counts  # New variable to store total counts
+def process_02(filename, compression, device, t_interval):  # Compression reduces the number of channels by 8, 4, or 2
+    logger.info(f'dispatcher.process_02 ({filename})')
 
-    counts          = 0
-    last_counts     = 0
-    total_counts    = 0  # Initialize total counts
+    global counts, last_counts, histogram_3d
 
-    compression     = int(compression)
-    t0              = time.time()
+    counts = 0
+    last_counts = 0
+    total_counts = 0
+    compression = int(compression)
+    max_bins = 8192
+    global_vars.bins = int(max_bins / compression)
+    t0 = time.time()
+    elapsed = 0
     compressed_bins = int(max_bins / compression)
+    last_hst = [0] * compressed_bins
+    hst3d = []
 
-    filename_3d     = filename + '_3d'
-    file_path       = os.path.expanduser('~/impulse_data/' + filename_3d + '.json')
+    # Load settings from global_vars
+    max_counts = global_vars.max_counts
+    coeff_1 = global_vars.coeff_1
+    coeff_2 = global_vars.coeff_2
+    coeff_3 = global_vars.coeff_3
+    max_seconds = global_vars.max_seconds
+    t_interval = global_vars.t_interval
 
-    settings        = fn.load_settings()
-    coeff_1         = settings[18]
-    coeff_2         = settings[19]
-    coeff_3         = settings[20]
+    # Define the histogram list
+    hst = [0] * max_bins  # Initialize the original histogram list
 
-    # Initialize last_compressed_hst
-    last_compressed_hst = [0] * compressed_bins
+    # Initialize last update and save times
+    last_update_time = time.time()
+    last_save_time = time.time()
 
-    # Write the initial JSON schema to the file without the spectrum field
-    initial_data = {
-        "schemaVersion": "NPESv1",
-        "resultData": {
-            "startTime": int(t0 * 1e6),  # Convert seconds to microseconds
-            "energySpectrum": {
-                "numberOfChannels": compressed_bins,
-                "energyCalibration": {
-                    "polynomialOrder": 2,
-                    "coefficients": [float(coeff_3), float(coeff_2), float(coeff_1)]
-                },
-                "validPulseCount": counts,
-                "totalPulseCount": total_counts,  # New field for total counts
-                "measurementTime": 0,
-                "spectrum": []
-            }
-        }
-    }
+    # Initialize count history
+    count_history = []
 
-    with open(file_path, "w") as wjf:
-        json.dump(initial_data, wjf, separators=(",", ":"))
+    while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag) and (counts < max_counts and elapsed <= max_seconds):
 
-    while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag):
         time.sleep(t_interval)
 
-        # Get the current time in microseconds
-        t1 = int(time.time() * 1e6)
+        # Get the device time
+        t1 = time.time()
 
-        # Fetch the histogram and counts from the device
-        hst = shproto.dispatcher.histogram
-        counts = sum(hst)
+        # Calculate the time difference
+        elapsed = int(t1 - t0)
+
+        # Convert float timestamps to datetime objects
+        start_time = datetime.fromtimestamp(t0)
+        end_time = datetime.fromtimestamp(t1)
+
+        # Fetch the histogram from the device
+        with shproto.dispatcher.histogram_lock:
+            hst = shproto.dispatcher.histogram.copy()
 
         # Clear counts in the last bin
         hst[-1] = 0
@@ -348,62 +382,133 @@ def process_02(filename, compression, t_interval):
         # Combine every 'compression' elements into one for compression
         compressed_hst = [sum(hst[i:i + compression]) for i in range(0, max_bins, compression)]
 
-        # Calculate net counts in each bin
-        net_compressed_hst = [current - last for current, last in zip(compressed_hst, last_compressed_hst)]
+        # Sum total counts
+        counts = sum(compressed_hst)
 
-        # Update total counts
-        total_counts += counts
+        cps = (counts - last_counts)  # Strictly not cps but counts per loop in this while loop!! (need to fix)
+
+        # Append CPS to count history
+        count_history.append(cps)
+
+        # Calculate net counts in each bin
+        this_hst = [a - b for a, b in zip(compressed_hst, last_hst)]
+        hst3d.append(this_hst)
+
+        # Update global variables once per second
+        if t1 - last_update_time >= 1 * t_interval:
+            with global_vars.write_lock:
+                global_vars.cps = cps
+                global_vars.counts = counts
+                global_vars.elapsed = elapsed
+                global_vars.count_history = count_history  # Update count history
+                global_vars.histogram_3d = hst3d
+
+            last_update_time = t1
+
+        # Save JSON files once every 60 seconds
+        if t1 - last_save_time >= 60 or shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag:
+
+            logger.info(f'shproto process_02 attempting to save {filename}_3d.json')
+
+            data = {
+                "schemaVersion": "NPESv2",
+                "data": [
+                    {
+                        "deviceData": {
+                            "softwareName": "IMPULSE",
+                            "deviceName": "{}{}".format(device, shproto.dispatcher.serial_number)
+                        },
+                        "sampleInfo": {
+                            "name": filename,
+                            "location": "",
+                            "note": ""
+                        },
+                        "resultData": {
+                            "startTime": start_time.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                            "endTime": end_time.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                            "energySpectrum": {
+                                "numberOfChannels": compressed_bins,
+                                "energyCalibration": {
+                                    "polynomialOrder": 2,
+                                    "coefficients": [coeff_3, coeff_2, coeff_1]
+                                },
+                                "validPulseCount": counts,
+                                "measurementTime": elapsed,
+                                "spectrum": hst3d
+                            }
+                        }
+                    }
+                ]
+            }
+
+            json_data = json.dumps(data, separators=(",", ":"))
+
+            # Construct the full path to the file
+            file_path = os.path.join(global_vars.data_directory, f'{filename}_3d.json')
+
+            logger.info(f'file path = {file_path}')
+
+            # Open the JSON file in "write" mode for each iteration
+            with open(file_path, "w") as wjf:
+                wjf.write(json_data)
+
+            # Save CPS data to a separate JSON file
+            cps_data = {
+                "filename": filename,
+                "count_history": count_history,
+                "elapsed": elapsed
+            }
+
+            cps_file_path = os.path.join(global_vars.data_directory, f'{filename}_cps.json')
+
+            logger.info(f'CPS file path = {cps_file_path}')
+
+            # Open the CPS JSON file in "write" mode for each iteration
+            with open(cps_file_path, "w") as cps_wjf:
+                json.dump(cps_data, cps_wjf)
+
+            last_save_time = t1
 
         last_counts = counts
-
-        last_compressed_hst = compressed_hst
-
-        # Load existing data from the JSON file
-        existing_data = load_existing_data(file_path)
-
-        # Check if the spectrum field exists, and if not, add it
-        if "spectrum" not in existing_data["resultData"]["energySpectrum"]:
-            existing_data["resultData"]["energySpectrum"]["spectrum"] = []
-
-        # Append the new histogram to the existing spectrum
-        existing_data["resultData"]["energySpectrum"]["spectrum"].append(net_compressed_hst)
-
-        # Update the endTime, validPulseCount, totalPulseCount, and measurementTime
-        existing_data["resultData"]["endTime"] = t1
-        existing_data["resultData"]["energySpectrum"]["validPulseCount"] = counts
-        existing_data["resultData"]["energySpectrum"]["totalPulseCount"] = total_counts
-        existing_data["resultData"]["energySpectrum"]["measurementTime"] = int((t1 - initial_data["resultData"]["startTime"]) / 1e6)
-
-        # Write the updated data back to the file
-        with open(file_path, "w") as wjf:
-            json.dump(existing_data, wjf, separators=(",", ":"))
+        last_hst = compressed_hst
 
     return
 
-
-def load_existing_data(file_path):
-    existing_data = {}
-
-    # Load existing data if the file exists
+def load_json_data(file_path):
+    logger.info(f'dispatcher.load_json_data({file_path})')
     if os.path.exists(file_path):
-        with open(file_path, 'r') as file:
-            try:
-                existing_data = json.load(file)
-            except json.JSONDecodeError:
-                pass
-
-    return existing_data
+        with open(file_path, "r") as rjf:
+            return json.load(rjf)
+    else:
+        return {
+            "schemaVersion": "NPESv1",
+            "resultData": {
+                "startTime": int(time.time() * 1e6),  # Convert seconds to microseconds
+                "energySpectrum": {
+                    "numberOfChannels": 0,
+                    "energyCalibration": {
+                        "polynomialOrder": 2,
+                        "coefficients": []
+                    },
+                    "validPulseCount": 0,
+                    "totalPulseCount": 0,
+                    "measurementTime": 0,
+                    "spectrum": []
+                }
+            }
+        }
 
 def process_03(_command):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = _command
-        logger.info(f'Command received (dispatcher):{_command}')
+        logger.info(f'dispatcher.process_03({_command})')
         return
 
 def stop():
-
+    logger.info('shproto.stop triggered')
     with shproto.dispatcher.stopflag_lock:
         process_03('-sto')
+        logger.info('process_03(-sto)')
         time.sleep(0.5)
         shproto.dispatcher.stopflag = 1
         logger.info('Stop flag set(dispatcher)')
@@ -411,7 +516,6 @@ def stop():
         return
 
 def spec_stop():
-
     with shproto.dispatcher.spec_stopflag_lock:
         shproto.dispatcher.spec_stopflag = 1
 
@@ -420,14 +524,14 @@ def spec_stop():
 
 def clear():
     with shproto.dispatcher.histogram_lock:
-        shproto.dispatcher.histogram        = [0] * max_bins
-        shproto.dispatcher.pkts01           = 0
-        shproto.dispatcher.pkts03           = 0
-        shproto.dispatcher.pkts04           = 0
-        shproto.dispatcher.total_pkts       = 0
-        shproto.dispatcher.cpu_load         = 0
-        shproto.dispatcher.cps              = 0
-        shproto.dispatcher.total_time       = 0
-        shproto.dispatcher.lost_impulses    = 0
-        shproto.dispatcher.total_pulse_width = 0
-        shproto.dispatcher.dropped          = 0
+        shproto.dispatcher.histogram            = [0] * max_bins
+        shproto.dispatcher.pkts01               = 0
+        shproto.dispatcher.pkts03               = 0
+        shproto.dispatcher.pkts04               = 0
+        shproto.dispatcher.total_pkts           = 0
+        shproto.dispatcher.cpu_load             = 0
+        shproto.dispatcher.cps                  = 0
+        shproto.dispatcher.total_time           = 0
+        shproto.dispatcher.lost_impulses        = 0
+        shproto.dispatcher.total_pulse_width    = 0
+        shproto.dispatcher.dropped              = 0

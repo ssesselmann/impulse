@@ -6,35 +6,60 @@ import numpy as np
 import sqlite3 as sql
 import threading
 import logging
-from datetime import datetime
-
-import dash
-import dash_daq as daq
-import plotly.graph_objs as go
-from dash import dcc, html
-from dash.dependencies import Input, Output, State
-from dash.exceptions import PreventUpdate
-from server import app
-
-import functions as fn
-import pulsecatcher as pc
+import global_vars
 import audio_spectrum as asp
 import subprocess
 import serial.tools.list_ports
 import dash_bootstrap_components as dbc
 import shproto.dispatcher
 import shproto.port as port
+import dash
+import dash_daq as daq
+import plotly.graph_objs as go
+
+from dash import dcc, html, callback_context
+from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
+from server import app
+from datetime import datetime
+
+# Importing store variables from server
+from server import (
+    store_device, 
+    store_filename, 
+    store_filename_2, 
+    store_bins,
+    store_bins_2, 
+    store_histogram, 
+    store_histogram_2, 
+    store_histogram_3d,
+    store_gaussian, 
+    store_coefficients, 
+    store_sigma, 
+    store_annotations,
+    store_confirmation_output,
+    store_load_flag_tab3
+)
+
+# Importing custom functions
+from functions import (
+    get_path, 
+    get_device_number, 
+    start_recording, 
+    stop_recording,
+    load_histogram_3d, 
+    clear_global_cps_list, 
+    write_blank_json_schema, 
+    handle_modal_confirmation
+)
 
 logger = logging.getLogger(__name__)
 
-device = None
-mean_cps = None
-cps = None
-
-data_directory = os.path.join(os.path.expanduser("~"), "impulse_data")
+data_directory = global_vars.data_directory
 
 def show_tab3():
-    global device
+    global_vars.load_settings_from_json()
+    logger.info("Loading settings from JSON")
 
     # Load available JSON files
     files = [os.path.relpath(file, data_directory).replace("\\", "/")
@@ -48,57 +73,55 @@ def show_tab3():
         file['label'] = file['label'].replace('.json', '')
         file['value'] = file['value'].replace('.json', '')
 
-    # Load settings from database
-    database = fn.get_path(f'{data_directory}/.data_v2.db')
-    conn = sql.connect(database)
-    c = conn.cursor()
-    query = "SELECT * FROM settings"
-    c.execute(query)
-    settings = c.fetchall()[0]
+    # Load settings from global variables
+    filename        = global_vars.filename
+    device          = global_vars.device
+    sample_rate     = global_vars.sample_rate
+    chunk_size      = global_vars.chunk_size
+    threshold       = global_vars.threshold
+    tolerance       = global_vars.tolerance
+    bins            = global_vars.bins
+    bin_size        = global_vars.bin_size
+    max_counts      = global_vars.max_counts
+    sample_length   = global_vars.sample_length
+    calib_bin_1     = global_vars.calib_bin_1
+    calib_bin_2     = global_vars.calib_bin_2
+    calib_bin_3     = global_vars.calib_bin_3
+    calib_e_1       = global_vars.calib_e_1
+    calib_e_2       = global_vars.calib_e_2
+    calib_e_3       = global_vars.calib_e_3
+    coeff_1         = global_vars.coeff_1
+    coeff_2         = global_vars.coeff_2
+    coeff_3         = global_vars.coeff_3
+    max_seconds     = global_vars.max_seconds
+    t_interval      = global_vars.t_interval
+    compression     = global_vars.compression
 
-    filename = settings[1]
-    device = settings[2]
-    sample_rate = settings[3]
-    chunk_size = settings[4]
-    threshold = settings[5]
-    tolerance = settings[6]
-    bins = settings[7]
-    bin_size = settings[8]
-    max_counts = settings[9]
-    shapestring = settings[10]
-    sample_length = settings[11]
-    calib_bin_1 = settings[12]
-    calib_bin_2 = settings[13]
-    calib_bin_3 = settings[14]
-    calib_e_1 = settings[15]
-    calib_e_2 = settings[16]
-    calib_e_3 = settings[17]
-    coeff_1 = settings[18]
-    coeff_2 = settings[19]
-    coeff_3 = settings[20]
-    max_seconds = settings[26]
-    t_interval = settings[27]
-    compression = settings[29]
+    try:
+        if device < 100:
+            load_histogram_3d(filename)
+        else:
+            shproto.dispatcher.load_json_data(os.path.join(data_directory, f'{filename}_3d.json'))
+    except FileNotFoundError:
+        logger.info(f'{filename}_3d.json not found')
+        pass
 
-    if device >= 100:
-        serial = 'block'
-        audio = 'none'
-    else:
-        serial = 'none'
-        audio = 'block'
-
+    serial = 'block' if device >= 100 else 'none'
+    audio = 'none' if device >= 100 else 'block'
     refresh_rate = t_interval * 1000
 
     # Render tab layout
     html_tab3 = html.Div(id='tab3', children=[
-        html.Div(id='polynomial_3d', children=''),
-        html.Div(id='bar_chart_div_3d', children=[
-            dcc.Graph(id='chart_3d', figure={}),
+        html.Div(id='plolynomial-3d', children=''),
+        html.Div(id='bar-chart-div-3d', children=[
+            dcc.Graph(id='chart-3d', figure={}),
             dcc.Interval(id='interval-component', interval=refresh_rate, n_intervals=0)
         ]),
+        dcc.Store(id='store-histogram-3d', data={'histogram_3d': []}),
+        dcc.Store(id='store_load_flag_tab3', data=False),
         html.Div(id='t2_filler_div', children=''),
         html.Div(id='t2_setting_div1', children=[
-            html.Button('START', id='start_3d'),
+            html.Button('START', id='start_3d', n_clicks=0),
             html.Div(id='counts_3d', children=''),
             html.Div(id='start_text_3d', children=''),
             html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1000, readOnly=False, value=max_counts)]),
@@ -153,9 +176,13 @@ def show_tab3():
         html.Div(id='subfooter', children=[]),
         
         dbc.Modal([
-            dbc.ModalBody(f'Overwrite \"{filename}\" ?'),
+            dbc.ModalBody(id='modal-body-3d'),
+            dbc.ModalBody(children=[
+                html.P('Avoid huge arrays.'),
+                html.P('Try 500 bins and 10 second intervals'),
+                ], style={'color': 'red', 'align':'center'}),
             dbc.ModalFooter([
-                dbc.Button("Append", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
+                dbc.Button("Overwrite", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
                 dbc.Button("Cancel", id="cancel-overwrite-tab3", className="ml-auto", n_clicks=0),
             ]),
             ], 
@@ -168,224 +195,285 @@ def show_tab3():
     ])
     return html_tab3
 
-# --------- CALLBACK FOR START MODAL FUNCTION ------------------------
 @app.callback(
-    [Output('modal-overwrite-tab3', 'is_open'),
-     Output('start_text_3d', 'children')],
-    [Input('start_3d', 'n_clicks'), 
-     Input('confirm-overwrite-tab3', 'n_clicks'), 
-     Input('cancel-overwrite-tab3', 'n_clicks')],
-    [State('filename', 'value'),
-     State('modal-overwrite-tab3', 'is_open'),
-     State('compression', 'value'),
-     State('t_interval', 'value')]
+    [Output('modal-overwrite-tab3'  , 'is_open'),
+     Output('modal-body-3d'         , 'children')],
+    [Input('start_3d'               , 'n_clicks'), 
+     Input('confirm-overwrite-tab3' , 'n_clicks'), 
+     Input('cancel-overwrite-tab3'  , 'n_clicks')],
+    [State('filename'               , 'value'), 
+     State('modal-overwrite-tab3'   , 'is_open')]
 )
-def handle_start_and_modal(start_clicks, confirm_clicks, cancel_clicks, filename, is_open, compression, t_interval):
-    logger.info("Entering handle_start_and_modal")
-    ctx = dash.callback_context
+def confirm_with_user_3d(start_clicks, confirm_clicks, cancel_clicks, filename, is_open):
+    ctx = callback_context
 
     if not ctx.triggered:
         raise PreventUpdate
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    logger.info(f"Triggered by {button_id}")
-    logger.info(f"Current is_open state: {is_open}")
+    logging.info(f"Tab3 Modal triggered by {button_id}")
 
-    try:
-        if button_id == "start_3d":
-            file_exists = os.path.exists(f'{data_directory}/{filename}_3d.json')
-            logger.info(f"Checked and file exists: {file_exists}")
-            if file_exists:
-                logger.info("Modal should open")
-                return True, ""
-            else:
-                thread = threading.Thread(target=start_recording, args=(filename, compression, t_interval))
-                thread.start()
-                return False, " "
+    if button_id == "start_3d":
+        file_exists = os.path.exists(f'{global_vars.data_directory}/{filename}_3d.json')
+        logging.info(f"File exists: {file_exists} for {filename}_3d.json")
 
-        elif button_id == "confirm-overwrite-tab3":
-            logger.info("Confirm overwrite button clicked")
-            thread = threading.Thread(target=start_recording, args=(filename, compression, t_interval))
-            thread.start()
-            logger.info("Modal should close")
-            return False, " "
+        if file_exists:
+            return True, f'Overwrite "{filename}_3d.json"?'
 
-        elif button_id == "cancel-overwrite-tab3":
-            logger.info("Cancel overwrite button clicked")
-            logger.info("Modal should close")
-            return False, ""  # Ensure modal is closed
+    elif button_id in ["confirm-overwrite-tab3", "cancel-overwrite-tab3"]:
+        return False, ''
 
-    except Exception as e:
-        logger.error(f"Error in handle_start_and_modal: {e}")
-        return is_open, f"Error: {str(e)}"
+    return False, ''
 
-    return False, ""
+@app.callback(
+    Output('start_text_3d'          , 'children'),
+    [Input('confirm-overwrite-tab3' , 'n_clicks'),
+     Input('start_3d'               , 'n_clicks')],
+    [State('filename'               , 'value'),
+     State('compression'            , 'value'),
+     State('t_interval'             , 'value')]
+)
+def start_new_3d_spectrum(confirm_clicks, start_clicks, filename, compression, t_interval):
+    ctx = dash.callback_context
 
-def start_recording(filename, compression, t_interval):
-    """
-    Starts the recording process depending on the device type.
-    """
-    logger.info(f"Starting recording with filename: {filename}, compression: {compression}, t_interval: {t_interval}")
-    dn = fn.get_device_number()
-    logger.info(f"Device number: {dn}")
+    if not ctx.triggered:
+        raise PreventUpdate
 
-    if dn >= 100:
-        try:
-            shproto.dispatcher.spec_stopflag = 0
-            dispatcher = threading.Thread(target=shproto.dispatcher.start)
-            dispatcher.start()
+    trigger_id      = ctx.triggered[0]['prop_id'].split('.')[0]
+    trigger_value   = ctx.triggered[0]['value']
+    file_exists     = os.path.exists(f'{global_vars.data_directory}/{filename}_3d.json')
+    device          = global_vars.device 
 
-            time.sleep(0.1)
-            shproto.dispatcher.process_03('-rst')
-            logger.info('tab3 sends command -rst')
-            time.sleep(0.1)
-            shproto.dispatcher.process_03('-sta')
-            logger.info('tab3 sends command -sta')
-            time.sleep(0.1)
-            shproto.dispatcher.process_02(filename, compression, t_interval)
-            logger.info('dispatcher.process_02 Started')
-            time.sleep(0.1)
-        except serial.SerialException as e:
-            logger.error(f'SerialException: {e}')
-        except KeyError as e:
-            logger.error(f'KeyError: {e}')
-        except Exception as e:
-            logger.error(f'Unexpected error in start_recording: {e}')
-    else:
-        fn.start_recording(3)
-        logger.info('Audio Codec Recording Started')
+    if trigger_value == 0:
+        raise PreventUpdate
+
+    if (trigger_id == 'confirm-overwrite-tab3') or (trigger_id == 'start_3d' and not file_exists):
+        
+        if device >= 100:
+            try:
+                shproto.dispatcher.spec_stopflag = 0
+                dispatcher = threading.Thread(target=shproto.dispatcher.start)
+                dispatcher.start()
+
+                time.sleep(0.1)
+                shproto.dispatcher.process_03('-rst')
+                logger.info(f'tab2 sends reset command -rst')
+
+                time.sleep(0.1)
+                shproto.dispatcher.process_03('-sta')
+                logger.info(f'tab2 sends start command -sta')
+
+                time.sleep(0.1)
+                shproto.dispatcher.process_02(filename, compression, "MAX", t_interval)
+                logger.info(f'tab2 calls process_01(){filename}, {compression}, MAX, {t_interval}')
+
+                time.sleep(0.1)
+
+            except Exception as e:
+                logger.error(f'tab 2 start_new_or_overwrite() error {e}')
+                return f"tab2 Error: {str(e)}"
+        else:    
+            start_recording(3)
+            logger.info(f'tab2 fn.start_recording({3})')
+            return ""
+
+    raise PreventUpdate
 
 #-------- STOP FUNCTION ---------------------
 @app.callback(Output('stop_text_3d', 'children'),
               [Input('stop_3d', 'n_clicks')])
 def update_output(n_clicks):
-    """
-    Stops the recording process.
-    """
+    logger.info("update_output callback triggered")
+
     if n_clicks is None:
         raise PreventUpdate
 
-    dn = fn.get_device_number()
+    dn = get_device_number()
+
     if dn >= 100:
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
         time.sleep(0.1)
         logger.info('Stop command sent from (tab3)')
     else:
-        fn.stop_recording()
-        return " "
+        stop_recording()
 
-# ------- RENDER CHART FUNCTION ------------------------
-@app.callback([Output('chart_3d', 'figure'),
-               Output('counts_3d', 'children'),
-               Output('elapsed_3d', 'children'),
-               Output('cps_3d', 'children')],
-              [Input('interval-component', 'n_intervals'),
-               Input('filename', 'value'),
-               Input('epb_switch', 'on'),
-               Input('log_switch', 'on'),
-               Input('cal_switch', 'on'),
-               Input('t_interval', 'value')], prevent_initial_call=True)
-def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
-    """
-    Updates the 3D graph with the current data.
-    """
-    global mean_cps
-    global global_counts
-    global device
+    global_vars.run_flag.clear()
 
-    if n is None:
-        raise PreventUpdate
+    return " "
 
-    if device is not None and isinstance(device, int):
-        if device > 100:
+# ------- Render surface plot callback ------------------------
+@app.callback(
+    [Output('chart-3d'          , 'figure'),
+     Output('counts_3d'         , 'children'),
+     Output('elapsed_3d'        , 'children'),
+     Output('cps_3d'            , 'children'),
+     Output('store_load_flag_tab3', 'data')],
+    [Input('interval-component' , 'n_intervals'),
+     Input('filename'           , 'value'),
+     Input('epb_switch'         , 'on'),
+     Input('log_switch'         , 'on'),
+     Input('cal_switch'         , 'on'),
+     Input('t_interval'         , 'value')],
+    [State('store-histogram-3d' , 'data'),
+    State('store_load_flag_tab3'     , 'data')]
+)
+def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t_interval, store_data, store_load_flag_tab3):
+    
+    if global_vars.device is not None and isinstance(global_vars.device, int):
+        if global_vars.device >= 100:
             from shproto.dispatcher import cps
-        elif device < 100:
-            from pulsecatcher import mean_cps
-            cps = mean_cps 
+        elif global_vars.device < 100:
+            cps = global_vars.cps
+        else:
+            cps = 0
+    else:
+        cps = 0
+        
+    axis_type = 'log' if log_switch else 'linear'
 
-    axis_type   = 'log' if log_switch else 'linear'
-    histogram3  = fn.get_path(f'{data_directory}/{filename}_3d.json')
-    now         = datetime.now()
+    now = datetime.now()
+    date = now.strftime('%d/%m/%Y')
+
+    filename_3d = f'{filename}_3d.json'
+    file_path = os.path.join(global_vars.data_directory, filename_3d)
+
+    y_range = [0, len(global_vars.histogram_3d)]
+
     layout = go.Layout(
-            uirevision='nochange',
-            height=480,
-            margin=dict(l=0, r=0, b=0, t=0),
-            scene=dict(
-                xaxis=dict(title='Energy(x)'),
-                yaxis=dict(title='Seconds(y)'),
-                zaxis=dict(title='Counts(z)', 
-                type=axis_type),
-            ))
+        uirevision='nochange',
+        height=480,
+        margin=dict(l=0, r=0, b=0, t=0),
+        scene=dict(
+            xaxis=dict(title='Energy(x)', range=[0, global_vars.bins]),
+            yaxis=dict(title='Time intervals(y)', range=y_range),
+            zaxis=dict(title='Counts(z)', type=axis_type),
+        )
+    )
 
-    if os.path.exists(histogram3):
-        with open(histogram3, "r") as f:
+    if not global_vars.run_flag.is_set() and not store_load_flag_tab3:
+
+        if os.path.exists(file_path):
+
             try:
-                data = json.load(f)
-            except json.JSONDecodeError as e:
-                logger.error(f"JSONDecodeError: {e}")
-                return go.Figure(data=[], layout=layout), 0, 0, 0
+                with open(file_path, 'r') as file:
+                    data = json.load(file)
 
-            numberOfChannels = data["resultData"]["energySpectrum"]["numberOfChannels"]
-            validPulseCount = data["resultData"]["energySpectrum"]["validPulseCount"]
-            elapsed = data["resultData"]["energySpectrum"]["measurementTime"]
-            coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"][::-1]
-            spectra = data["resultData"]["energySpectrum"]["spectrum"]
+                    # Check if the JSON file has the expected structure and non-empty spectrum
+                    if "data" not in data or not data["data"]:
+                        raise ValueError("JSON file does not have the expected structure")
+                    result_data = data["data"][0]["resultData"]
+                    if "energySpectrum" not in result_data or "spectrum" not in result_data["energySpectrum"]:
+                        raise ValueError("JSON file does not contain energy spectrum data")
+                    spectrum = result_data["energySpectrum"]["spectrum"]
 
-        global_counts = validPulseCount
-        x = list(range(numberOfChannels))
-        y = spectra
+                    if not spectrum:
+                        raise ValueError("Spectrum data is empty")
+
+                    z = spectrum
+                    y = list(range(len(spectrum)))
+                    x = list(range(global_vars.bins))
+
+                    layout.scene.yaxis.range = [0, max(y)]  # Set the range for the y-axis explicitly
+
+                    surface_trace = {
+                        'type': 'surface',
+                        'x': x,
+                        'y': y,
+                        'z': z,
+                        'colorscale': 'Rainbow',
+                        'showlegend': False
+                    }
+
+                    traces = [surface_trace]
+
+                    title_text = f'{filename}<br>{date}<br>{global_vars.counts} counts<br>{global_vars.elapsed} seconds'
+
+                    layout.update(
+                        title={
+                            'text': title_text,
+                            'x': 0.85,
+                            'y': 0.9,
+                            'xanchor': 'center',
+                            'yanchor': 'top',
+                            'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+                        }
+                    )
+
+                    fig = go.Figure(data=traces, layout=layout)
+
+                    store_load_flag_tab3 = True
+
+                    return fig, f'{global_vars.counts}', f'{global_vars.elapsed}', f'cps {cps}', store_load_flag_tab3
+
+            except json.JSONDecodeError as json_err:
+                logger.error(f"tab3 JSON decode error: {json_err}")
+            except FileNotFoundError as fnf_err:
+                logger.error(f"tab3 file not found: {fnf_err}")
+            except ValueError as val_err:
+                logger.error(f"tab3 value error: {val_err}")
+            except Exception as e:
+                logger.error(f"tab3 error reading JSON file: {e}")
+        else:
+            logger.info('Run flag is not set and file does not exist, returning default blank figure')
+
+            data = [go.Scatter3d(
+                x=[0],
+                y=[0],
+                z=[0],
+                mode='markers',
+                marker=dict(size=5, color='blue')
+            )]
+
+            fig = go.Figure(data=data, layout=layout)
+
+            return fig, "0", "0", f'cps {cps}' , store_load_flag_tab3
+            
+
+    try:
+        z = global_vars.histogram_3d
+        y = list(range(len(global_vars.histogram_3d)))
+        x = list(range(global_vars.bins))
+
+        layout.scene.yaxis.range = [0, max(y)]  # Ensure the range for the y-axis is set explicitly
 
         if epb_switch:
-            y = [[num * index for index, num in enumerate(inner_list)] for inner_list in spectra]
+            z = [[num * index for index, num in enumerate(inner_list)] for inner_list in z]
 
         if cal_switch:
-            x = np.polyval(np.poly1d(coefficients), x)
-
-        traces = []
-        for i in range(len(y)):
-            trace = {
-                'type': 'scatter3d',
-                'showlegend': False
-            }
-            traces.append(trace)
+            x = np.polyval(np.poly1d(global_vars.coefficients_1), x)
 
         surface_trace = {
             'type': 'surface',
             'x': x,
-            'y': list(range(len(y))),
-            'z': y,
+            'y': y,
+            'z': z,
             'colorscale': 'Rainbow',
             'showlegend': False
         }
-        traces.append(surface_trace)
 
-        date        =now.strftime('%d/%m/%Y')
-        title_text  = f'{filename}<br>{date}<br>{global_counts} counts<br>{elapsed} seconds'
+        traces = [surface_trace]
 
-        layout = go.Layout(
+        title_text = f'{filename}<br>{date}<br>{global_vars.counts} counts<br>{global_vars.elapsed} seconds'
+
+        layout.update(
             title={
                 'text': title_text,
                 'x': 0.85,
                 'y': 0.9,
                 'xanchor': 'center',
                 'yanchor': 'top',
-                'font': {'family': 'Arial', 'size': 24, 'color': 'black'}},
-            uirevision='nochange',
-            height=480,
-            margin=dict(l=0, r=0, b=0, t=0),
-            scene=dict(
-                xaxis=dict(title='Energy(x)'),
-                yaxis=dict(title='Seconds(y)'),
-                zaxis=dict(title='Counts(z)', 
-                type=axis_type),
-            )
+                'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+            }
         )
 
         fig = go.Figure(data=traces, layout=layout)
 
-        return fig, f'{validPulseCount}', f'{elapsed}', f'cps {cps}'
-    else:
+        return fig, f'{global_vars.counts}', f'{global_vars.elapsed}', f'cps {cps}', store_load_flag_tab3
+
+    except Exception as e:
+        logger.error(f"tab3 rror updating 3D chart: {e}")
+
         data = [go.Scatter3d(
             x=[0],
             y=[0],
@@ -396,80 +484,76 @@ def update_graph(n, filename, epb_switch, log_switch, cal_switch, t_interval):
 
         fig = go.Figure(data=data, layout=layout)
 
-        return fig, 0, 0, 0
+        return fig, "0", "0", f'cps {cps}', store_load_flag_tab3
 
-# Update Settings
-@app.callback(Output('polynomial_3d', 'children'),
-              [Input('bins', 'value'),
-               Input('bin_size', 'value'),
-               Input('max_counts', 'value'),
-               Input('max_seconds', 'value'),
-               Input('t_interval', 'value'),
-               Input('filename', 'value'),
-               Input('threshold', 'value'),
-               Input('tolerance', 'value'),
-               Input('calib_bin_1', 'value'),
-               Input('calib_bin_2', 'value'),
-               Input('calib_bin_3', 'value'),
-               Input('calib_e_1', 'value'),
-               Input('calib_e_2', 'value'),
-               Input('calib_e_3', 'value')])
+
+# Save Settings to global and json
+@app.callback(
+    Output('plolynomial-3d' , 'children'),
+    [Input('bins'           , 'value'),
+     Input('bin_size'       , 'value'),
+     Input('max_counts'     , 'value'),
+     Input('max_seconds'    , 'value'),
+     Input('t_interval'     , 'value'),
+     Input('filename'       , 'value'),
+     Input('threshold'      , 'value'),
+     Input('tolerance'      , 'value'),
+     Input('calib_bin_1'    , 'value'),
+     Input('calib_bin_2'    , 'value'),
+     Input('calib_bin_3'    , 'value'),
+     Input('calib_e_1'      , 'value'),
+     Input('calib_e_2'      , 'value'),
+     Input('calib_e_3'      , 'value')]
+)
 def save_settings(bins, bin_size, max_counts, max_seconds, t_interval, filename, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
-    """
-    Saves settings to the database.
-    """
-    database = fn.get_path(f'{data_directory}/.data_v2.db')
-    conn = sql.connect(database)
-    c = conn.cursor()
-    query = f"""UPDATE settings SET 
-                bins={bins}, 
-                bin_size={bin_size}, 
-                max_counts={max_counts},
-                max_seconds={max_seconds}, 
-                name='{filename}', 
-                threshold={threshold}, 
-                tolerance={tolerance}, 
-                calib_bin_1={calib_bin_1},
-                calib_bin_2={calib_bin_2},
-                calib_bin_3={calib_bin_3},
-                calib_e_1={calib_e_1},
-                calib_e_2={calib_e_2},
-                calib_e_3={calib_e_3},
-                t_interval={t_interval}
-                WHERE id=0;"""
-    c.execute(query)
-    conn.commit()
+    
+    logger.info("save_settings callback triggered")
 
-    x_bins = [calib_bin_1, calib_bin_2, calib_bin_3]
-    x_energies = [calib_e_1, calib_e_2, calib_e_3]
-    coefficients = np.polyfit(x_bins, x_energies, 2)
-    polynomial_fn = np.poly1d(coefficients)
+    global_vars.bins        = bins
+    global_vars.bin_size    = bin_size
+    global_vars.max_counts  = max_counts
+    global_vars.max_seconds = max_seconds
+    global_vars.filename    = filename
+    global_vars.threshold   = threshold
+    global_vars.tolerance   = tolerance
+    global_vars.calib_bin_1 = calib_bin_1
+    global_vars.calib_bin_2 = calib_bin_2
+    global_vars.calib_bin_3 = calib_bin_3
+    global_vars.calib_e_1   = calib_e_1
+    global_vars.calib_e_2   = calib_e_2
+    global_vars.calib_e_3   = calib_e_3
+    global_vars.t_interval  = t_interval
 
-    query = f"""UPDATE settings SET 
-                coeff_1={float(coefficients[0])},
-                coeff_2={float(coefficients[1])},
-                coeff_3={float(coefficients[2])}
-                WHERE id=0;"""
-    c.execute(query)
-    conn.commit()
+    x_bins                  = [calib_bin_1, calib_bin_2, calib_bin_3]
+    x_energies              = [calib_e_1, calib_e_2, calib_e_3]
+    coefficients            = np.polyfit(x_bins, x_energies, 2)
+    polynomial_fn           = np.poly1d(coefficients)
+
+    global_vars.coeff_1     = coefficients[0]
+    global_vars.coeff_2     = coefficients[1]
+    global_vars.coeff_3     = coefficients[2]
+    global_vars.save_settings_to_json()
 
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
 
 # Update Calibration of Existing Spectrum
-@app.callback(Output('3d_update_calib_message', 'children'),
-              [Input('update_calib_button', 'n_clicks'),
-               Input('filename', 'value')])
+@app.callback(
+    Output('3d_update_calib_message', 'children'),
+    [Input('update_calib_button', 'n_clicks'),
+     Input('filename', 'value')]
+)
 def update_current_calibration(n_clicks, filename):
-    """
-    Updates the calibration of the existing spectrum.
-    """
+    logger.info("update_current_calibration callback triggered")
+
     if n_clicks is None:
         raise PreventUpdate
 
-    settings = fn.load_settings()
-    coeff_1 = round(settings[18], 6)
-    coeff_2 = round(settings[19], 6)
-    coeff_3 = round(settings[20], 6)
+    coeff_1 = round(global_vars.coeff_1, 6)
+    coeff_2 = round(global_vars.coeff_2, 6)
+    coeff_3 = round(global_vars.coeff_3, 6)
 
-    fn.update_coeff(filename, coeff_1, coeff_2, coeff_3)
+    update_coeff(filename, coeff_1, coeff_2, coeff_3)
+
     return f"Update {n_clicks}"
+
+# end of tab3.py

@@ -3,95 +3,93 @@ import wave
 import math
 import threading
 import time
-import functions as fn
-import sqlite3 as sql
 import datetime
 import logging
-from collections import defaultdict
-
-data            = None
-left_channel    = None
-global_cps      = 0
-mean_cps        = 0
-global_counts   = 0
-run_flag        = True
-run_flag_lock   = threading.Lock()
-write_lock      = threading.Lock()
+import global_vars
+import functions as fn
 
 logger = logging.getLogger(__name__)
 
 # Function reads audio stream and finds pulses then outputs time, pulse height and distortion
 def pulsecatcher(mode, run_flag, run_flag_lock):
-
+    # Clear global variables at the start of each recording
+    fn.clear_global_vars()
+    
     # Start timer
-    t0              = datetime.datetime.now()
-    tb              = time.time()   # time beginning
-    tla = 0
+    t0 = datetime.datetime.now()
+    time_start = time.time()
+    time_last_save = time_start
+    time_last_save_time = time_start  # corrected variable initialization
 
-    # Get the following from settings
-    settings        = fn.load_settings()
-    filename        = settings[1]
-    device          = settings[2]             
-    sample_rate     = settings[3]
-    chunk_size      = settings[4]                        
-    threshold       = settings[5]
-    tolerance       = settings[6]
-    bins            = settings[7]
-    bin_size        = settings[8]
-    max_counts      = settings[9]
-    sample_length   = settings[11]
-    coeff_1         = settings[18]
-    coeff_2         = settings[19]
-    coeff_3         = settings[20]
-    flip            = settings[22]
-    max_seconds     = settings[26]
-    t_interval      = settings[27]
-    peakshift       = settings[28]
-    peak            = int((sample_length-1)/2) + peakshift
+    array_3d = []
+    last_histogram = [0] * global_vars.bins  # Initialize last_histogram
 
-    right_threshold = 1000  # Set a stricter threshold for right channel to filter out noise
+    # Load settings from global variables
+    filename        = global_vars.filename
+    device          = global_vars.device
+    sample_rate     = global_vars.sample_rate
+    chunk_size      = global_vars.chunk_size
+    threshold       = global_vars.threshold
+    tolerance       = global_vars.tolerance
+    bins            = global_vars.bins
+    bin_size        = global_vars.bin_size
+    max_counts      = global_vars.max_counts
+    sample_length   = global_vars.sample_length
+    coeff_1         = global_vars.coeff_1
+    coeff_2         = global_vars.coeff_2
+    coeff_3         = global_vars.coeff_3
+    flip            = global_vars.flip
+    max_seconds     = global_vars.max_seconds
+    t_interval      = global_vars.t_interval
+    peakshift       = global_vars.peakshift
+    peak            = int((sample_length - 1) / 2) + peakshift
 
-    # Create an array of empty bins
-    histogram       = [0] * bins
-    histogram_3d    = [0] * bins
+    right_threshold = 1000  # Set a stricter threshold for right channel to filter out noise    
+
     audio_format    = pyaudio.paInt16
+    p               = pyaudio.PyAudio()
     device_channels = fn.get_max_input_channels(device)
 
     # Loads pulse shape from csv
-    shapes = fn.load_shape()
-    left_shape = [int(x) for x in shapes[0]]
-    right_shape = [int(x) for x in shapes[1]]
+    shapes          = fn.load_shape()
+    left_shape      = [int(x) for x in shapes[0]]
+    right_shape     = [int(x) for x in shapes[1]]
 
-    samples     = []
-    pulses      = []
-    left_data   = []
-    right_data  = []
+    samples         = []
+    pulses          = []
+    left_data       = []
+    right_data      = []
 
-    p = pyaudio.PyAudio()
+    last_count      = 0
 
-    global mean_cps
-    global global_counts  
-
-    global_cps      = 0
-    global_counts   = 0
-    elapsed         = 0
-
+    # Global variables
+    global_vars.elapsed         = 0
+    global_vars.counts          = 0
+    global_vars.histogram       = [0] * bins
+    global_vars.count_history   = []
+    
+    # Local Variables
+    local_elapsed = 0
+    local_counts = 0
+    local_histogram = [0] * bins
+    local_count_history = []
+    
     # Open the selected audio input device
     stream = p.open(
-        format              = audio_format,
-        channels            = 2,
-        rate                = sample_rate,
-        input               = True,
-        output              = False,
-        input_device_index  = device,
-        frames_per_buffer   = chunk_size * 2)
+        format=audio_format,
+        channels=2,
+        rate=sample_rate,
+        input=True,
+        output=False,
+        input_device_index=device,
+        frames_per_buffer=chunk_size * 2
+    )
 
-    while run_flag.is_set() and (global_counts < max_counts and elapsed <= max_seconds):
-        # Read one chunk of audio data from stream into memory. 
+    while global_vars.run_flag.is_set() and local_counts < max_counts and local_elapsed <= max_seconds:
+        # Read one chunk of audio data from stream into memory.
         data = stream.read(chunk_size, exception_on_overflow=False)
         # Convert hex values into a list of decimal values
         values = list(wave.struct.unpack("%dh" % (chunk_size * 2), data))
-
         # Extract every other element (left channel)
         left_channel = values[::2]
         right_channel = values[1::2]
@@ -112,10 +110,10 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
         # Extend detection to right channel for mode 4
         right_pulses = []
-        
+
         if mode == 4:
             for i in range(len(right_channel) - sample_length):
-                samples = right_channel[i:i+sample_length]
+                samples = right_channel[i:i + sample_length]
                 height = fn.pulse_height(samples)
                 if samples[peak] == max(samples) and abs(height) > right_threshold and samples[peak] < 32768:
                     right_pulses.append((i + peak, height))
@@ -123,72 +121,79 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
         # Read through the list of left channel values and find pulse peaks
         for i in range(len(left_channel) - sample_length):
-            # iterate through one sample length at the time in quick succession, ta-ta-ta-ta-ta...
-            samples = left_channel[i:i+sample_length]
-            # Function calculates pulse height of all samples 
+            samples = left_channel[i:i + sample_length]
             height = fn.pulse_height(samples)
-            # Filter out noise
             if samples[peak] == max(samples) and abs(height) > threshold and samples[peak] < 32768:
 
                 if mode == 4:
-                    # Check for coincident pulses within 3 sample indices
+
                     coincident_pulse = None
+
                     for rp in right_pulses:
+
                         if i + peak - 3 <= rp[0] <= i + peak + 3:
+
                             coincident_pulse = rp
+
                             break
+
                     if not coincident_pulse:
+
                         continue  # Skip this pulse if no coincident pulse found
                     else:
-                        logger.debug(f"Coincidence found: Left pulse at index {i}, height {height}, Right pulse at index {coincident_pulse[0]}, height {coincident_pulse[1]}")
 
-                # Function normalises sample to zero and converts to integer
+                        logger.debug(f"Coincidence index {i}, height {height}, Right pulse at index {coincident_pulse[0]}, height {coincident_pulse[1]}")
+
                 normalised = fn.normalise_pulse(samples)
-                # Compares pulse to sample and calculates distortion number
                 distortion = fn.distortion(normalised, left_shape)
-                # Filters out distorted pulses
                 if distortion < tolerance:
-                    # Sorts pulse into correct bin
-                    bin_index = int(height/bin_size)
-                    # Adds 1 to the correct bin
+                    bin_index = int(height / bin_size)
                     if bin_index < bins:
-                        histogram[bin_index]    += 1
-                        histogram_3d[bin_index] += 1 
-                        global_counts           += 1    
-                        global_cps              += 1
+                        local_histogram[bin_index] += 1
+                        local_counts += 1
 
-        t1      = datetime.datetime.now() # Time capture
-        te      = time.time()
-        elapsed = int(te - tb)
+        t1 = datetime.datetime.now()  # Time capture
+        time_this_save = time.time()
 
-        # Saves histogram to json file at interval
-        if te - tla >= t_interval:
-            settings        = fn.load_settings()
-            filename        = settings[1]
-            max_counts      = settings[9]
-            max_seconds     = settings[26]
-            coeff_1         = settings[18]
-            coeff_2         = settings[19]
-            coeff_3         = settings[20]
-            global_cps      = int(global_cps/t_interval)
-            location        = ""
-            note            = ""
-            mean_cps        = global_cps
+        local_elapsed = int(time_this_save - time_start)
+
+        # reduce overhead by updating global variables once per second
+        if time_this_save - time_last_save >= 1 * t_interval:
+            counts_per_sec = local_counts - last_count
+
+            with global_vars.write_lock:
+
+                global_vars.cps     = counts_per_sec
+                global_vars.counts  = local_counts
+                global_vars.count_history.append(counts_per_sec)
+                global_vars.elapsed = local_elapsed
+                local_count_history.append(counts_per_sec)
+
+                if mode == 2:
+                    global_vars.histogram = local_histogram
+
+                if mode == 3:
+                    interval_histogram = [local_histogram[i] - last_histogram[i] for i in range(bins)]
+                    global_vars.histogram_3d.append(interval_histogram)
+                    last_histogram = local_histogram.copy()
+
+            last_count      = local_counts
+            time_last_save  = time_this_save
+
+        # Save data to global_variables once per minute
+        if time_this_save - time_last_save_time >= 10 * t_interval or not global_vars.run_flag.is_set():
+            location = ""
+            note = ""
             
             if mode == 2 or mode == 4:
-                with write_lock:
-                    fn.write_histogram_npesv2(t0, t1, bins, global_counts, int(elapsed), filename, histogram, coeff_1, coeff_2, coeff_3, device, location, note )                                           
-                    tla = time.time()
-                with write_lock:
-                    fn.write_cps_json(filename, global_cps, elapsed)
-                    global_cps = 0    
+                fn.write_histogram_npesv2(t0, t1, bins, local_counts, int(local_elapsed), filename, local_histogram, coeff_1, coeff_2, coeff_3, device, location, note)
+                fn.write_cps_json(filename, local_count_history, global_vars.elapsed)
 
             if mode == 3:
-                with write_lock:
-                    fn.write_3D_intervals_json(t0, t1, bins, global_counts, int(elapsed), filename, histogram_3d, coeff_1, coeff_2, coeff_3)
-                    histogram_3d = [0] * bins
-                    tla = time.time()
+                fn.update_json_3d_file(t0, t1, bins, local_counts, local_elapsed, filename, interval_histogram, coeff_1, coeff_2, coeff_3)
+            
+            time_last_save_time = time.time()
 
-    
-    p.terminate() # closes stream when done
-    return                      
+    p.terminate()  # closes stream when done
+    global_vars.run_flag.clear()  # Ensure the CPS thread also stops
+    return

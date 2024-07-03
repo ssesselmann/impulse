@@ -16,13 +16,9 @@ from functions import fetch_json
 
 logger = logging.getLogger(__name__)
 
-data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data")
-
 total_pages = 1
 
-
 def show_tab5():
-
     modal = dbc.Modal([
         dbc.ModalHeader(dbc.ModalTitle("Full Resolution Histogram")),
         dbc.ModalBody([
@@ -42,7 +38,6 @@ def show_tab5():
     is_open=False,  # Initially closed
 )
 
-    # Pagination buttons
     pagination_div = html.Div([
         html.Button('Previous', 
             id='prev-page-button', 
@@ -67,7 +62,6 @@ def show_tab5():
             html.H3('Record a great spectrum,'),
             html.H3('Give it a descriptive name,'),
             
-            # Search input
             dcc.Input(id='tab5_search', 
                     type='text', 
                     placeholder='Search spectra', 
@@ -80,7 +74,6 @@ def show_tab5():
             
         ], style={'width':'90%', 'margin':'auto', 'textAlign':'left'}),
 
-        # Container for the data rows
         html.Div(id='spectrum-data', style={'width': '90%', 'margin': 'auto'}),
         html.Div(id='total-pages', style={'display': 'none'}),
 
@@ -94,11 +87,6 @@ def show_tab5():
 
     ], style={'width':'96%', 'padding':30,'height':'100%','margin':'auto', 'backgroundColor':'white', 'textAlign':'center'})
 
-    return html_tab5
-
-# ---- End of html - Start callbacks --------
-
-
 @app.callback(
     [Output('spectrum-data', 'children'),
      Output('total-pages', 'children'),
@@ -110,112 +98,99 @@ def show_tab5():
      [State('current-page', 'children')]
 )
 def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_page):
+    total_pages = '0'
+    value_list = []
+    buttons = []
 
-
-    total_pages  = '0'
-    i            = 0
-    value_list   = []
-    buttons      = []
-
-    # Determine the current page based on button clicks
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     if 'next-page-button' in changed_id:
         current_page = int(current_page) + 1
-
     elif 'prev-page-button' in changed_id:
         current_page = max(int(current_page) - 1, 1)
 
     if not search_value:
         search_value = ''
 
-
     try:
-        # Include current_page in the request
         response = requests.post('https://gammaspectacular.com/spectra/search', 
-            data={'query': search_value, 'total_pages': total_pages,'current_page': current_page })    
+            data={'query': search_value, 'total_pages': total_pages, 'current_page': current_page })    
 
         if response.status_code == 200:
-            response_data   = response.json()
-            spectra_data    = response_data['data']
-            total_pages     = response_data['total_pages']
-            current_page    = response_data['current_page']
+            response_data = response.json()
+            spectra_data = response_data['data']
+            total_pages = response_data['total_pages']
+            current_page = response_data['current_page']
 
-            # Creating a list of html.Div elements for each record
-            data_divs       = []
-            
+            data_divs = []
 
             for record in spectra_data:
-                
-                id          = record['id']
-
+                id = record['id']
                 value_list.append(id)
                 
-                filename    = record['filename']
-                date        = record['date']
+                filename = record['filename']
+                date = record['date']
                 client_info = record['client']
-                spectrum    = record['npes']['data'][0]['resultData']['energySpectrum']['spectrum']
-                location    = record['npes']['data'][0]['sampleInfo']['location']
-                specnote    = record['npes']['data'][0]['sampleInfo']['note']
-                coefficients= record['npes']['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients']
-                channels_l  = record['npes']['data'][0]['resultData']['energySpectrum']['numberOfChannels']
-                spec_notes  = record['npes']['data'][0]["sampleInfo"]["note"]
+                spectrum = record['npes']['data'][0]['resultData']['energySpectrum']['spectrum']
+                location = record['npes']['data'][0]['sampleInfo']['location']
+                specnote = record['npes']['data'][0]['sampleInfo']['note']
+                coefficients = record['npes']['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients']
+                channels_l = record['npes']['data'][0]['resultData']['energySpectrum']['numberOfChannels']
+                spec_notes = record['npes']['data'][0]["sampleInfo"]["note"]
                 
-                channels_s  = len(spectrum)
-                x_factor    = channels_l/channels_s
-                x_values    = [i * x_factor for i in range(channels_s)]
+                channels_s = len(spectrum)
+                x_factor = channels_l / channels_s
+                x_values = [i * x_factor for i in range(channels_s)]
 
-                coeff_1     = coefficients[2] 
-                coeff_2     = coefficients[1]
-                coeff_3     = coefficients[0] + 5 # botch !
-                calib_x     = [coeff_1*x**2 + coeff_2*x + coeff_3 for x in x_values]
+                coeff_1 = coefficients[2] 
+                coeff_2 = coefficients[1]
+                coeff_3 = coefficients[0] + 5
+                calib_x = [coeff_1 * x**2 + coeff_2 * x + coeff_3 for x in x_values]
 
-                first_name  = client_info.get('first_name', '')
-                last_name   = client_info.get('last_name', '')
+                first_name = client_info.get('first_name', '')
+                last_name = client_info.get('last_name', '')
                 institution = client_info.get('institution', 'N/A')
-                city        = client_info.get('city', 'N/A')
-                country     = client_info.get('country', 'N/A')
-                email       = client_info.get('email', 'N/A')
-                phone       = client_info.get('phone', 'N/A')
-                web         = client_info.get('web', 'N/A')
-                social      = client_info.get('social', 'N/A')
-                notes       = client_info.get('notes', 'N/A')
+                city = client_info.get('city', 'N/A')
+                country = client_info.get('country', 'N/A')
+                email = client_info.get('email', 'N/A')
+                phone = client_info.get('phone', 'N/A')
+                web = client_info.get('web', 'N/A')
+                social = client_info.get('social', 'N/A')
+                notes = client_info.get('notes', 'N/A')
 
-                download    = f'https://www.gammaspectacular.com/spectra/files/{id}.json'
+                download = f'https://www.gammaspectacular.com/spectra/files/{id}.json'
 
-                fig         = []
-
-                if institution == None or institution.strip() == "":
+                if institution is None or institution.strip() == "":
                     institution_show = 'none'
                 else: 
                     institution_show = 'block'
 
-                if (city == None or city.strip() == "") and (country == None or country.strip() == ""): 
+                if (city is None or city.strip() == "") and (country is None or country.strip() == ""): 
                     cc_show = 'none'
                 else:
                     cc_show = 'block'
                 
-                if email == None or email.strip() == "": 
+                if email is None or email.strip() == "": 
                     email_show = 'none'
                 else:
                     email_show = 'block'
 
-                if phone == None or phone.strip() == "": 
+                if phone is None or phone.strip() == "": 
                     phone_show = 'none'
                 else:
                     phone_show = 'block'    
 
-                if web == None or web.strip() == "": 
+                if web is None or web.strip() == "": 
                     web_show = 'none'
                 else:
                     web_show = 'block'
 
-                if social == None or social.strip() == "": 
+                if social is None or social.strip() == "": 
                     social_show = 'none'
                 else:
                     social_show = 'block'    
 
-                if notes == None or notes.strip() == "": 
+                if notes is None or notes.strip() == "": 
                     notes_show = 'none'
                 else:
                     notes_show = 'block' 
@@ -228,7 +203,6 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                 )
                 buttons.append(button)
 
-                # Format file information
                 file_info_div = html.Div(id='tab5_col_1', children=[
                     html.H4(f"#  {id}"),
                     html.P(f"{date}"),
@@ -236,9 +210,6 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                     html.A("Download", href=download, target='_blank'),
                 ], style={'textAlign':'left','width': '130px', 'padding': '10px'})
 
-                
-
-                # Format client information
                 client_info_div = html.Div(id='tab5_col_2', children=[
                     html.P(f"{first_name} {last_name}"),
                     html.P(f"{institution}", style={'display':institution_show}),
@@ -248,29 +219,14 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                     html.P(html.A(web, href=web, target="_blank"), style={'height':10, 'fontSize':10, 'display':web_show}),
                     html.P(html.A(social, href=social, target="_blank"), style={'height':10, 'fontSize':10, 'display':social_show}),
                     html.P(f"Note: {notes}", style={'display':notes_show}),
-                    # Include other client details as needed
                 ], style={'width': '250px', 'padding':'10px'})
 
                 notes_div = html.Div(id='tab5_col_3', children=[
                     html.P(id='spec_notes', children =[spec_notes]),
+                ], style={'width':'200px', 'height':'175px', 'marginRight':10, 'padding':'5px', 'marginTop':'30px', 'backgroundColor':'#e6f2ff'})
 
-                    ], style={'width':'200px', 'height':'175px', 'marginRight':10, 'padding':'5px', 'marginTop':'30px', 'backgroundColor':'#e6f2ff'})
-
-
-                plot_div = html.Div(id='tab5_col_4', children=[dcc.Graph(figure=fig)]),
-
-                button_div = html.Div(id='tab5_col_5', children=[button], style={
-                    'width': '70px',  # Ensure units are specified for width and height
-                    'height': '200px',
-                    'display': 'flex',  # Make the div a flex container
-                    'flex-direction': 'column',  # Stack children vertically
-                    'justify-content': 'flex-end',  # Align children to the end (bottom) of the container
-                    })
-
-
-                # Generate a basic plot
                 fig = go.Figure(data=[go.Scatter(
-                    x = calib_x,
+                    x=calib_x,
                     y=spectrum, 
                     mode='lines',
                     fill='tozeroy',
@@ -288,7 +244,6 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                     yaxis={'visible': False}
                 )
 
-                # Plot div with the graph
                 plot_div = html.Div([
                     dcc.Graph(
                         figure=fig,
@@ -296,10 +251,15 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                     )
                 ])
 
-                i = i+1
+                button_div = html.Div(id='tab5_col_5', children=[button], style={
+                    'width': '70px',  
+                    'height': '200px',
+                    'display': 'flex',  
+                    'flex-direction': 'column',  
+                    'justify-content': 'flex-end',  
+                })
 
-                # Combine the divs into a single row
-                row_div = html.Div([file_info_div, client_info_div, notes_div, plot_div, button_div], 
+                data_divs.append(html.Div([file_info_div, client_info_div, notes_div, plot_div, button_div], 
                     style={
                         'display':'flex',
                         'flex-wrap':'wrap',
@@ -307,27 +267,18 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                         'justify-content': 'center',  
                         'width':'100%',
                         'clear': 'both',
-                        })
-
-                data_divs.append(row_div)
+                    }))
 
             new_page_info = f"Page {current_page} of {total_pages}"
-
-            
             return data_divs, total_pages, current_page, new_page_info
 
-    except:
-        # Handle the case where there's no internet connection
-        print("No internet connection available.")
-        new_page_info = 'No internet connection - unable to update'
-        return [], '0', '1', new_page_info
+        else:
+            logger.error(f"Failed to fetch data: {response.status_code} - {response.text}")
+            return [], '0', '1', f"Failed to fetch data: {response.status_code}"
 
-    else:
-
-        return [], '0', '1', 'Page 1 of 0'
-
-# ------------- zoom functions below here------------------
-
+    except requests.exceptions.RequestException as e:
+        logger.error(f"No internet connection available. Error: {e}")
+        return [], '0', '1', 'No internet connection - unable to update'
 
 @app.callback(
     [Output('modal', 'is_open'),  # This output toggles the modal
@@ -342,89 +293,77 @@ def toggle_modal(zoom_clicks, close_clicks, linlog, is_open, current_figure):
     ctx = dash.callback_context
 
     if not ctx.triggered:
-
         raise PreventUpdate
 
     triggered_id, triggered_prop = ctx.triggered[0]['prop_id'].split('.')
 
     if 'close-modal' in triggered_id:
-
         return False, dash.no_update  # Ensure the modal is closed
 
     scale = 'log' if 'log' in linlog else 'linear'
 
-    # Check if the scale toggle was the trigger
     if 'linlog' in triggered_id:
         if current_figure:
-            # Update only the y-axis scale of the current figure
             current_figure['layout']['yaxis']['type'] = scale
             return is_open, current_figure
+
     try:
-        # Attempt to parse the triggered_id if it's expected to be in JSON format
-         if any(click and 'zoom-button' in triggered_id for click in zoom_clicks):
+        if any(click and 'zoom-button' in triggered_id for click in zoom_clicks):
             parsed_id = json.loads(triggered_id.replace('zoom-button.', ''))
             filename = parsed_id['value']
 
             if any(click > 0 for click in zoom_clicks):
-
                 file = fetch_json(filename)
 
                 if file:
-                    channels        = file['data'][0]['resultData']['energySpectrum']['numberOfChannels']
-                    y_values        = file['data'][0]['resultData']['energySpectrum']['spectrum']
-                    x_values        = list(range(channels))
-                    coefficients    = file['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients']
-                    title           = file['data'][0]['sampleInfo']['name']
+                    channels = file['data'][0]['resultData']['energySpectrum']['numberOfChannels']
+                    y_values = file['data'][0]['resultData']['energySpectrum']['spectrum']
+                    x_values = list(range(channels))
+                    coefficients = file['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients']
+                    title = file['data'][0]['sampleInfo']['name']
 
-                    # Ensure x_values is a NumPy array
                     x_values_np = np.array(x_values)
 
-                    # Calculate new x_values using the second-order polynomial
                     calibrated_x = coefficients[2] * x_values_np**2 + coefficients[1] * x_values_np + coefficients[0]
 
                     figure = go.Figure(
                         data=[go.Scatter(
                             y=y_values, 
                             x=calibrated_x,
-
                             mode='markers',
                             marker=dict(color='lightgreen', size=1, 
                             line=dict( color='yellow', width=1),
                         ))])
 
-                    # Customize the layout
                     figure.update_layout(
                         title=title,
-                        title_x=0.5,  # Center the title
-                        xaxis=dict(showgrid=True, gridcolor='gray', gridwidth=1 ),
+                        title_x=0.5,
+                        xaxis=dict(showgrid=True, gridcolor='gray', gridwidth=1),
                         xaxis_title='energy',
                         yaxis=dict(showgrid=True, gridcolor='gray', gridwidth=1, type=scale),
                         yaxis_title='counts',
                         font=dict(family="Arial, Bold", size=16, color="#ffffff"),
                         margin=dict(l=10, r=100, t=40, b=60),
                         plot_bgcolor='black',
-                        paper_bgcolor='black',  
-                    
-
-                        shapes=[  # Add shapes for horizontal and vertical lines
-                            # Horizontal line
+                        paper_bgcolor='black',
+                        shapes=[  
                             go.layout.Shape(
                                 type="line",
                                 x0=min(calibrated_x),
                                 x1=max(calibrated_x),
                             ),
-                            # Vertical line
                             go.layout.Shape(
                                 type="line",
                                 y0=min(y_values),
                                 y1=max(y_values),
                             )]
-                        )
+                    )
 
-                    return not is_open, figure  # Toggle the modal state and update the figure
+                    return not is_open, figure
 
     except json.JSONDecodeError:
-
         raise PreventUpdate
 
-    return is_open, dash.no_update  # Default action if no conditions are met
+    return is_open, dash.no_update
+
+# -- end of tab5.py
