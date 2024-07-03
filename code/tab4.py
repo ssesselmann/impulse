@@ -52,14 +52,14 @@ def show_tab4():
                          step=1, value=rolling,
                          marks={i: str(i) for i in range(0, 3601, 300)}
                 )]),
-                html.Div(children=[
+                html.Div(id="last-hour", children=[
                 daq.ToggleSwitch(
                         id='full-monty',
                         label='Last hour | Show all',
                         value=False,
                         color='purple'
                     )
-                    ], style={'width': '200px', 'float': 'right', 'marginTop': '40px'})
+                    ])
                 ]),
         html.Div(html.H5('Start and Stop from 2D tab.'), style={'textAlign': 'left', 'marginTop': '10px', 'marginLeft': '5%'}),
         html.Div(children=[html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
