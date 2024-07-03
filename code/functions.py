@@ -203,16 +203,45 @@ def write_blank_json_schema(filename, device):
     except Exception as e:
         logger.error(f"Error writing blank JSON file: {e}")
 
-# Function to update keys and histogram_3d.append(last_histogram)
+
+# Function to update keys and append histogram
 def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram, coeff_1, coeff_2, coeff_3):
     logger.info(f'Updating JSON 3D file: t0:{t0} t1:{t1} bins:{bins} counts:{counts} elapsed:{elapsed} filename:{filename} coeff_1:{coeff_1} coeff_2:{coeff_2} coeff_3:{coeff_3}')
     
-    jsonfile = get_path(f'{global_vars.data_directory}/{filename}_3d.json')
+    jsonfile = get_path(os.path.join(global_vars.data_directory, f'{filename}_3d.json'))
     
+    # Check if the file exists
     if not os.path.isfile(jsonfile):
-        logger.error(f"JSON file does not exist: {jsonfile}")
+        logger.info(f"JSON file does not exist, creating new file: {jsonfile}")
+        data = {
+            "data": [
+                {
+                    "resultData": {
+                        "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                        "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                        "energySpectrum": {
+                            "numberOfChannels": bins,
+                            "energyCalibration": {
+                                "coefficients": [coeff_3, coeff_2, coeff_1]
+                            },
+                            "validPulseCount": counts,
+                            "measurementTime": elapsed,
+                            "spectrum": [last_histogram]
+                        }
+                    }
+                }
+            ]
+        }
+        
+        try:
+            with open(jsonfile, "w") as f:
+                json.dump(data, f, separators=(',', ':'))
+            logger.info(f"New JSON 3D file created: {jsonfile}")
+        except Exception as e:
+            logger.error(f"Error writing new JSON file: {e}")
         return
     
+    # If file exists, update the existing data
     try:
         with open(jsonfile, "r") as f:
             data = json.load(f)
@@ -220,13 +249,15 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram,
         logger.error(f"Error reading JSON file: {e}")
         return
     
-    data["data"][0]["resultData"]["startTime"] = t0.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-    data["data"][0]["resultData"]["endTime"] = t1.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-    data["data"][0]["resultData"]["energySpectrum"]["numberOfChannels"] = bins
-    data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"] = [coeff_3, coeff_2, coeff_1]
-    data["data"][0]["resultData"]["energySpectrum"]["validPulseCount"] = counts
-    data["data"][0]["resultData"]["energySpectrum"]["measurementTime"] = elapsed
-    data["data"][0]["resultData"]["energySpectrum"]["spectrum"].append(last_histogram)
+    # Update the necessary fields
+    result_data = data["data"][0]["resultData"]
+    result_data["startTime"] = t0.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    result_data["endTime"] = t1.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    result_data["energySpectrum"]["numberOfChannels"] = bins
+    result_data["energySpectrum"]["energyCalibration"]["coefficients"] = [coeff_3, coeff_2, coeff_1]
+    result_data["energySpectrum"]["validPulseCount"] = counts
+    result_data["energySpectrum"]["measurementTime"] = elapsed
+    result_data["energySpectrum"]["spectrum"].append(last_histogram)
     
     try:
         with open(jsonfile, "w") as f:
@@ -234,6 +265,10 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram,
         logger.info(f"JSON 3D file updated: {jsonfile}")
     except Exception as e:
         logger.error(f"Error writing JSON file: {e}")
+
+# Example usage
+# update_json_3d_file(datetime.now(), datetime.now(), 1024, 1000, 3600, 'example_filename', [0, 1, 2], 1.0, 0.0, -0.1)
+
 
 # This function writes counts per second to JSON
 def write_cps_json(filename, count_history, elapsed):
@@ -421,8 +456,6 @@ def start_recording(mode):
     logger.info(f'functions start_recording({mode})')
 
     stop_recording()
-    
-    clear_global_vars()
 
     with global_vars.run_flag_lock:
         global_vars.run_flag.set()  # Set the run flag

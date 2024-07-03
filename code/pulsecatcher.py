@@ -181,7 +181,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             time_last_save  = time_this_save
 
         # Save data to global_variables once per minute
-        if time_this_save - time_last_save_time >= 10 * t_interval or not global_vars.run_flag.is_set():
+        if time_this_save - time_last_save_time >= 30 * t_interval or not global_vars.run_flag.is_set():
             location = ""
             note = ""
             

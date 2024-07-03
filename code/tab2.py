@@ -71,7 +71,7 @@ device = None
 data_directory = global_vars.data_directory
 
 def show_tab2():
-    options_sorted = get_options()
+    options_sorted  = get_options()
 
     filename        = global_vars.filename
     filename_2      = global_vars.comparison
@@ -364,6 +364,7 @@ def stop_button(n_clicks, dn):
         raise PreventUpdate
 
     logger.info('tab2 stop button. clicked')
+
 
     if dn is None:
         logger.error('Device number is None')
