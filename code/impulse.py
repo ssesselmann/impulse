@@ -61,4 +61,4 @@ port = 8050
 
 if __name__ == '__main__':
     Timer(1, lambda: open_browser(port)).start()
-    app.run_server(host='0.0.0.0', debug=True, threaded=True, port=port)
+    app.run_server(host='0.0.0.0', debug=False, threaded=True, port=port)
