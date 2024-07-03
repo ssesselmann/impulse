@@ -27,6 +27,9 @@ entitlements.py
 notarize.txt
 sign-tool.log
 simplesign.py
+appsimplesigndmg.py
+entitlements.plist
+
 
 *.dmg
 *.cer
