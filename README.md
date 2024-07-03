@@ -144,6 +144,11 @@ Change log
 60) Added functionality for publishing spectra to a public repository.
 61) Added functionality for Atom-Nano serial devices 
 62) Added functionality for right channel recording and coincidence counting
+# IMPULSE v2.0.0
+63) This has been a major rewrite with many changes
+64) Program settings and user setings file format changed from an sql file to json
+65) All settings are preloaded into global variables and uopdated when change occurrs
+66) Gamma spectra are saved to dcc.Store memore and only saved to file once per minute or when stopped.
 
 
 Things to do
