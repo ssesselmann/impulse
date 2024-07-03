@@ -6,7 +6,7 @@ import global_vars
 
 from dash import dcc
 
-data_directory = os.path.join(os.path.expanduser("~"), "impulse_files")
+data_directory = global_vars.data_directory
 
 if not os.path.exists(data_directory):
     os.makedirs(data_directory)
