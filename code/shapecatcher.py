@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.DEBUG)
 sc_info = []
 
 # Define the directory where data files are stored
-data_directory = os.path.join(os.path.expanduser("~"), "impulse_files")
+data_directory = global_vars.data_directory
 
 def determine_pulse_sign(pulse):
     """Determine if the pulse is predominantly positive or negative."""
