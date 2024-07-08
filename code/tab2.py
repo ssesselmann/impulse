@@ -67,45 +67,51 @@ from functions import (
     )
 
 logger = logging.getLogger(__name__)
+
+
 device = None
-data_directory = global_vars.data_directory
+with global_vars.write_lock:
+    data_directory = global_vars.data_directory
 
 def show_tab2():
     options_sorted  = get_options()
 
-    filename        = global_vars.filename
-    filename_2      = global_vars.comparison
-    device          = global_vars.device
-    sample_rate     = global_vars.sample_rate
-    chunk_size      = global_vars.chunk_size
-    threshold       = global_vars.threshold
-    tolerance       = global_vars.tolerance
-    bins            = global_vars.bins
-    bin_size        = global_vars.bin_size
-    max_counts      = global_vars.max_counts
-    sample_length   = global_vars.sample_length
-    calib_bin_1     = global_vars.calib_bin_1
-    calib_bin_2     = global_vars.calib_bin_2
-    calib_bin_3     = global_vars.calib_bin_3
-    calib_e_1       = global_vars.calib_e_1
-    calib_e_2       = global_vars.calib_e_2
-    calib_e_3       = global_vars.calib_e_3
-    coeff_1         = global_vars.coeff_1
-    coeff_2         = global_vars.coeff_2
-    coeff_3         = global_vars.coeff_3
-    peakfinder      = global_vars.peakfinder
-    sigma           = global_vars.sigma
-    max_seconds     = global_vars.max_seconds
-    t_interval      = global_vars.t_interval
-    compression     = global_vars.compression
+    with global_vars.write_lock:
+        filename        = global_vars.filename
+        filename_2      = global_vars.comparison
+        device          = global_vars.device
+        sample_rate     = global_vars.sample_rate
+        chunk_size      = global_vars.chunk_size
+        threshold       = global_vars.threshold
+        tolerance       = global_vars.tolerance
+        bins            = global_vars.bins
+        bin_size        = global_vars.bin_size
+        max_counts      = global_vars.max_counts
+        sample_length   = global_vars.sample_length
+        calib_bin_1     = global_vars.calib_bin_1
+        calib_bin_2     = global_vars.calib_bin_2
+        calib_bin_3     = global_vars.calib_bin_3
+        calib_e_1       = global_vars.calib_e_1
+        calib_e_2       = global_vars.calib_e_2
+        calib_e_3       = global_vars.calib_e_3
+        coeff_1         = global_vars.coeff_1
+        coeff_2         = global_vars.coeff_2
+        coeff_3         = global_vars.coeff_3
+        peakfinder      = global_vars.peakfinder
+        sigma           = global_vars.sigma
+        max_seconds     = global_vars.max_seconds
+        t_interval      = global_vars.t_interval
+        compression     = global_vars.compression
 
     if device <= 100:
-        global_vars.bins = bins
+        with global_vars.write_lock:
+            global_vars.bins = bins
     else:
-        global_vars.bins = int(8192/compression)    
+        with global_vars.write_lock:
+            global_vars.bins = int(8192/compression)    
 
-    millisec = t_interval * 1000
-    spec_notes = get_spec_notes(filename)
+    millisec    = t_interval * 1000
+    spec_notes  = get_spec_notes(filename)
 
     if device >= 100:
         serial = 'block'
@@ -196,7 +202,7 @@ def show_tab2():
             html.Div(['Energy by bin', daq.BooleanSwitch(id='epb_switch', on=False, color='purple')]),
             html.Div(['Show log(y)', daq.BooleanSwitch(id='log_switch', on=False, color='purple')]),
             html.Div(['Calibration', daq.BooleanSwitch(id='cal_switch', on=False, color='purple')]),
-            html.Div(['Coincidence', daq.BooleanSwitch(id='mode-switch', on=False, color='purple')]),
+            html.Div(['Coincidence', daq.BooleanSwitch(id='mode-switch', on=False, color='purple')], style={'display': audio}),
         ]),
 
         html.Div(id='t2_setting_div7', children=[
@@ -313,11 +319,9 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
 
     mode = 4 if mode_switch else 2
 
-    clear_global_vars()
-
-    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    trigger_value = ctx.triggered[0]['value']
-    file_exists = os.path.exists(f'{global_vars.data_directory}/{filename}.json')
+    trigger_id      = ctx.triggered[0]['prop_id'].split('.')[0]
+    trigger_value   = ctx.triggered[0]['value']
+    file_exists     = os.path.exists(f'{global_vars.data_directory}/{filename}.json')
 
     if trigger_value == 0:
         raise PreventUpdate
@@ -344,11 +348,11 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
                 time.sleep(0.1)
 
             except Exception as e:
-                logger.error(f'tab 2 start_new_or_overwrite() error {e}')
+                logger.error(f'tab 2 start_new_2d_spectrum() error {e}')
                 return f"tab2 Error: {str(e)}"
         else:
             start_recording(mode)
-            logger.info(f'tab2 fn.start_recording(mode {mode}) passed.')
+            logger.info(f'tab2 start_recording(mode {mode}) passed.')
         return ""
 
     raise PreventUpdate
@@ -418,7 +422,18 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             except Exception as e:
                 logger.info(f'tab2 failed to load {filename_2}: {e}')    
 
-    cps             = global_vars.cps
+    with global_vars.write_lock:
+        counts          = global_vars.counts
+        cps             = global_vars.cps
+        elapsed         = global_vars.elapsed
+        elapsed_2       = global_vars.elapsed_2
+        bins            = global_vars.bins
+        bins_2          = global_vars.bins_2
+        histogram       = global_vars.histogram
+        histogram_2     = global_vars.histogram_2
+        coefficients_1  = global_vars.coefficients_1
+
+
     coincidence     = 'coincidence<br>(left if right)' if mode_switch else ""
     annotations     = []
     coefficients    = []
@@ -450,19 +465,19 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         except:
             logger.info(f'tab2 failed to load {histogram_2}')
 
-    if global_vars.counts > 0:
+    if counts > 0:
 
-        coefficients = global_vars.coefficients_1
+        coefficients = coefficients_1
 
         prominence = 0.5
 
         if sigma == 0:
             gaussian = []
         else:
-            gaussian = gaussian_correl(global_vars.histogram, sigma)
+            gaussian = gaussian_correl(histogram, sigma)
 
-        x = list(range(global_vars.bins))
-        y = global_vars.histogram
+        x = list(range(bins))
+        y = histogram
         max_value = np.max(y)
         if max_value == 0:
             max_value = 10
@@ -470,10 +485,10 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         max_log_value = np.log10(max_value)
 
         if cal_switch:
-            x = np.polyval(np.poly1d(global_vars.coefficients_1), x)
+            x = np.polyval(np.poly1d(coefficients_1), x)
 
         if epb_switch:
-            y = [i * count for i, count in enumerate(global_vars.histogram)]
+            y = [i * count for i, count in enumerate(histogram)]
             gaussian = [i * count for i, count in enumerate(gaussian)]
 
         trace1 = go.Bar(
@@ -498,18 +513,18 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     peaks, fwhm = peak_finder(y, prominence, peakfinder)
 
     for i in range(len(peaks)):
-        peak_value = peaks[i]
-        bin_counts = y[peaks[i]]
-        x_pos = peaks[i]
-        y_pos = y[peaks[i]]
-        y_pos_ann = y_pos + int(y_pos / 10)
-        resolution = (fwhm[i] / peaks[i]) * 100
+        peak_value  = peaks[i]
+        bin_counts  = y[peaks[i]]
+        x_pos       = peaks[i]
+        y_pos       = y[peaks[i]]
+        y_pos_ann   = y_pos + int(y_pos / 10)
+        resolution  = (fwhm[i] / peaks[i]) * 100
 
         if y_pos_ann > (max_value * 0.9):
             y_pos_ann -= int(max_value * 0.03)
 
         if cal_switch:
-            peak_value = np.polyval(np.poly1d(global_vars.coefficients_1), peak_value)
+            peak_value = np.polyval(np.poly1d(coefficients_1), peak_value)
             x_pos = peak_value
 
         if log_switch:
@@ -544,7 +559,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     fig.update_layout(
         annotations=annotations,
         title={
-            'text': f'{filename}<br>{time_str}<br>{global_vars.counts} counts<br>{global_vars.elapsed} seconds<br>{coincidence}',
+            'text': f'{filename}<br>{time_str}<br>{counts} counts<br>{elapsed} seconds<br>{coincidence}',
             'x': 0.85,
             'y': 0.9,
             'xanchor': 'center',
@@ -554,11 +569,11 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         shapes=lines
     )
 
-    steps   = (global_vars.elapsed / global_vars.elapsed_2) if global_vars.elapsed > 0 and global_vars.elapsed_2 > 0 else 0.1
+    steps   = (elapsed / elapsed_2) if elapsed > 0 and elapsed_2 > 0 else 0.1
 
-    x2      = list(range(global_vars.bins_2))
+    x2      = list(range(bins_2))
 
-    y2      = [int(n * steps) for n in global_vars.histogram_2]
+    y2      = [int(n * steps) for n in histogram_2]
 
     if filename_2:
 
@@ -569,7 +584,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             y2 = [x * 0.5 for x in y2]
 
         if epb_switch:
-            y2 = [i * n * steps for i, n in enumerate(global_vars.histogram_2)]
+            y2 = [i * n * steps for i, n in enumerate(histogram_2)]
 
         trace2 = go.Scatter(
             x=x2, 
@@ -631,7 +646,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             borderwidth=1
         )
 
-    return fig, f'{global_vars.counts}', f'{global_vars.elapsed}', f'cps {cps}', gaussian, coefficients
+    return fig, f'{counts}', f'{elapsed}', f'cps {cps}', gaussian, coefficients
 
 
 # SAVE SETTINGS ------------------------------------    
@@ -683,27 +698,27 @@ def save_settings(*args):
 
     polynomial_fn = np.poly1d(coefficients)
 
-    
-    global_vars.bin_size    = args[1]
-    global_vars.max_counts  = args[2]
-    global_vars.max_seconds = args[3]
-    global_vars.filename    = args[4]
-    global_vars.comparison  = args[5]
-    global_vars.threshold   = args[6]
-    global_vars.tolerance   = args[7]
-    global_vars.calib_bin_1 = x_bins[0]
-    global_vars.calib_bin_2 = x_bins[1]
-    global_vars.calib_bin_3 = x_bins[2]
-    global_vars.calib_e_1   = x_energies[0]
-    global_vars.calib_e_2   = x_energies[1]
-    global_vars.calib_e_3   = x_energies[2]
-    global_vars.peakfinder  = args[14]
-    global_vars.sigma       = args[15]
-    global_vars.t_interval  = args[16]
-    global_vars.coeff_1     = float(coefficients[0])
-    global_vars.coeff_2     = float(coefficients[1])
-    global_vars.coeff_3     = float(coefficients[2])
-    global_vars.compression = args[17]
+    with global_vars.write_lock:
+        global_vars.bin_size    = args[1]
+        global_vars.max_counts  = args[2]
+        global_vars.max_seconds = args[3]
+        global_vars.filename    = args[4]
+        global_vars.comparison  = args[5]
+        global_vars.threshold   = args[6]
+        global_vars.tolerance   = args[7]
+        global_vars.calib_bin_1 = x_bins[0]
+        global_vars.calib_bin_2 = x_bins[1]
+        global_vars.calib_bin_3 = x_bins[2]
+        global_vars.calib_e_1   = x_energies[0]
+        global_vars.calib_e_2   = x_energies[1]
+        global_vars.calib_e_3   = x_energies[2]
+        global_vars.peakfinder  = args[14]
+        global_vars.sigma       = args[15]
+        global_vars.t_interval  = args[16]
+        global_vars.coeff_1     = float(coefficients[0])
+        global_vars.coeff_2     = float(coefficients[1])
+        global_vars.coeff_3     = float(coefficients[2])
+        global_vars.compression = args[17]
 
     device = get_device_number()
 
