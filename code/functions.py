@@ -31,7 +31,9 @@ from urllib.request import urlopen
 from shproto.dispatcher import process_03
 
 logger = logging.getLogger(__name__)
+
 cps_list = []
+
 data_directory = global_vars.data_directory
 
 # Finds pulses in string of data over a given threshold
@@ -291,8 +293,9 @@ def write_cps_json(filename, count_history, elapsed):
 
 # Clears global counts per second list
 def clear_global_cps_list():
-    global_vars.counts = 0
-    global_vars.count_history = []
+    with global_vars.write_lock:
+        global_vars.counts = 0
+        global_vars.count_history = []
 
 
 # This function opens the CSV and loads the pulse shape
@@ -323,7 +326,7 @@ def refresh_audio_device_list():
     try:
         p = pyaudio.PyAudio()
         p.terminate()
-        time.sleep(1)
+        time.sleep(0.1)
     except:
         pass
 
@@ -426,11 +429,6 @@ def gaussian_correl(data, sigma):
     scaling_factor = 0.8 * max_data / max_correl_value if max_correl_value != 0 else 1
     return [int(value * scaling_factor) for value in correl_values]
 
-def clear_global_cps_list():
-    with global_vars.write_lock:
-        global_vars.global_cps = 0
-
-
 def handle_modal_confirmation(start_clicks, confirm_clicks, cancel_clicks, filename, is_open, suffix=''):
     ctx = dash.callback_context
 
@@ -455,7 +453,13 @@ def start_recording(mode):
 
     logger.info(f'functions start_recording({mode})')
 
-    stop_recording()
+    with global_vars.write_lock:
+        filename = global_vars.filename
+        global_vars.run_flag.clear()
+
+    clear_global_vars(mode)
+
+    write_cps_json(filename, [[0]], 0)
 
     with global_vars.run_flag_lock:
         global_vars.run_flag.set()  # Set the run flag
@@ -476,6 +480,8 @@ def start_recording(mode):
 
     elif mode == 3:
         # Start 3D spectrum recording logic
+        with global_vars.write_lock:
+            filename = global_vars.filename
         logger.info("Starting 3D spectrum recording...")
         try:
             if callable(pulsecatcher):
@@ -491,8 +497,46 @@ def start_recording(mode):
         logger.error("Invalid recording mode specified.")
 
 
+# clear variables
+def clear_global_vars(mode):
+    logger.info('1..running clear_global_vars')
+    if mode == 2:
+        with global_vars.write_lock:
+            global_vars.count_history   = []
+            global_vars.counts          = 0
+            global_vars.cps             = 0
+            global_vars.elapsed         = 0
+            global_vars.histogram       = [0] * global_vars.bins
+
+    if mode == 3:
+        logger.info('2..clear_global_vars mode is (3)')
+        file_path = os.path.join(global_vars.data_directory, f'{global_vars.filename}_3d.json')
+
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"3..deleting file: {file_path}")
+            else:
+                logger.warning(f"4..file does not exist: {file_path}")
+        except Exception as e:
+            logger.error(f"ERROR deleting file {file_path}: {e}")
+
+        global_vars.count_history   = []
+        global_vars.counts          = 0
+        global_vars.cps             = 0
+        global_vars.elapsed         = 0
+        global_vars.histogram_3d    = []
+
+    return
+
+def clear_global_cps_list():
+    with global_vars.write_lock:
+        global_vars.global_cps = 0
+        global_vars.count_history = []
+
 def stop_recording():
-    global_vars.run_flag.clear()
+    with global_vars.write_lock:
+        global_vars.run_flag.clear()
     logger.info('functions recording stopped')
     return
 
@@ -806,43 +850,35 @@ def load_histogram_2(filename):
         return False
 
 
-def load_histogram_3d(filename):
+def load_3d_json(filename):
+    file_path = os.path.join(global_vars.data_directory, f'{filename}_3d.json')
+    
+    if not os.path.exists(file_path):
+        logger.error(f"File not found: {file_path}")
+        return
+
     try:
-        file_path = os.path.join(global_vars.data_directory, filename + "_3d.json")
         with open(file_path, 'r') as file:
             data = json.load(file)
-        
-        # Check for schema version
-        if data["schemaVersion"] in ["NPESv1", "NPESv2"]:
-            # Navigate to the resultData section
-            result_data = data["data"][0]["resultData"]["energySpectrum"]
-            
-            global_vars.bins = result_data["numberOfChannels"]
-            global_vars.elapsed = result_data["measurementTime"]
-            global_vars.counts = result_data["validPulseCount"]
-            global_vars.coefficients = result_data["energyCalibration"]["coefficients"]
-            
-            if result_data["spectrum"]:
-                global_vars.histogram_3d = result_data["spectrum"]
-                return True
-            else:
-                logger.info("Spectrum data is empty")
-                return False
-        else:
-            logger.info("Unsupported schema version")
-            return False
-    except json.JSONDecodeError as json_err:
-        logger.info(f"JSON decode error loading histogram_3d from {filename}: {json_err}")
-        return False
-    except FileNotFoundError as fnf_err:
-        logger.info(f"File not found error loading histogram_3d from {filename}: {fnf_err}")
-        return False
-    except KeyError as key_err:
-        logger.info(f"Key error loading histogram_3d from {filename}: {key_err}")
-        return False
     except Exception as e:
-        logger.info(f"Error loading histogram_3d from {filename}: {e}")
-        return False
+        logger.error(f"Error reading {file_path}: {e}")
+        return
+
+    try:
+        with global_vars.write_lock:
+            global_vars.histogram_3d    = data['data'][0]['resultData']['energySpectrum']['spectrum'][0]
+            global_vars.counts          = data['data'][0]['resultData']['energySpectrum']['validPulseCount']
+            global_vars.elapsed         = data['data'][0]['resultData']['energySpectrum']['measurementTime']
+            global_vars.coeff_1         = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][0]
+            global_vars.coeff_2         = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][1]
+            global_vars.coeff_3         = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
+
+        logger.info(f"Successfully loaded data from {file_path}")
+    except KeyError as e:
+        logger.error(f"Missing expected data key in {file_path}: {e}")
+
+
+
 
 
 def load_cps_file(filename):
@@ -879,16 +915,7 @@ def load_cps_file(filename):
         raise RuntimeError(f"An error occurred while loading CPS data from {cps_file_path}: {e}")
 
 
-# clear variables
-def clear_global_vars():
 
-    with global_vars.write_lock:
-        global_vars.count_history   = []
-        global_vars.histogram_3d    = []
-        global_vars.counts          = 0
-        global_vars.cps             = 0
-        global_vars.elapsed         = 0
-        global_vars.histogram       = [0] * global_vars.bins
 
 
 # functions.py
