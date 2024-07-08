@@ -30,10 +30,12 @@ data_directory = global_vars.data_directory
 
 def show_tab4():
 
-    global_vars.count_hostory = []
-    filename    = global_vars.filename
-    t_interval  = global_vars.t_interval
-    rolling     = global_vars.rolling_interval
+    with global_vars.write_lock:
+        global_vars.count_hostory = []      
+        filename    = global_vars.filename
+        t_interval  = global_vars.t_interval
+        rolling     = global_vars.rolling_interval
+
     interval    = 1000  # 1 second interval
 
 
@@ -84,19 +86,19 @@ def show_tab4():
 def update_count_rate_chart(n_intervals, filename, t_interval, full_monty, store_load_flag_tab4, tab, rolling):
     logger.debug(f"Updating chart with filename={filename}, t_interval={t_interval}, full_monty={full_monty}, rolling={rolling}")
 
-    now = datetime.now()
-    time_str = now.strftime('%d/%m/%Y')
+    now         = datetime.now()
+    time_str    = now.strftime('%d/%m/%Y')
 
-    if not store_load_flag_tab4:
-        if os.path.exists(os.path.join(global_vars.data_directory, f"{filename}_cps.json")):
-            load_cps_file(filename)
-            store_load_flag_tab4 = True
+    if os.path.exists(os.path.join(data_directory, f"{filename}_cps.json")) and not global_vars.run_flag:
+        load_cps_file(filename)
+
 
     with global_vars.write_lock:
-        count_history = global_vars.count_history
-        counts = global_vars.temp_counts  # Retrieve temp_counts
-        cps = global_vars.cps
-        elapsed = global_vars.elapsed
+        count_history   = global_vars.count_history
+        sum_counts      = sum(count_history)
+        counts          = global_vars.counts
+        cps             = global_vars.cps
+        elapsed         = global_vars.elapsed
 
     if not full_monty:
         start_index = max(0, len(count_history) - 3600 // t_interval)
@@ -152,7 +154,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, full_monty, store
         ),
         annotations=[
             dict(
-                text=f"{rolling} Second average<br>{counts} Total counts<br>{elapsed} Seconds total",
+                text=f"{rolling} Second average<br>{counts} Total counts<br>{sum_counts} Sum counts<br>{elapsed} Seconds total",
                 x=0.95,
                 y=0.95,
                 xref='paper',
@@ -181,7 +183,10 @@ def update_count_rate_chart(n_intervals, filename, t_interval, full_monty, store
     [Input('rolling', 'value')]
 )
 def save_settings(rolling):
-    global_vars.rolling_interval = rolling
+
+    with global_vars.write_lock:
+        global_vars.rolling_interval = rolling
+        
     global_vars.save_settings_to_json()
 
     logger.info(f'(tab4 rolling interval changed to {rolling})')
