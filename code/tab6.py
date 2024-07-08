@@ -29,7 +29,8 @@ def show_tab6():
     options_sorted = sorted(options, key=lambda x: x['label'])
 
     # Load theme from global_vars
-    theme = global_vars.theme
+    with global_vars.write_lock:
+        theme = global_vars.theme
 
     html_tab6 = html.Div([
         html.Div(id='exit', children=[
@@ -230,8 +231,9 @@ def theme_change(value):
     if value is None:
         raise PreventUpdate
 
-    global_vars.theme = value
-    global_vars.save_settings_to_json()
+    with global_vars.write_lock:
+        global_vars.theme = value
+        global_vars.save_settings_to_json()
 
     logger.info('User clicked Exit')
     return 'Restart to see new theme'
