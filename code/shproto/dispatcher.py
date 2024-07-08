@@ -419,7 +419,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
 
             last_update_time = t1
 
-        # Save JSON files once every 60 seconds
+        # Save JSON files once every 60 seconds or when global_vars.run_flag.clear()
         if t1 - last_save_time >= 60 or shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag:
 
             logger.info(f'shproto process_02 attempting to save {filename}_3d.json')

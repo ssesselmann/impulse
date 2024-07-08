@@ -478,9 +478,11 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
 
         x = list(range(bins))
         y = histogram
-        max_value = np.max(y)
-        if max_value == 0:
-            max_value = 10
+
+        try:
+            max_value = np.max(y)
+        except:
+            max_value = 10    
         
         max_log_value = np.log10(max_value)
 

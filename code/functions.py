@@ -207,7 +207,7 @@ def write_blank_json_schema(filename, device):
 
 
 # Function to update keys and append histogram
-def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram, coeff_1, coeff_2, coeff_3):
+def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram, coeff_1, coeff_2, coeff_3, device):
     logger.info(f'Updating JSON 3D file: t0:{t0} t1:{t1} bins:{bins} counts:{counts} elapsed:{elapsed} filename:{filename} coeff_1:{coeff_1} coeff_2:{coeff_2} coeff_3:{coeff_3}')
     
     jsonfile = get_path(os.path.join(global_vars.data_directory, f'{filename}_3d.json'))
@@ -215,25 +215,37 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram,
     # Check if the file exists
     if not os.path.isfile(jsonfile):
         logger.info(f"JSON file does not exist, creating new file: {jsonfile}")
+        
         data = {
-            "data": [
-                {
-                    "resultData": {
-                        "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-                        "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-                        "energySpectrum": {
-                            "numberOfChannels": bins,
-                            "energyCalibration": {
-                                "coefficients": [coeff_3, coeff_2, coeff_1]
-                            },
-                            "validPulseCount": counts,
-                            "measurementTime": elapsed,
-                            "spectrum": [last_histogram]
+                "schemaVersion": "NPESv2",
+                "data": [
+                    {
+                        "deviceData": {
+                            "softwareName": "IMPULSE",
+                            "deviceName":device
+                        },
+                        "sampleInfo": {
+                            "name":filename,
+                            "location": "",
+                            "note": ""
+                        },
+                        "resultData": {
+                            "startTime":t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                            "endTime":t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                            "energySpectrum": {
+                                "numberOfChannels":bins,
+                                "energyCalibration": {
+                                    "polynomialOrder": 2,
+                                    "coefficients":[coeff_3, coeff_2, coeff_1]
+                                },
+                                "validPulseCount":counts,
+                                "measurementTime":elapsed,
+                                "spectrum":last_histogram
+                            }
                         }
                     }
-                }
-            ]
-        }
+                ]
+            }
         
         try:
             with open(jsonfile, "w") as f:
@@ -268,8 +280,6 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram,
     except Exception as e:
         logger.error(f"Error writing JSON file: {e}")
 
-# Example usage
-# update_json_3d_file(datetime.now(), datetime.now(), 1024, 1000, 3600, 'example_filename', [0, 1, 2], 1.0, 0.0, -0.1)
 
 
 # This function writes counts per second to JSON
@@ -851,29 +861,35 @@ def load_histogram_2(filename):
 
 
 def load_3d_json(filename):
+
+    logging.info('1.. load_3d_json')
+
     file_path = os.path.join(global_vars.data_directory, f'{filename}_3d.json')
     
     if not os.path.exists(file_path):
-        logger.error(f"File not found: {file_path}")
+        logger.error(f"load_3d_json File not found: {file_path}")
         return
 
     try:
         with open(file_path, 'r') as file:
+            logger.info('2.. loading 3d file')
             data = json.load(file)
+            logger.info('3.. loading 3d file')
     except Exception as e:
         logger.error(f"Error reading {file_path}: {e}")
         return
 
     try:
         with global_vars.write_lock:
-            global_vars.histogram_3d    = data['data'][0]['resultData']['energySpectrum']['spectrum'][0]
-            global_vars.counts          = data['data'][0]['resultData']['energySpectrum']['validPulseCount']
-            global_vars.elapsed         = data['data'][0]['resultData']['energySpectrum']['measurementTime']
-            global_vars.coeff_1         = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][0]
-            global_vars.coeff_2         = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][1]
-            global_vars.coeff_3         = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
+            global_vars.histogram_3d = data['data'][0]['resultData']['energySpectrum']['spectrum']
+            global_vars.counts = data['data'][0]['resultData']['energySpectrum']['validPulseCount']
+            global_vars.elapsed = data['data'][0]['resultData']['energySpectrum']['measurementTime']
+            global_vars.coeff_1 = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][0]
+            global_vars.coeff_2 = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][1]
+            global_vars.coeff_3 = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
 
-        logger.info(f"Successfully loaded data from {file_path}")
+
+        logger.info(f"4.. global_vars updated from {file_path}")
     except KeyError as e:
         logger.error(f"Missing expected data key in {file_path}: {e}")
 
