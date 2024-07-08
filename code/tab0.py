@@ -15,8 +15,9 @@ import json
 
 logger = logging.getLogger(__name__)
 
-data_directory = global_vars.data_directory
-user_settings_file = global_vars.user_settings
+with global_vars.write_lock:
+    data_directory      = global_vars.data_directory
+    user_settings_file  = global_vars.user_settings
 
 n_clicks = None
 

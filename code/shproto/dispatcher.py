@@ -41,7 +41,10 @@ calibration         = [0., 1., 0., 0., 0.]
 calibration_updated = 0
 calibration_lock    = threading.Lock()
 inf_str             = ''
-data_directory      = global_vars.data_directory
+
+with global_vars.write_lock:
+    data_directory      = global_vars.data_directory
+
 logger              = logging.getLogger(__name__)
 
 # This function communicates with the device
@@ -178,7 +181,7 @@ def start(sn=None):
 
 
 
-def process_01(filename, compression, device, t_interval):  # Compression reduces the number of channels by 8, 4, or 2
+def process_01(filename, compression, device, t_interval):
     logger.info(f'dispatcher.process_01({filename})')
 
     global counts, last_counts
@@ -187,45 +190,47 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
     last_counts         = 0
     compression         = int(compression)
     max_bins            = 8192
-    global_vars.bins    = int(max_bins / compression)
     t0                  = time.time()
     elapsed             = 0
     compressed_bins     = int(max_bins / compression)
 
-    # Load settings from global_vars
-    max_counts          = global_vars.max_counts
-    coeff_1             = global_vars.coeff_1
-    coeff_2             = global_vars.coeff_2
-    coeff_3             = global_vars.coeff_3
-    max_seconds         = global_vars.max_seconds
-    t_interval          = global_vars.t_interval
+    with global_vars.write_lock:
+        global_vars.bins    = int(max_bins / compression)
+        # Load settings from global_vars
+        max_counts  = global_vars.max_counts
+        coeff_1     = global_vars.coeff_1
+        coeff_2     = global_vars.coeff_2
+        coeff_3     = global_vars.coeff_3
+        max_seconds = global_vars.max_seconds
+        t_interval  = global_vars.t_interval
 
     # Define the histogram list
-    hst                 = [0] * max_bins  # Initialize the original histogram list
+    hst = [0] * max_bins  # Initialize the original histogram list
 
     # Initialize last update and save times
     last_update_time    = time.time()
     last_save_time      = time.time()
 
     # Initialize count history
-    count_history       = []
+    count_history = []
 
     while not (shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag) and (counts < max_counts and elapsed <= max_seconds):
 
         time.sleep(t_interval)
 
-        # Get the devicetime
-        t1 = time.time()
+        # Get the device time
+        t1          = time.time()
 
         # Calculate the time difference
-        elapsed = int(t1 - t0)
+        elapsed     = int(t1 - t0)
 
         # Convert float timestamps to datetime objects
-        start_time = datetime.fromtimestamp(t0)
-        end_time = datetime.fromtimestamp(t1)
+        start_time  = datetime.fromtimestamp(t0)
+        end_time    = datetime.fromtimestamp(t1)
 
         # Fetch the histogram from the device
-        hst = shproto.dispatcher.histogram
+        with shproto.dispatcher.histogram_lock:
+            hst = shproto.dispatcher.histogram.copy()
 
         # Clear counts in the last bin
         hst[-1] = 0
@@ -236,20 +241,25 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
         # Sum total counts
         counts = sum(compressed_hst)
 
-        cps = (counts - last_counts)  # Strictly not cps but counts per loop in this while loop!! (need to fix)
+        # Calculate counts per second (CPS)
+        with cps_lock:
+            cps             = (counts - last_counts)
+            global_vars.cps = cps
 
-        # Append CPS to count history
-        count_history.append(cps)
+        # Append CPS to count history in a thread-safe manner
+        with global_vars.write_lock:
+            count_history.append(cps)
+            global_vars.count_history = count_history  # Update count history
 
         # Update global variables once per second
         if t1 - last_update_time >= 1 * t_interval:
             with global_vars.write_lock:
-                global_vars.cps             = cps
                 global_vars.counts          = counts
                 global_vars.elapsed         = elapsed
                 global_vars.count_history   = count_history  # Update count history
                 global_vars.histogram       = compressed_hst
-
+            with cps_lock:
+                global_vars.cps             = cps
 
             last_update_time = t1
 
@@ -307,7 +317,7 @@ def process_01(filename, compression, device, t_interval):  # Compression reduce
                 "elapsed": elapsed
             }
 
-            cps_file_path = os.path.join(global_vars.data_directory, f'{filename}_cps.json')
+            cps_file_path = os.path.join(data_directory, f'{filename}_cps.json')
 
             logger.info(f'CPS file path = {cps_file_path}')
 
@@ -328,25 +338,26 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
 
     global counts, last_counts, histogram_3d
 
-    counts = 0
-    last_counts = 0
-    total_counts = 0
-    compression = int(compression)
-    max_bins = 8192
-    global_vars.bins = int(max_bins / compression)
-    t0 = time.time()
-    elapsed = 0
-    compressed_bins = int(max_bins / compression)
-    last_hst = [0] * compressed_bins
-    hst3d = []
+    counts              = 0
+    last_counts         = 0
+    total_counts        = 0
+    compression         = int(compression)
+    max_bins            = 8192
+    t0                  = time.time()
+    elapsed             = 0
+    hst3d               = []
+    compressed_bins     = int(max_bins / compression)
+    last_hst            = [0] * compressed_bins
 
-    # Load settings from global_vars
-    max_counts = global_vars.max_counts
-    coeff_1 = global_vars.coeff_1
-    coeff_2 = global_vars.coeff_2
-    coeff_3 = global_vars.coeff_3
-    max_seconds = global_vars.max_seconds
-    t_interval = global_vars.t_interval
+    with global_vars.write_lock:
+        global_vars.bins    = int(max_bins / compression)
+        # Load settings from global_vars
+        max_counts          = global_vars.max_counts
+        coeff_1             = global_vars.coeff_1
+        coeff_2             = global_vars.coeff_2
+        coeff_3             = global_vars.coeff_3
+        max_seconds         = global_vars.max_seconds
+        t_interval          = global_vars.t_interval
 
     # Define the histogram list
     hst = [0] * max_bins  # Initialize the original histogram list
@@ -396,12 +407,15 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
 
         # Update global variables once per second
         if t1 - last_update_time >= 1 * t_interval:
+
             with global_vars.write_lock:
-                global_vars.cps = cps
-                global_vars.counts = counts
-                global_vars.elapsed = elapsed
-                global_vars.count_history = count_history  # Update count history
-                global_vars.histogram_3d = hst3d
+                global_vars.counts          = counts
+                global_vars.elapsed         = elapsed
+                global_vars.count_history   = count_history  # Update count history
+                global_vars.histogram_3d    = hst3d
+
+            with cps_lock:
+                global_vars.cps             = cps    
 
             last_update_time = t1
 
@@ -444,7 +458,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
             json_data = json.dumps(data, separators=(",", ":"))
 
             # Construct the full path to the file
-            file_path = os.path.join(global_vars.data_directory, f'{filename}_3d.json')
+            file_path = os.path.join(data_directory, f'{filename}_3d.json')
 
             logger.info(f'file path = {file_path}')
 
@@ -459,7 +473,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
                 "elapsed": elapsed
             }
 
-            cps_file_path = os.path.join(global_vars.data_directory, f'{filename}_cps.json')
+            cps_file_path = os.path.join(data_directory, f'{filename}_cps.json')
 
             logger.info(f'CPS file path = {cps_file_path}')
 
@@ -470,7 +484,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
             last_save_time = t1
 
         last_counts = counts
-        last_hst = compressed_hst
+        last_hst    = compressed_hst
 
     return
 
@@ -509,10 +523,10 @@ def stop():
     with shproto.dispatcher.stopflag_lock:
         process_03('-sto')
         logger.info('process_03(-sto)')
-        time.sleep(0.5)
+        time.sleep(0.1)
         shproto.dispatcher.stopflag = 1
         logger.info('Stop flag set(dispatcher)')
-        time.sleep(0.5)
+        time.sleep(0.1)
         return
 
 def spec_stop():

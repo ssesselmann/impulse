@@ -18,26 +18,28 @@ import global_vars
 
 logger = logging.getLogger(__name__)
 
-data_directory = global_vars.data_directory
+with global_vars.write_lock:
+    data_directory = global_vars.data_directory
 
 # ----------- Audio input selection ---------------------------------
 
 def show_tab1():
     global_vars.load_settings_from_json()
 
-    filename        = global_vars.filename
-    device          = global_vars.device
-    sample_rate     = global_vars.sample_rate
-    chunk_size      = global_vars.chunk_size
-    threshold       = global_vars.threshold
-    tolerance       = global_vars.tolerance
-    bins            = global_vars.bins
-    bin_size        = global_vars.bin_size
-    max_counts      = global_vars.max_counts
-    shapecatches    = global_vars.shapecatches
-    sample_length   = global_vars.sample_length
-    peakshift       = global_vars.peakshift
-    stereo          = global_vars.stereo
+    with global_vars.write_lock:
+        filename        = global_vars.filename
+        device          = global_vars.device
+        sample_rate     = global_vars.sample_rate
+        chunk_size      = global_vars.chunk_size
+        threshold       = global_vars.threshold
+        tolerance       = global_vars.tolerance
+        bins            = global_vars.bins
+        bin_size        = global_vars.bin_size
+        max_counts      = global_vars.max_counts
+        shapecatches    = global_vars.shapecatches
+        sample_length   = global_vars.sample_length
+        peakshift       = global_vars.peakshift
+        stereo          = global_vars.stereo
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
     shape_left, shape_right = fn.load_shape()
@@ -263,13 +265,14 @@ def show_tab1():
 )
 def save_settings(n_clicks, device, sample_rate, chunk_size, catch, sample_length, peakshift, stereo):
     if n_clicks is not None:
-        global_vars.device = device
-        global_vars.sample_rate = sample_rate
-        global_vars.chunk_size = chunk_size
-        global_vars.shapecatches = catch
-        global_vars.sample_length = sample_length
-        global_vars.peakshift = peakshift
-        global_vars.stereo = stereo
+        with global_vars.write_lock:
+            global_vars.device          = device
+            global_vars.sample_rate     = sample_rate
+            global_vars.chunk_size      = chunk_size
+            global_vars.shapecatches    = catch
+            global_vars.sample_length   = sample_length
+            global_vars.peakshift       = peakshift
+            global_vars.stereo          = stereo
 
         global_vars.save_settings_to_json()
 
@@ -416,7 +419,7 @@ def update_output(n_clicks, cmd):
 
     if allowed:
         execute_serial_command(cmd)
-        time.sleep(1)
+        time.sleep(0.1)
         table = generate_device_settings_table()
         return f'Command sent: {cmd}', table, ''
 
