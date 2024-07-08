@@ -8,12 +8,12 @@ import logging
 import global_vars
 import functions as fn
 
+
+
 logger = logging.getLogger(__name__)
 
 # Function reads audio stream and finds pulses then outputs time, pulse height and distortion
 def pulsecatcher(mode, run_flag, run_flag_lock):
-    # Clear global variables at the start of each recording
-    fn.clear_global_vars()
     
     # Start timer
     t0 = datetime.datetime.now()
@@ -25,30 +25,31 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     last_histogram = [0] * global_vars.bins  # Initialize last_histogram
 
     # Load settings from global variables
-    filename        = global_vars.filename
-    device          = global_vars.device
-    sample_rate     = global_vars.sample_rate
-    chunk_size      = global_vars.chunk_size
-    threshold       = global_vars.threshold
-    tolerance       = global_vars.tolerance
-    bins            = global_vars.bins
-    bin_size        = global_vars.bin_size
-    max_counts      = global_vars.max_counts
-    sample_length   = global_vars.sample_length
-    coeff_1         = global_vars.coeff_1
-    coeff_2         = global_vars.coeff_2
-    coeff_3         = global_vars.coeff_3
-    flip            = global_vars.flip
-    max_seconds     = global_vars.max_seconds
-    t_interval      = global_vars.t_interval
-    peakshift       = global_vars.peakshift
-    peak            = int((sample_length - 1) / 2) + peakshift
+    with global_vars.write_lock:
+        filename        = global_vars.filename
+        device          = global_vars.device
+        sample_rate     = global_vars.sample_rate
+        chunk_size      = global_vars.chunk_size
+        threshold       = global_vars.threshold
+        tolerance       = global_vars.tolerance
+        bins            = global_vars.bins
+        bin_size        = global_vars.bin_size
+        max_counts      = global_vars.max_counts
+        sample_length   = global_vars.sample_length
+        coeff_1         = global_vars.coeff_1
+        coeff_2         = global_vars.coeff_2
+        coeff_3         = global_vars.coeff_3
+        flip            = global_vars.flip
+        max_seconds     = global_vars.max_seconds
+        t_interval      = global_vars.t_interval
+        peakshift       = global_vars.peakshift
+        peak            = int((sample_length - 1) / 2) + peakshift
 
     right_threshold = 1000  # Set a stricter threshold for right channel to filter out noise    
 
     audio_format    = pyaudio.paInt16
     p               = pyaudio.PyAudio()
-    device_channels = fn.get_max_input_channels(device)
+    device_channels = p.get_device_info_by_index(device)['maxInputChannels']
 
     # Loads pulse shape from csv
     shapes          = fn.load_shape()
@@ -63,10 +64,11 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     last_count      = 0
 
     # Global variables
-    global_vars.elapsed         = 0
-    global_vars.counts          = 0
-    global_vars.histogram       = [0] * bins
-    global_vars.count_history   = []
+    with global_vars.write_lock:
+        global_vars.elapsed         = 0
+        global_vars.counts          = 0
+        global_vars.histogram       = [0] * bins
+        global_vars.count_history   = []
     
     # Local Variables
     local_elapsed = 0
@@ -162,7 +164,6 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             counts_per_sec = local_counts - last_count
 
             with global_vars.write_lock:
-
                 global_vars.cps     = counts_per_sec
                 global_vars.counts  = local_counts
                 global_vars.count_history.append(counts_per_sec)
@@ -190,7 +191,9 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 fn.write_cps_json(filename, local_count_history, global_vars.elapsed)
 
             if mode == 3:
-                fn.update_json_3d_file(t0, t1, bins, local_counts, local_elapsed, filename, interval_histogram, coeff_1, coeff_2, coeff_3)
+                with global_vars.write_lock:
+                    histogram_3d = global_vars.histogram_3d
+                fn.update_json_3d_file(t0, t1, bins, local_counts, local_elapsed, filename, histogram_3d, coeff_1, coeff_2, coeff_3)
             
             time_last_save_time = time.time()
 
