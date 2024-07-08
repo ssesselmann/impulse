@@ -38,6 +38,7 @@ def show_tab4():
 
     interval    = 1000  # 1 second interval
 
+    load_cps_file(filename)
 
     html_tab4 = html.Div(id='tab4', children=[
         html.Div(dcc.Input(id='filename', type='text', value=filename, style={'display': 'none'})),
