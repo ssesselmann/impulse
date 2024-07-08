@@ -11,10 +11,12 @@ from server import app
 import functions as fn  # Import functions as fn if needed
 
 logger          = logging.getLogger(__name__)
-data_directory  = global_vars.data_directory
-settings_file   = global_vars.settings_file
-user_file       = global_vars.user_settings
-shapecsv        = global_vars.shapecsv
+
+with global_vars.write_lock:
+    data_directory  = global_vars.data_directory
+    settings_file   = global_vars.settings_file
+    user_file       = global_vars.user_settings
+    shapecsv        = global_vars.shapecsv  
 
 default_settings = {
     "filename": "my_spectrum",
