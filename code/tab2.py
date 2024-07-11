@@ -105,7 +105,6 @@ def show_tab2():
         compression     = global_vars.compression
         spec_notes      = global_vars.spec_notes
 
-    print(f'tab2 filename: {filename}')
 
     load_histogram(filename)
 

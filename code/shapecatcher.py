@@ -17,34 +17,33 @@ sc_info = []
 # Define the directory where data files are stored
 data_directory = global_vars.data_directory
 
+#   Determine if the pulse is predominantly positive or negative.
 def determine_pulse_sign(pulse):
-    """Determine if the pulse is predominantly positive or negative."""
     sc_info.append('Checking pulse polarity')
     time.sleep(0.1)
     return np.mean(pulse) > 0
 
+#   Encode pulse signs into a numeric value.
 def encode_pulse_sign(left_sign, right_sign):
-    """Encode pulse signs into a numeric value."""
     left_digit = 1 if left_sign else 2
     right_digit = 1 if right_sign else 2
-
     sc_info.append(f'Saving pulse polarity')
     time.sleep(0.1)
 
     return left_digit * 10 + right_digit
 
+#   Align the pulse so that its peak is in the middle.
 def align_pulse(pulse, peak_position):
-    """Align the pulse so that its peak is in the middle."""
     max_idx = np.argmax(np.abs(pulse))
     shift = peak_position - max_idx
     return np.pad(pulse, (max(shift, 0), max(-shift, 0)), 'constant', constant_values=(0,))[:len(pulse)]
 
+#   Capture initial pulses to determine polarity.
 def capture_pulse_polarity(stereo, sample_rate, chunk_size, device, sample_length, peak, threshold, timeout=30):
-    """Capture initial pulses to determine polarity."""
-    p = pyaudio.PyAudio()
-    channels = 2 if stereo else 1
 
-    stream = p.open(format=pyaudio.paInt16,
+    p           = pyaudio.PyAudio()
+    channels    = 2 if stereo else 1
+    stream      = p.open(format=pyaudio.paInt16,
                     channels=channels,
                     rate=sample_rate,
                     input=True,
