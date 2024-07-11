@@ -63,7 +63,8 @@ from functions import (
     update_coeff, 
     update_json_notes,
     handle_modal_confirmation,
-    clear_global_vars
+    clear_global_vars,
+    save_settings_to_json,
     )
 
 logger = logging.getLogger(__name__)
@@ -102,6 +103,11 @@ def show_tab2():
         max_seconds     = global_vars.max_seconds
         t_interval      = global_vars.t_interval
         compression     = global_vars.compression
+        spec_notes      = global_vars.spec_notes
+
+    print(f'tab2 filename: {filename}')
+
+    load_histogram(filename)
 
     if device <= 100:
         with global_vars.write_lock:
@@ -111,7 +117,6 @@ def show_tab2():
             global_vars.bins = int(8192/compression)    
 
     millisec    = t_interval * 1000
-    spec_notes  = get_spec_notes(filename)
 
     if device >= 100:
         serial = 'block'
@@ -335,24 +340,24 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
 
                 time.sleep(0.1)
                 shproto.dispatcher.process_03('-rst')
-                logger.info(f'tab2 sends reset command -rst')
+                logger.info(f'tab2 sends reset command -rst\n')
 
                 time.sleep(0.1)
                 shproto.dispatcher.process_03('-sta')
-                logger.info(f'tab2 sends start command -sta')
+                logger.info(f'tab2 sends start command -sta\n')
 
                 time.sleep(0.1)
                 shproto.dispatcher.process_01(filename, compression, "MAX", t_interval)
-                logger.info(f'tab2 calls process_01(){filename}, {compression}, MAX, {t_interval}')
+                logger.info(f'tab2 calls process_01(){filename}, {compression}, MAX, {t_interval}\n')
 
                 time.sleep(0.1)
 
             except Exception as e:
-                logger.error(f'tab 2 start_new_2d_spectrum() error {e}')
+                logger.error(f'tab 2 start_new_2d_spectrum() error {e}\n')
                 return f"tab2 Error: {str(e)}"
         else:
             start_recording(mode)
-            logger.info(f'tab2 start_recording(mode {mode}) passed.')
+            logger.info(f'tab2 start_recording(mode {mode}) passed.\n_clicks')
         return ""
 
     raise PreventUpdate
@@ -367,21 +372,21 @@ def stop_button(n_clicks, dn):
     if n_clicks is None:
         raise PreventUpdate
 
-    logger.info('tab2 stop button. clicked')
+    logger.info('tab2 stop button. clicked\n')
 
 
     if dn is None:
-        logger.error('Device number is None')
+        logger.error('Device number is None\n')
         raise PreventUpdate
 
     if dn >= 100:
-        logger.info('tab2 stop_button shproto.dispatcher')
+        logger.info('tab2 stop_button shproto.dispatcher\n')
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
         time.sleep(0.1)
     else:
         stop_recording()
-        logger.info('tab2 stop_recording() for audio device')
+        logger.info('tab2 stop_recording() for audio device\n')
     return
 
 
@@ -420,7 +425,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             try:
                 load_histogram_2(filename_2)
             except Exception as e:
-                logger.info(f'tab2 failed to load {filename_2}: {e}')    
+                logger.info(f'tab2 failed to load {filename_2}: {e}\n')    
 
     with global_vars.write_lock:
         counts          = global_vars.counts
@@ -432,6 +437,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         histogram       = global_vars.histogram
         histogram_2     = global_vars.histogram_2
         coefficients_1  = global_vars.coefficients_1
+        spec_notes      = global_vars.spec_notes
 
 
     coincidence     = 'coincidence<br>(left if right)' if mode_switch else ""
@@ -441,7 +447,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     lines           = []
     gaussian        = []
     now             = datetime.now()
-    time_str        = now.strftime('%d/%m/%Y')
+    date        = now.strftime('%d-%m-%Y')
 
     layout = go.Layout(
         paper_bgcolor='white',
@@ -463,7 +469,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         try:
             load_histogram_2(filename_2)
         except:
-            logger.info(f'tab2 failed to load {histogram_2}')
+            logger.info(f'tab2 failed to load {histogram_2}\n')
 
     if counts > 0:
 
@@ -561,7 +567,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     fig.update_layout(
         annotations=annotations,
         title={
-            'text': f'{filename}<br>{time_str}<br>{counts} counts<br>{elapsed} seconds<br>{coincidence}',
+            'text': f'{filename}<br>{date}<br>{counts} counts<br>{elapsed} seconds<br>{coincidence}',
             'x': 0.85,
             'y': 0.9,
             'xanchor': 'center',
@@ -641,7 +647,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             y=0.8, yref="paper",
             text=f"Selected counts {visible_counts}",
             showarrow=False,
-            font=dict(size=14),
+            font=dict(size=16),
             align="center",
             bgcolor="white",
             bordercolor="lightgray",
@@ -729,9 +735,9 @@ def save_settings(*args):
     else:
         global_vars.bins    = args[0]
 
-    global_vars.save_settings_to_json()
+    save_settings_to_json()
     
-    logger.info(f'Settings updated from tab2')
+    logger.info(f'Settings updated from tab2\n')
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
 
 
@@ -746,17 +752,17 @@ def play_sound(n_clicks, filename):
 
     if os.path.exists(f'{data_directory}/{filename}.wav'):
         asp.play_wav_file(filename)
-        logger.info(f'Playing existing wav file: {filename}.wav')
+        logger.info(f'Playing existing wav file: {filename}.wav\n')
         return
     else:
         gaussian = gaussian_correl(global_vars.histogram, 1)
-        logger.info('calculating gaussian correlation')
+        logger.info('calculating gaussian correlation\n')
 
         asp.make_wav_file(filename, gaussian)
-        logger.info('Converting gaussian correlation to wav file')
+        logger.info('Converting gaussian correlation to wav file\n')
 
         asp.play_wav_file(filename)
-        logger.info(f'Playing soundfile {filename}.wav')
+        logger.info(f'Playing soundfile {filename}.wav\n')
         return
 
 @app.callback(
@@ -775,7 +781,7 @@ def update_current_calibration(n_clicks, filename):
         with global_vars.write_lock:
             update_coeff(filename, coeff_1, coeff_2, coeff_3)
 
-        logger.info(f'Calibration updated tab2: {filename, coeff_1, coeff_2, coeff_3}')
+        logger.info(f'Calibration updated tab2: {filename, coeff_1, coeff_2, coeff_3}\n')
         return f"Update {n_clicks}"
 
 @app.callback(
@@ -788,7 +794,7 @@ def update_output(selected_cmd, active_tab):
     if active_tab != 'tab_2':
         raise PreventUpdate
 
-    logger.info(f'tab2 command sent: {selected_cmd}')
+    logger.info(f'tab2 command sent: {selected_cmd}\n')
 
     try:
         shproto.dispatcher.process_03(selected_cmd)
@@ -842,7 +848,7 @@ def display_confirmation_result(confirm_publish_clicks, cancel_publish_clicks, f
 
     if button_id == "confirm-publish" and confirm_publish_clicks:
 
-        logger.info(f'tab2 user confirmed publishing of {filename}')
+        logger.info(f'tab2 user confirmed publishing of {filename}\n')
 
         response_message = publish_spectrum(filename)
 
@@ -865,13 +871,14 @@ def display_confirmation_result(confirm_publish_clicks, cancel_publish_clicks, f
 )
 def update_spectrum_notes(spec_notes, filename):
 
-    if os.path.exists(f'{data_directory}/{filename}.json'):
+    with global_vars.write_lock:
+        global_vars.spec_notes = spec_notes
 
-        with global_vars.write_lock:
-            
-            update_json_notes(filename, spec_notes)
+    if not global_vars.run_flag.is_set():
+                
+        update_json_notes(filename, spec_notes)
 
-        logger.info(f'Spectrum notes updated {spec_notes}')
+        logger.info(f'tab2 spectrum notes updated {spec_notes}\n')
 
     return spec_notes
 

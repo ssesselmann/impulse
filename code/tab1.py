@@ -12,7 +12,13 @@ import dash_daq as daq
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output, State
 from server import app
-from functions import execute_serial_command, generate_device_settings_table, allowed_command, get_path
+from functions import (
+    execute_serial_command, 
+    generate_device_settings_table, 
+    allowed_command, 
+    get_path, 
+    save_settings_to_json 
+    )
 from shapecatcher import sc_info
 import global_vars
 
@@ -24,27 +30,26 @@ with global_vars.write_lock:
 # ----------- Audio input selection ---------------------------------
 
 def show_tab1():
-    global_vars.load_settings_from_json()
 
     with global_vars.write_lock:
         filename        = global_vars.filename
-        device          = global_vars.device
-        sample_rate     = global_vars.sample_rate
-        chunk_size      = global_vars.chunk_size
-        threshold       = global_vars.threshold
-        tolerance       = global_vars.tolerance
-        bins            = global_vars.bins
-        bin_size        = global_vars.bin_size
-        max_counts      = global_vars.max_counts
-        shapecatches    = global_vars.shapecatches
-        sample_length   = global_vars.sample_length
-        peakshift       = global_vars.peakshift
-        stereo          = global_vars.stereo
+        device          = int(global_vars.device)
+        sample_rate     = int(global_vars.sample_rate)
+        chunk_size      = int(global_vars.chunk_size)
+        threshold       = int(global_vars.threshold)
+        tolerance       = int(global_vars.tolerance)
+        bins            = int(global_vars.bins)
+        bin_size        = int(global_vars.bin_size)
+        max_counts      = int(global_vars.max_counts)
+        shapecatches    = int(global_vars.shapecatches)
+        sample_length   = int(global_vars.sample_length)
+        peakshift       = int(global_vars.peakshift)
+        stereo          = bool(global_vars.stereo)
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
     shape_left, shape_right = fn.load_shape()
 
-    logger.info(f'stereo retrieved from settings as {stereo}')
+    logger.info(f'stereo retrieved from settings as {stereo}\n')
 
     try:
         response = req.get('https://www.gammaspectacular.com/steven/impulse/news.html', verify=False)
@@ -274,12 +279,12 @@ def save_settings(n_clicks, device, sample_rate, chunk_size, catch, sample_lengt
             global_vars.peakshift       = peakshift
             global_vars.stereo          = stereo
 
-        global_vars.save_settings_to_json()
+        save_settings_to_json()
 
         pulse_length = int(1000000 * int(sample_length) / int(sample_rate))
         warning = 'WARNING LONG' if pulse_length >= 334 else ''
 
-        logger.debug(f'Settings saved to JSON file')
+        logger.debug(f'Settings saved to JSON file\n')
 
         return f'Device: {device} (Refresh)', f'{warning} Dead time ~ {pulse_length} µs', stereo
 

@@ -8,21 +8,19 @@ import logging
 import global_vars
 import functions as fn
 
-
-
 logger = logging.getLogger(__name__)
 
 # Function reads audio stream and finds pulses then outputs time, pulse height and distortion
 def pulsecatcher(mode, run_flag, run_flag_lock):
     
     # Start timer
-    t0 = datetime.datetime.now()
-    time_start = time.time()
-    time_last_save = time_start
-    time_last_save_time = time_start  # corrected variable initialization
-
-    array_3d = []
-    last_histogram = [0] * global_vars.bins  # Initialize last_histogram
+    t0                      = datetime.datetime.now()
+    time_start              = time.time()
+    time_last_save          = time_start
+    time_last_save_time     = time_start  # corrected variable initialization
+    array_3d                = []
+    last_histogram          = [0] * global_vars.bins  # Initialize last_histogram
+    spec_notes              = ""
 
     # Load settings from global variables
     with global_vars.write_lock:
@@ -44,6 +42,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         t_interval      = global_vars.t_interval
         peakshift       = global_vars.peakshift
         peak            = int((sample_length - 1) / 2) + peakshift
+        spec_notes      = global_vars.spec_notes
 
     right_threshold = 1000  # Set a stricter threshold for right channel to filter out noise    
 
@@ -107,8 +106,8 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         if flip == 21:
             left_channel = [flip * x for x in left_channel]
 
-        logger.debug(f"Left channel data: {left_channel[:10]}")
-        logger.debug(f"Right channel data: {right_channel[:10]}")
+        logger.debug(f"Left channel data: {left_channel[:10]}\n")
+        logger.debug(f"Right channel data: {right_channel[:10]}\n")
 
         # Extend detection to right channel for mode 4
         right_pulses = []
@@ -119,7 +118,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 height = fn.pulse_height(samples)
                 if samples[peak] == max(samples) and abs(height) > right_threshold and samples[peak] < 32768:
                     right_pulses.append((i + peak, height))
-                    logger.debug(f"Right channel pulse detected at index {i}: height {height} sample = {samples}")
+                    logger.debug(f"Right channel pulse detected at index {i}: height {height} sample = {samples}\n")
 
         # Read through the list of left channel values and find pulse peaks
         for i in range(len(left_channel) - sample_length):
@@ -144,7 +143,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                         continue  # Skip this pulse if no coincident pulse found
                     else:
 
-                        logger.debug(f"Coincidence index {i}, height {height}, Right pulse at index {coincident_pulse[0]}, height {coincident_pulse[1]}")
+                        logger.debug(f"Coincidence index {i}, height {height}, Right pulse at index {coincident_pulse[0]}, height {coincident_pulse[1]}\n")
 
                 normalised = fn.normalise_pulse(samples)
                 distortion = fn.distortion(normalised, left_shape)
@@ -164,11 +163,12 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             counts_per_sec = local_counts - last_count
 
             with global_vars.write_lock:
-                global_vars.cps     = counts_per_sec
-                global_vars.counts  = local_counts
+                global_vars.cps         = counts_per_sec
+                global_vars.counts      = local_counts
+                global_vars.elapsed     = local_elapsed
+                global_vars.spec_notes  = spec_notes
+
                 global_vars.count_history.append(counts_per_sec)
-                global_vars.elapsed = local_elapsed
-                local_count_history.append(counts_per_sec)
 
                 if mode == 2:
                     global_vars.histogram = local_histogram
@@ -178,16 +178,17 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                     global_vars.histogram_3d.append(interval_histogram)
                     last_histogram = local_histogram.copy()
 
+            local_count_history.append(counts_per_sec)
             last_count      = local_counts
             time_last_save  = time_this_save
 
         # Save data to global_variables once per minute
         if time_this_save - time_last_save_time >= 30 * t_interval or not global_vars.run_flag.is_set():
-            location = ""
-            note = ""
+            location    = ""
+            spec_notes  = ""
             
             if mode == 2 or mode == 4:
-                fn.write_histogram_npesv2(t0, t1, bins, local_counts, int(local_elapsed), filename, local_histogram, coeff_1, coeff_2, coeff_3, device, location, note)
+                fn.write_histogram_npesv2(t0, t1, bins, local_counts, int(local_elapsed), filename, local_histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes)
                 fn.write_cps_json(filename, local_count_history, global_vars.elapsed)
 
             if mode == 3:

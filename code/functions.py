@@ -21,8 +21,8 @@ import requests as req
 import shproto.dispatcher
 import serial.tools.list_ports
 import global_vars
-# Import pulsecatcher function
-from pulsecatcher import pulsecatcher  # Adjust according to the actual module name
+
+from pulsecatcher import pulsecatcher
 from dash import dash_table
 from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
@@ -30,15 +30,15 @@ from datetime import datetime
 from urllib.request import urlopen
 from shproto.dispatcher import process_03
 
-logger = logging.getLogger(__name__)
-
-cps_list = []
-
-data_directory = global_vars.data_directory
+logger          = logging.getLogger(__name__)
+cps_list        = []
+data_directory  = global_vars.data_directory
 
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
+
     pulses = []
+
     for i in range(len(left_channel) - 51):
         samples = left_channel[i:i + 51]  # Get the first 51 samples
         if samples[25] >= max(samples) and (max(samples) - min(samples)) > 100 and samples[25] < 32768:
@@ -58,7 +58,7 @@ def normalise_pulse(average):
 def get_serial_device_information():
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = "-inf"
-        logger.info("Sending '-inf' command to device")
+        logger.info("Sending '-inf' command to device\n")
     time.sleep(0.1)
 
     with shproto.dispatcher.command_lock:
@@ -104,32 +104,10 @@ def update_bin(n, bins, bin_counts):
     bin_counts[bin_num] += 1
     return bin_counts
 
-# This function writes a 2D histogram to JSON file according to NPESv1 schema.
-def write_histogram_json(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3):
-    jsonfile = get_path(f'{data_directory}/{name}.json')
-    data = {
-        "schemaVersion": "NPESv1",
-        "resultData": {
-            "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-            "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-            "energySpectrum": {
-                "numberOfChannels": bins,
-                "energyCalibration": {
-                    "polynomialOrder": 2,
-                    "coefficients": [coeff_3, coeff_2, coeff_1]
-                },
-                "validPulseCount": counts,
-                "measurementTime": elapsed,
-                "spectrum": histogram
-            }
-        }
-    }
-    with open(jsonfile, "w+") as f:
-        json.dump(data, f, separators=(',', ':'))
 
 # This function writes a 2D histogram to JSON file according to NPESv2 schema.
-def write_histogram_npesv2(t0, t1, bins, counts, elapsed, name, histogram, coeff_1, coeff_2, coeff_3, device, location, note):
-    jsonfile = get_path(f'{data_directory}/{name}.json')
+def write_histogram_npesv2(t0, t1, bins, counts, elapsed, filename, histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes):
+    jsonfile = get_path(os.path.join(global_vars.data_directory, f'{filename}.json'))
     data = {
         "schemaVersion": "NPESv2",
         "data": [
@@ -139,9 +117,9 @@ def write_histogram_npesv2(t0, t1, bins, counts, elapsed, name, histogram, coeff
                     "deviceName": "AUDIO-CODEC",
                 },
                 "sampleInfo": {
-                    "name": name,
+                    "name": filename,
                     "location": location,
-                    "note": note,
+                    "note": spec_notes,
                 },
                 "resultData": {
                     "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
@@ -154,7 +132,7 @@ def write_histogram_npesv2(t0, t1, bins, counts, elapsed, name, histogram, coeff
                         },
                         "validPulseCount": counts,
                         "measurementTime": elapsed,
-                        "spectrum": histogram
+                        "spectrum": histogram,
                     }
                 }
             }
@@ -201,20 +179,19 @@ def write_blank_json_schema(filename, device):
     try:
         with open(jsonfile, "w") as f:
             json.dump(data, f, separators=(',', ':'))
-        logger.info(f"Blank JSON schema created: {jsonfile}")
+        logger.info(f"Blank JSON schema created: {jsonfile}\n")
     except Exception as e:
-        logger.error(f"Error writing blank JSON file: {e}")
+        logger.error(f"Error writing blank JSON file: {e}\n")
 
 
 # Function to update keys and append histogram
 def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram, coeff_1, coeff_2, coeff_3, device):
-    logger.info(f'Updating JSON 3D file: t0:{t0} t1:{t1} bins:{bins} counts:{counts} elapsed:{elapsed} filename:{filename} coeff_1:{coeff_1} coeff_2:{coeff_2} coeff_3:{coeff_3}')
     
     jsonfile = get_path(os.path.join(global_vars.data_directory, f'{filename}_3d.json'))
     
     # Check if the file exists
     if not os.path.isfile(jsonfile):
-        logger.info(f"JSON file does not exist, creating new file: {jsonfile}")
+        logger.info(f"JSON file does not exist, creating new file: {jsonfile}\n")
         
         data = {
                 "schemaVersion": "NPESv2",
@@ -240,7 +217,7 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram,
                                 },
                                 "validPulseCount":counts,
                                 "measurementTime":elapsed,
-                                "spectrum":last_histogram
+                                "spectrum":last_histogram,
                             }
                         }
                     }
@@ -248,11 +225,11 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram,
             }
         
         try:
-            with open(jsonfile, "w") as f:
+            with open(jsonfile, "w+") as f:
                 json.dump(data, f, separators=(',', ':'))
-            logger.info(f"New JSON 3D file created: {jsonfile}")
+            logger.info(f"New JSON 3D file created: {jsonfile}\n")
         except Exception as e:
-            logger.error(f"Error writing new JSON file: {e}")
+            logger.error(f"Error writing new JSON file: {e}\n")
         return
     
     # If file exists, update the existing data
@@ -260,7 +237,7 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram,
         with open(jsonfile, "r") as f:
             data = json.load(f)
     except Exception as e:
-        logger.error(f"Error reading JSON file: {e}")
+        logger.error(f"Error reading JSON file: {e}\n")
         return
     
     # Update the necessary fields
@@ -295,9 +272,9 @@ def write_cps_json(filename, count_history, elapsed):
     }
     try:
         with open(cps_file_path, 'w') as file:
-            json.dump(cps_data, file, indent=4)
+            json.dump(cps_data, file, separators=(',', ':'))
     except Exception as e:
-        logger.error(f"Error saving CPS data to {cps_file_path}: {e}")
+        logger.error(f"Error saving CPS data to {cps_file_path}: {e}\n")
      
     return    
 
@@ -409,7 +386,7 @@ def restart_program():
     subprocess.Popen(['python', 'app.py'])
 
 def shutdown():
-    logger.info('Shutting down server...')
+    logger.info('Shutting down server...\n')
     os._exit(0)
 
 def peak_finder(y_values, prominence, min_width):
@@ -461,7 +438,7 @@ def handle_modal_confirmation(start_clicks, confirm_clicks, cancel_clicks, filen
 
 def start_recording(mode):
 
-    logger.info(f'functions start_recording({mode})')
+    logger.info(f'functions start_recording({mode})\n')
 
     with global_vars.write_lock:
         filename = global_vars.filename
@@ -473,43 +450,43 @@ def start_recording(mode):
 
     with global_vars.run_flag_lock:
         global_vars.run_flag.set()  # Set the run flag
-        logger.info(f"Recording started in mode {mode}.")
+        logger.info(f"Recording started in mode {mode}.\n")
 
     if mode == 2:
         # Start 2D spectrum recording logic
-        logger.info("Starting 2D spectrum recording...")
+        logger.info("Starting 2D spectrum recording...\n")
         try:
             if callable(pulsecatcher):
                 thread = threading.Thread(target=pulsecatcher, args=(2, global_vars.run_flag, global_vars.run_flag_lock))
                 thread.start()
-                logger.info("2D spectrum recording thread started.")
+                logger.info("2D spectrum recording thread started.\n")
             else:
-                logger.error("pulsecatcher is not callable.")
+                logger.error("pulsecatcher is not callable.\n")
         except Exception as e:
-            logger.error(f"Error starting 2D spectrum recording thread: {e}")
+            logger.error(f"Error starting 2D spectrum recording thread: {e}\n")
 
     elif mode == 3:
         # Start 3D spectrum recording logic
         with global_vars.write_lock:
             filename = global_vars.filename
-        logger.info("Starting 3D spectrum recording...")
+        logger.info("Starting 3D spectrum recording...\n")
         try:
             if callable(pulsecatcher):
                 thread = threading.Thread(target=pulsecatcher, args=(3, global_vars.run_flag, global_vars.run_flag_lock))
                 thread.start()
-                logger.info("3D spectrum recording thread started.")
+                logger.info("3D spectrum recording thread started.\n")
             else:
-                logger.error("pulsecatcher is not callable.")
+                logger.error("pulsecatcher is not callable.\n")
         except Exception as e:
-            logger.error(f"Error starting 3D spectrum recording thread: {e}")
+            logger.error(f"Error starting 3D spectrum recording thread: {e}\n")
 
     else:
-        logger.error("Invalid recording mode specified.")
+        logger.error("Invalid recording mode specified.\n")
 
 
 # clear variables
 def clear_global_vars(mode):
-    logger.info('1..running clear_global_vars')
+    logger.info('1..running clear_global_vars\n')
     if mode == 2:
         with global_vars.write_lock:
             global_vars.count_history   = []
@@ -519,17 +496,17 @@ def clear_global_vars(mode):
             global_vars.histogram       = [0] * global_vars.bins
 
     if mode == 3:
-        logger.info('2..clear_global_vars mode is (3)')
+        logger.info('2..clear_global_vars mode is (3)\n')
         file_path = os.path.join(global_vars.data_directory, f'{global_vars.filename}_3d.json')
 
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
-                logger.info(f"3..deleting file: {file_path}")
+                logger.info(f"3..deleting file: {file_path}\n")
             else:
-                logger.warning(f"4..file does not exist: {file_path}")
+                logger.warning(f"4..file does not exist: {file_path}\n")
         except Exception as e:
-            logger.error(f"ERROR deleting file {file_path}: {e}")
+            logger.error(f"ERROR deleting file {file_path}: {e}\n")
 
         global_vars.count_history   = []
         global_vars.counts          = 0
@@ -547,7 +524,7 @@ def clear_global_cps_list():
 def stop_recording():
     with global_vars.write_lock:
         global_vars.run_flag.clear()
-    logger.info('functions recording stopped')
+    logger.info('functions recording stopped\n')
     return
 
 def export_csv(filename):
@@ -580,7 +557,7 @@ def update_coeff(filename, coeff_1, coeff_2, coeff_3):
     coefficients[1] = coeff_2
     coefficients[2] = coeff_1
     with open(f'{data_directory}/{filename}.json', 'w') as f:
-        json.dump(data, f)
+        json.dump(data, f, separators=(',', ':'))
     # update global_vars
     global_vars.coeff_1 = coeff_3
     global_vars.coeff_2 = coeff_2 
@@ -604,7 +581,7 @@ def get_api_key():
 
         if not os.path.exists(user_file_path):
 
-            logger.error(f"User file not found: {user_file_path}")
+            logger.error(f"User file not found: {user_file_path}\n")
             
             return None
 
@@ -617,16 +594,15 @@ def get_api_key():
 
     except Exception as e:
 
-        logger.error(f"code/functions/get_api_key() failed: {e}")
+        logger.error(f"code/functions/get_api_key() failed: {e}\n")
 
         return None
 
-
 def publish_spectrum(filename):
-    logger.info(f'functions.publish_spectrum {filename}')
+    logger.info(f'functions.publish_spectrum {filename}\n')
     url = "https://gammaspectacular.com/spectra/publish_spectrum"
     api_key = get_api_key()
-    logger.info(f'Api key obtained {api_key}')
+    logger.info(f'Api key obtained {api_key}\n')
     spectrum_file_path = f'{data_directory}/{filename}.json'
     try:
         with open(spectrum_file_path, 'rb') as file:
@@ -634,35 +610,51 @@ def publish_spectrum(filename):
             data = {'api_key': api_key}
             response = req.post(url, files=files, data=data)
             if response.status_code == 200:
-                logger.info(f'{filename} Published ok')
+                logger.info(f'{filename} Published ok\n')
                 return f'{filename}\npublished:\n{response}'
             else:
-                logger.error(f'code/functions/publish_spectrum {response.text}')
+                logger.error(f'code/functions/publish_spectrum {response.text}\n')
                 return f'Error from /code/functions/publish_spectrum: {response.text}'
     except req.exceptions.RequestException as e:
-        logger.error(f'code/functions/publish_spectrum: {e}')
+        logger.error(f'code/functions/publish_spectrum: {e}\n')
         return f'code/functions/publish_spectrum: {e}'
     except FileNotFoundError:
-        logger.error(f'Error from /code/functions/publish_spectrum: {spectrum_file_path}')
+        logger.error(f'Error from /code/functions/publish_spectrum: {spectrum_file_path}\n')
         return f'Error from /code/functions/publish_spectrum: {spectrum_file_path}'
     except Exception as e:
-        logger.error(f'Error from /code/functions/publish_spectrum: {e}')
+        logger.error(f'Error from /code/functions/publish_spectrum: {e}\n')
         return f'Error from /code/functions/publish_spectrum: {e}'
 
+
+
 def update_json_notes(filename, spec_notes):
+    with global_vars.write_lock:
+        data_directory = global_vars.data_directory
+
     try:
-        with open(f'{data_directory}/{filename}.json') as f:
+        file_path = f'{data_directory}/{filename}.json'
+        
+        # Read the existing JSON file
+        with open(file_path, 'r') as f:
             data = json.load(f)
-        if data["schemaVersion"] == "NPESv2":
+        
+        # Update the notes
+        if "data" in data and isinstance(data["data"], list) and "sampleInfo" in data["data"][0]:
             data["data"][0]["sampleInfo"]["note"] = spec_notes
         else:
-            return "Wrong file format"
-        with open(f'{data_directory}/{filename}.json', 'w') as f:
-            json.dump(data, f, indent=4)
-        return "Spec notes Written"
+            logger.error(f"Unexpected JSON structure in {filename}.json\n")
+            return
+        
+        # Write the updated JSON back to the file
+        with open(file_path, 'w') as f:
+            json.dump(data, f, separators=(',', ':'))
+        
+        logger.info(f'Notes updated: {spec_notes}\n')
+        
     except Exception as e:
-        logger.error(f'Error in /code/functions.update_json_notes {e}')
-        return f'Error in /code/functions.update_json_notes {e}'
+        logger.error(f'Error in update_json_notes: {e}\n')
+
+
 
 def get_spec_notes(filename):
     try:
@@ -682,13 +674,13 @@ def fetch_json(file_id):
             return response.json()
         return None
     except req.exceptions.RequestException as e:
-        logger.error(f"Error fetching JSON: {e}")
+        logger.error(f"Error fetching JSON: {e}\n")
         return None
 
 def execute_serial_command(input_cmd):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = input_cmd
-        logger.info(f"Sending command {input_cmd} to device")
+        logger.info(f"Sending command {input_cmd} to device\n")
 
 def generate_device_settings_table():
     shproto.dispatcher.spec_stopflag = 0
@@ -765,19 +757,28 @@ def is_valid_json(file_path):
     except (json.JSONDecodeError, FileNotFoundError):
         return False
 
+
+
 def get_options():
+    with global_vars.write_lock:
+        data_directory = global_vars.data_directory
+
     files = [os.path.relpath(file, data_directory).replace("\\", "/")
              for file in glob.glob(os.path.join(data_directory, "**", "*.json"), recursive=True)]
+    
     options = [{'label': "~ " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json")
-               else {'label': os.path.basename(file), 'value': file} for file in files]
+        else {'label': os.path.basename(file), 'value': file} for file in files]
+
     options = [opt for opt in options if not opt['value'].endswith("_cps.json")]
     options = [opt for opt in options if not opt['value'].endswith("_3d.json")]
     options = [opt for opt in options if not opt['value'].endswith("_settings.json")]
     options = [opt for opt in options if not opt['value'].endswith("_user.json")]
+
     options_sorted = sorted(options, key=lambda x: x['label'])
     for file in options_sorted:
         file['label'] = file['label'].replace('.json', '')
         file['value'] = file['value'].replace('.json', '')
+
     return options_sorted
 
 # Calibrates the x-axis of the Gaussian correlation
@@ -812,33 +813,125 @@ def matching_isotopes(gc_calibrated, peaks, data, sigma):
                 matches[idx] = (x, y, matched_isotopes)
     return matches
 
-def load_histogram(filename):
-    data = {}
-    try:
-        with open(os.path.join(data_directory, filename + ".json"), 'r') as file:
+# functions.py
 
+def reset_stores():
+    return {
+        'store_count_history': [],
+        'store_load_flag_tab3': False,
+        'store_load_flag_tab4': False,
+    }
+
+
+def save_settings_to_json():
+
+    settings = {key: getattr(global_vars, key) for key in [
+        "flip", 
+        "theme", 
+        "max_bins", 
+        "device", 
+        "sample_rate", 
+        "sample_length", 
+        "shapecatches",
+        "chunk_size", 
+        "stereo", 
+        "peakshift", 
+        "max_counts", 
+        "max_seconds", 
+        "filename",
+        "bins", 
+        "threshold", 
+        "tolerance", 
+        "bin_size", 
+        "t_interval", 
+        "comparison",
+        "bins_2", 
+        "bin_2_size", 
+        "sigma", 
+        "peakfinder", 
+        "calib_bin_1", 
+        "calib_bin_2", 
+        "calib_bin_3",
+        "calib_e_1", 
+        "calib_e_2", 
+        "calib_e_3", 
+        "coeff_1", 
+        "coeff_2", 
+        "coeff_3", 
+        "rolling_interval", 
+        "compression",
+    ]}
+    with open(global_vars.settings_file, 'w') as f:
+        json.dump(settings, f, indent=4)
+        logger.info('functions save_settings_to_json(done)\n')
+    return    
+
+
+def load_settings_from_json():
+    path = global_vars.settings_file
+
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            settings = json.load(f)
+
+            logger.info(f'settings={settings}\n')
+
+            for key, value in settings.items():
+                if key in [
+                    "flip", "theme", "max_bins", "device", "sample_rate", "sample_length", "shapecatches",
+                    "chunk_size", "stereo", "peakshift", "max_counts", "max_seconds", "filename",
+                    "bins", "threshold", "tolerance", "bin_size", "t_interval", "comparison",
+                    "bins_2", "bin_2_size", "sigma", "peakfinder", "calib_bin_1", "calib_bin_2", "calib_bin_3",
+                    "calib_e_1", "calib_e_2", "calib_e_3", "coeff_1", "coeff_2", "coeff_3", "rolling_interval", "compression",
+                ]:
+                    try:
+                        setattr(global_vars, key, int(value))
+                    except ValueError:
+                        setattr(global_vars, key, value)
+                elif key in ["calib_e_1", "calib_e_2", "calib_e_3", "coeff_1", "coeff_2", "coeff_3", "peakfinder", "sigma"]:
+                    try:
+                        setattr(global_vars, key, float(value))
+                    except ValueError:
+                        setattr(global_vars, key, value)
+                else:
+                    setattr(global_vars, key, value)   
+                    logger.info(f'load settings completed {settings}\n')                      
+
+def load_histogram(filename):
+    with global_vars.write_lock:
+        data_directory = global_vars.data_directory
+
+    data = {}
+    path = get_path(os.path.join(data_directory, f'{filename}.json'))
+
+    try:
+        # Read the JSON file
+        with open(path, 'r') as file:
             data = json.load(file)
 
-        if data["schemaVersion"] == "NPESv2":
-            result_data = data["data"][0]["resultData"]["energySpectrum"]
-            global_vars.histogram = result_data["spectrum"]
-            global_vars.bins = result_data["numberOfChannels"]
-            global_vars.elapsed = result_data["measurementTime"]
-            global_vars.coefficients_1 = result_data["energyCalibration"]["coefficients"]
-            global_vars.counts = sum(global_vars.histogram)
+            # Validate the schema version
+            if data["schemaVersion"] == "NPESv2":
+                with global_vars.write_lock:
+                    global_vars.histogram = data["data"][0]["resultData"]["energySpectrum"]["spectrum"]
+                    global_vars.bins = data["data"][0]["resultData"]["energySpectrum"]["numberOfChannels"]
+                    global_vars.elapsed = data["data"][0]["resultData"]["energySpectrum"]["measurementTime"]
+                    global_vars.coefficients_1 = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+                    global_vars.spec_notes = data["data"][0]["sampleInfo"]["note"]
+                    global_vars.counts = sum(global_vars.histogram)
 
-            return True
-        else:
-            logger.info("Unsupported schema version")
-            return False
+                return True
+            else:
+                print("Invalid schema version.")
+                return False
+
     except Exception as e:
-        logger.info(f"Error load_histogram({data}: {e})")
+        logger.info(f"Error in functions load_histogram({e})\n")
         return False
 
 def load_histogram_2(filename):
-
+    path = get_path(os.path.join(global_vars.data_directory, f'{filename}.json'))
     try:
-        with open(os.path.join(data_directory, filename + ".json"), 'r') as file:
+        with open(path, 'r') as file:
 
             data = json.load(file)
 
@@ -851,32 +944,32 @@ def load_histogram_2(filename):
             global_vars.counts_2        = result_data["validPulseCount"]
             return True
         else:
-            logger.info("Unsupported schema version")
+            logger.info("Unsupported schema version\n")
             return False
 
     except Exception as e:
 
-        logger.info(f"Error loading histogram_2 from {filename}: {e}")
+        logger.info(f"Error loading histogram_2 from {filename}: {e}\n")
         return False
 
 
-def load_3d_json(filename):
+def load_histogram_3d(filename):
 
-    logging.info('1.. load_3d_json')
+    logging.info('1.. load_histogram_3d\n')
 
     file_path = os.path.join(global_vars.data_directory, f'{filename}_3d.json')
     
     if not os.path.exists(file_path):
-        logger.error(f"load_3d_json File not found: {file_path}")
+        logger.error(f"load_histogram_3d File not found: {file_path}\n")
         return
 
     try:
         with open(file_path, 'r') as file:
-            logger.info('2.. loading 3d file')
+            logger.info('2.. loading 3d file\n')
             data = json.load(file)
-            logger.info('3.. loading 3d file')
+            logger.info('3.. loading 3d file\n')
     except Exception as e:
-        logger.error(f"Error reading {file_path}: {e}")
+        logger.error(f"Error reading {file_path}: {e}\n")
         return
 
     try:
@@ -888,24 +981,17 @@ def load_3d_json(filename):
             global_vars.coeff_2 = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][1]
             global_vars.coeff_3 = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
 
-
-        logger.info(f"4.. global_vars updated from {file_path}")
+        logger.info(f"4.. global_vars updated from {file_path}\n")
     except KeyError as e:
-        logger.error(f"Missing expected data key in {file_path}: {e}")
-
-
-
-
+        logger.error(f"Missing expected data key in {file_path}: {e}\not")
 
 def load_cps_file(filename):
 
     data_directory  = global_vars.data_directory
     cps_file_path   = os.path.join(data_directory, f"{filename}_cps.json")
-    logger.info(f'functions load_cps_file({cps_file_path})')
 
     if not os.path.exists(cps_file_path):
-        raise FileNotFoundError(f"{cps_file_path} does not exist.")
-
+        return
     try:
         with open(cps_file_path, 'r') as file:
             cps_data = json.load(file)
@@ -926,23 +1012,9 @@ def load_cps_file(filename):
             return cps_data
 
     except json.JSONDecodeError as e:
-        raise ValueError(f"Error decoding JSON from {cps_file_path}: {e}")
+        raise ValueError(f"Error loading cps JSON from {cps_file_path}: {e}")
     except Exception as e:
-        raise RuntimeError(f"An error occurred while loading CPS data from {cps_file_path}: {e}")
-
-
-
-
-
-# functions.py
-
-def reset_stores():
-    return {
-        'store_count_history': [],
-        'store_load_flag_tab3': False,
-        'store_load_flag_tab4': False,
-    }
-
+        raise RuntimeError(f"An error occurred while loading CPS data from {cps_file_path}: {e}")        
 
 
 

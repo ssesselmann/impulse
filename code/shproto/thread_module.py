@@ -15,6 +15,6 @@ def start_data_thread(filename):
     data_thread.start()
     data_thread.join()
 
-    logger.info(f'thread_module.start_data_tread({filename})')
+    logger.info(f'thread_module.start_data_tread({filename})\n')
 
     return data_thread

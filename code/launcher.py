@@ -8,15 +8,22 @@ import logging
 import json
 import global_vars
 from server import app
-import functions as fn  # Import functions as fn if needed
+import functions as fn  
 
-logger          = logging.getLogger(__name__)
+logger                  = logging.getLogger(__name__)
+
+data_directory          = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
+settings_file           = os.path.join(data_directory, "_settings.json")
+user_file               = os.path.join(data_directory, "_user.json")
+shapecsv                = os.path.join(data_directory, "_shape.csv")
+
+print(f'in launcher theme = {global_vars.theme}')
 
 with global_vars.write_lock:
-    data_directory  = global_vars.data_directory
-    settings_file   = global_vars.settings_file
-    user_file       = global_vars.user_settings
-    shapecsv        = global_vars.shapecsv  
+    global_vars.data_directory = data_directory
+    global_vars.settings_file  = settings_file
+    global_vars.user_settings  = user_file
+    global_vars.shapecsv       = shapecsv
 
 default_settings = {
     "filename": "my_spectrum",
@@ -82,19 +89,19 @@ def create_file_if_not_exists(file_path, default_content):
     if not os.path.exists(file_path):
         with open(file_path, 'w') as f:
             json.dump(default_content, f, indent=4)
-        logger.info(f'Created new file at {file_path}')
+        logger.info(f'Created new file at {file_path}\n')
 
 try:
     if not os.path.exists(data_directory):
         os.makedirs(data_directory)
-        logger.info(f'Created new data directory {data_directory}')
+        logger.info(f'Created new data directory {data_directory}\n')
 except Exception as e:
-    logger.error(f'Failed to create data directory: {str(e)}')
+    logger.error(f'Failed to create data directory: {str(e)}\n')
 
 try:
     if not os.path.exists(shapecsv):
         fn.create_dummy_csv(shapecsv)
-        logger.info(f'Created a blank shape.csv file')
+        logger.info(f'Created a blank shape.csv file \n')
     else:
         try:
             # Open the CSV file and determine the number of columns
@@ -102,20 +109,18 @@ try:
                 reader = csv.reader(file)
                 headers = next(reader, None)
         except Exception as e:
-            logger.error(f'Failed to process the CSV file: {str(e)}')
+            logger.error(f'Failed to process the CSV file: {str(e)}\n')
 except Exception as e:
-    logger.error(f'Error during initialization: {str(e)}')
+    logger.error(f'Error during initialization: {str(e)}\n')
 
 # Ensure the settings and user files exist
 create_file_if_not_exists(settings_file, default_settings)
 create_file_if_not_exists(user_file, default_user)
 
-# Load settings into global_vars
-global_vars.load_settings_from_json()
 
 # Set the paths for isotopes and tbl folders
-isotopes = "i"
-tbl = "tbl"
+isotopes    = "i"
+tbl         = "tbl"
 data_directory_path = os.path.join(data_directory, isotopes)
 tbl_directory_path = os.path.join(data_directory_path, tbl)
 
@@ -131,7 +136,26 @@ if not os.path.exists(tbl_directory_path):
     if os.path.exists(tbl_folder_path):
         shutil.copytree(tbl_folder_path, tbl_directory_path)
 
-# Your other application code...
+with global_vars.write_lock:
+    filename    = global_vars.filename
+    comparison  = global_vars.comparison
+    
+fn.load_histogram(filename)
+
+logger.info(f'2...2D {filename} loaded\n')
+
+fn.load_histogram_2(comparison)
+
+logger.info(f'3...2D {comparison} loaded\n')
+
+fn.load_histogram_3d(filename)
+
+logger.info(f'4...3D {filename} loaded\n')
+
+fn.load_cps_file(filename)
+
+logger.info(f'5...cps {filename} loaded\n')        
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)

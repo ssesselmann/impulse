@@ -2,16 +2,16 @@ import threading
 import json
 import os
 
-# Global variables
-data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
-settings_file   = os.path.join(data_directory, "_settings.json")
-user_settings   = os.path.join(data_directory, "_user.json")
-shapecsv        = os.path.join(data_directory, "_shape.csv")
-
 # Flags
 run_flag        = threading.Event()
 run_flag_lock   = threading.Lock()
 write_lock      = threading.Lock()
+
+# Global variables
+data_directory  = ""
+settings_file   = ""
+user_settings   = ""
+shapecsv        = ""
 
 # Global counts and measurements
 counts          = 0
@@ -28,6 +28,7 @@ count_history   = []
 histogram       = []
 histogram_2     = []
 histogram_3d    = []
+spec_notes      = ""
 
 # Tab1 Settings
 theme           = "lightgray"
@@ -70,28 +71,3 @@ coeff_3         = 0
 compression     = 8
 rolling_interval= 60
 
-def load_settings_from_json():
-    if os.path.exists(settings_file):
-        with open(settings_file, 'r') as f:
-            settings = json.load(f)
-            for key, value in settings.items():
-                if key in ["device", "sample_rate", "chunk_size", "threshold", "tolerance", "bins", "bin_size", "max_counts", "shapecatches", "sample_length", "calib_bin_1", "calib_bin_2", "calib_bin_3", "max_seconds", "max_bins", "t_interval", "peakshift", "compression", "rolling_interval"]:
-                    globals()[key] = int(value)
-                elif key in ["calib_e_1", "calib_e_2", "calib_e_3", "coeff_1", "coeff_2", "coeff_3", "peakfinder", "sigma"]:
-                    globals()[key] = float(value)
-                else:
-                    globals()[key] = value
-
-def save_settings_to_json():
-    settings = {key: globals()[key] for key in [
-        "flip", "theme", "max_bins", "device", "sample_rate", "sample_length", "shapecatches", 
-        "chunk_size", "stereo", "peakshift", "max_counts", "max_seconds", "filename", 
-        "bins", "threshold", "tolerance", "bin_size", "t_interval", "comparison", 
-        "bins_2", "bin_2_size", "sigma", "peakfinder", "calib_bin_1", "calib_bin_2", "calib_bin_3", 
-        "calib_e_1", "calib_e_2", "calib_e_3", "coeff_1", "coeff_2", "coeff_3", "rolling_interval", "compression"
-    ]}
-    with open(settings_file, 'w') as f:
-        json.dump(settings, f, indent=4)
-
-# Load settings on startup
-load_settings_from_json()

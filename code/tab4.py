@@ -13,7 +13,12 @@ from dash import html, dcc
 from dash.dependencies import Input, Output, State
 from server import app
 
-from functions import get_path, load_cps_file, reset_stores
+from functions import (
+    get_path, 
+    load_cps_file, 
+    reset_stores, 
+    save_settings_to_json,
+    )
 
 # Importing store variables from server
 from server import (
@@ -21,7 +26,7 @@ from server import (
     store_filename, 
     store_bins,
     store_count_history,
-    store_load_flag_tab4
+    store_load_flag_tab4,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,7 +43,7 @@ def show_tab4():
 
     interval    = 1000  # 1 second interval
 
-    load_cps_file(filename)
+    #load_cps_file(filename)
 
     html_tab4 = html.Div(id='tab4', children=[
         html.Div(dcc.Input(id='filename', type='text', value=filename, style={'display': 'none'})),
@@ -133,7 +138,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, full_monty, store
             'y': 0.9,
             'xanchor': 'center',
             'yanchor': 'top',
-            'font': {'family': 'Arial', 'size': 20, 'color': 'black'}
+            'font': {'family': 'Arial', 'size': 16, 'color': 'black'}
         },
         xaxis=dict(
             title='Seconds',
@@ -188,7 +193,7 @@ def save_settings(rolling):
     with global_vars.write_lock:
         global_vars.rolling_interval = rolling
         
-    global_vars.save_settings_to_json()
+    save_settings_to_json()
 
     logger.info(f'(tab4 rolling interval changed to {rolling})')
 

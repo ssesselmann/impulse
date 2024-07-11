@@ -43,9 +43,7 @@ calibration_lock    = threading.Lock()
 inf_str             = ''
 
 with global_vars.write_lock:
-    data_directory      = global_vars.data_directory
-
-logger              = logging.getLogger(__name__)
+    data_directory  = global_vars.data_directory
 
 # This function communicates with the device
 def start(sn=None):
@@ -75,7 +73,7 @@ def start(sn=None):
         try:
             rx_byte_arr = nano.read(size=READ_BUFFER)
         except serial.SerialException as e:
-            logger.error(f"SerialException: {e}")
+            logger.error(f"SerialException: {e}\n")
             break  # Exit the loop if there's a serial exception
         for rx_byte in rx_byte_arr:
             response.read(rx_byte)
@@ -95,13 +93,13 @@ def start(sn=None):
                     if re.search('^VERSION', resp_decoded):
                         shproto.dispatcher.inf_str = resp_decoded
                         shproto.dispatcher.inf_str = re.sub(r'\[[^]]*\]', '...', shproto.dispatcher.inf_str, count=2)
-                        logger.info("Got nano-pro settings: {}".format(shproto.dispatcher.inf_str))
+                        logger.info(f"Got nano-pro settings:\n {shproto.dispatcher.inf_str} \n")
                 except UnicodeDecodeError:
-                    logger.info("Unknown non-text response in dispatcher line 100")
+                    logger.info("Unknown non-text response in dispatcher line 100\n")
 
                 if len(resp_lines) == 40:
                     shproto.dispatcher.serial_number = "{}".format(resp_lines[39])
-                    logger.info("Found nano-pro serial # {}".format(shproto.dispatcher.serial_number))
+                    logger.info("Found nano-pro serial # {}\n".format(shproto.dispatcher.serial_number))
                     b_str = ''
                     for b in resp_lines[0:10]:
                         b_str += b
@@ -114,7 +112,7 @@ def start(sn=None):
                             shproto.dispatcher.calibration[3] = unpack('d', int((resp_lines[6] + resp_lines[7]), 16).to_bytes(8, 'little'))[0]
                             shproto.dispatcher.calibration[4] = unpack('d', int((resp_lines[8] + resp_lines[9]), 16).to_bytes(8, 'little'))[0]
                             shproto.dispatcher.calibration_updated = 1
-                        logger.info("Got calibration: {}".format(shproto.dispatcher.calibration))
+                        logger.info("Got calibration: {}\n".format(shproto.dispatcher.calibration))
                     else:
                         logger.info("Wrong crc for calibration values got: {:08x} expected: {:08x}".format(int(resp_lines[10], 16), crc))
 
@@ -175,12 +173,12 @@ def start(sn=None):
                                                            ((response.payload[17] & 0xFF) << 24)
                 response.clear()
             else:
-                logger.info("Received: cmd:{}\r\npayload: {}".format(response.cmd, response.payload))
+                logger.info("Received: cmd:{}\r\npayload: {}\n".format(response.cmd, response.payload))
                 response.clear()
     nano.close()
 
 
-
+# This process records the 2D histogram (spectrum)
 def process_01(filename, compression, device, t_interval):
     logger.info(f'dispatcher.process_01({filename})')
 
@@ -249,24 +247,24 @@ def process_01(filename, compression, device, t_interval):
         # Append CPS to count history in a thread-safe manner
         with global_vars.write_lock:
             count_history.append(cps)
-            global_vars.count_history = count_history  # Update count history
+            global_vars.count_history = count_history  
 
         # Update global variables once per second
         if t1 - last_update_time >= 1 * t_interval:
             with global_vars.write_lock:
                 global_vars.counts          = counts
                 global_vars.elapsed         = elapsed
-                global_vars.count_history   = count_history  # Update count history
+                global_vars.count_history   = count_history 
                 global_vars.histogram       = compressed_hst
-            with cps_lock:
                 global_vars.cps             = cps
+                spec_notes                  = global_vars.spec_notes
 
             last_update_time = t1
 
         # Save JSON files once every 60 seconds
         if t1 - last_save_time >= 60 or shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag:
 
-            logger.info(f'shproto process_01 attempting to save {filename}.json')
+            logger.info(f'shproto process_01 attempting to save {filename}.json\n')
 
             data = {
                 "schemaVersion": "NPESv2",
@@ -279,7 +277,7 @@ def process_01(filename, compression, device, t_interval):
                         "sampleInfo": {
                             "name": filename,
                             "location": "",
-                            "note": ""
+                            "note": spec_notes,
                         },
                         "resultData": {
                             "startTime": start_time.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
@@ -304,7 +302,7 @@ def process_01(filename, compression, device, t_interval):
             # Construct the full path to the file
             file_path = os.path.join(global_vars.data_directory, f'{filename}.json')
 
-            logger.info(f'file path = {file_path}')
+            logger.info(f'file path = {file_path}\n')
 
             # Open the JSON file in "write" mode for each iteration
             with open(file_path, "w") as wjf:
@@ -319,7 +317,7 @@ def process_01(filename, compression, device, t_interval):
 
             cps_file_path = os.path.join(data_directory, f'{filename}_cps.json')
 
-            logger.info(f'CPS file path = {cps_file_path}')
+            logger.info(f'CPS file path = {cps_file_path}\n')
 
             # Open the CPS JSON file in "write" mode for each iteration
             with open(cps_file_path, "w") as cps_wjf:
@@ -331,10 +329,9 @@ def process_01(filename, compression, device, t_interval):
 
     return
 
-
-
+# This process records the 3D histogram 9spectrum)
 def process_02(filename, compression, device, t_interval):  # Compression reduces the number of channels by 8, 4, or 2
-    logger.info(f'dispatcher.process_02 ({filename})')
+    logger.info(f'dispatcher.process_02 ({filename})\n')
 
     global counts, last_counts, histogram_3d
 
@@ -350,8 +347,9 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
     last_hst            = [0] * compressed_bins
 
     with global_vars.write_lock:
+        data_directory      = global_vars.data_directory
         global_vars.bins    = int(max_bins / compression)
-        # Load settings from global_vars
+        # Set local variables
         max_counts          = global_vars.max_counts
         coeff_1             = global_vars.coeff_1
         coeff_2             = global_vars.coeff_2
@@ -422,7 +420,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
         # Save JSON files once every 60 seconds or when global_vars.run_flag.clear()
         if t1 - last_save_time >= 60 or shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag:
 
-            logger.info(f'shproto process_02 attempting to save {filename}_3d.json')
+            logger.info(f'shproto process_02 attempting to save {filename}_3d.json\n')
 
             data = {
                 "schemaVersion": "NPESv2",
@@ -460,7 +458,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
             # Construct the full path to the file
             file_path = os.path.join(data_directory, f'{filename}_3d.json')
 
-            logger.info(f'file path = {file_path}')
+            logger.info(f'file path = {file_path}\n')
 
             # Open the JSON file in "write" mode for each iteration
             with open(file_path, "w") as wjf:
@@ -475,7 +473,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
 
             cps_file_path = os.path.join(data_directory, f'{filename}_cps.json')
 
-            logger.info(f'CPS file path = {cps_file_path}')
+            logger.info(f'CPS file path = {cps_file_path}\n')
 
             # Open the CPS JSON file in "write" mode for each iteration
             with open(cps_file_path, "w") as cps_wjf:
@@ -489,7 +487,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
     return
 
 def load_json_data(file_path):
-    logger.info(f'dispatcher.load_json_data({file_path})')
+    logger.info(f'dispatcher.load_json_data({file_path})\n')
     if os.path.exists(file_path):
         with open(file_path, "r") as rjf:
             return json.load(rjf)
@@ -512,20 +510,21 @@ def load_json_data(file_path):
             }
         }
 
+# This process is used for sending commands to the Nano device
 def process_03(_command):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = _command
-        logger.info(f'dispatcher.process_03({_command})')
+        logger.info(f'dispatcher.process_03({_command})\n')
         return
 
 def stop():
-    logger.info('shproto.stop triggered')
+    logger.info('shproto.stop triggered\n')
     with shproto.dispatcher.stopflag_lock:
         process_03('-sto')
-        logger.info('process_03(-sto)')
+        logger.info('process_03(-sto)\n')
         time.sleep(0.1)
         shproto.dispatcher.stopflag = 1
-        logger.info('Stop flag set(dispatcher)')
+        logger.info('Stop flag set(dispatcher)\n')
         time.sleep(0.1)
         return
 
@@ -533,7 +532,7 @@ def spec_stop():
     with shproto.dispatcher.spec_stopflag_lock:
         shproto.dispatcher.spec_stopflag = 1
 
-        logger.info('Stop flag set(dispatcher)')
+        logger.info('Stop flag set(dispatcher)\n')
         return
 
 def clear():

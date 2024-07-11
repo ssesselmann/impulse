@@ -273,11 +273,11 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
             return data_divs, total_pages, current_page, new_page_info
 
         else:
-            logger.error(f"Failed to fetch data: {response.status_code} - {response.text}")
+            logger.error(f"Failed to fetch data: {response.status_code} - {response.text}\n")
             return [], '0', '1', f"Failed to fetch data: {response.status_code}"
 
     except requests.exceptions.RequestException as e:
-        logger.error(f"No internet connection available. Error: {e}")
+        logger.error(f"No internet connection available. Error: {e}\n")
         return [], '0', '1', 'No internet connection - unable to update'
 
 @app.callback(

@@ -3,10 +3,10 @@ import os
 import logging
 import dash_bootstrap_components as dbc
 import global_vars
-
+import json
 from dash import dcc
 
-data_directory = global_vars.data_directory
+data_directory = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
 
 if not os.path.exists(data_directory):
     os.makedirs(data_directory)
@@ -26,11 +26,48 @@ logging.getLogger('werkzeug').setLevel(logging.WARNING)
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 logger.addHandler(console_handler)
-logger.info('Logging has been configured')
+logger.info('Logging has been configured\n')
 
 # Ensure settings are loaded from global_vars
-global_vars.load_settings_from_json()
-theme = global_vars.theme
+path = os.path.join(data_directory, "_settings.json")
+if os.path.exists(path):
+        with open(path, 'r') as f:
+            settings = json.load(f)
+            global_vars.flip            = settings["flip"]
+            global_vars.theme           = settings["theme"]
+            global_vars.filename        = settings["filename"]
+            global_vars.comparison      = settings["comparison"]         
+            global_vars.threshold       = int(settings["threshold"])
+            global_vars.tolerance       = int(settings["tolerance"])
+            global_vars.bin_size        = int(settings["bin_size"])
+            global_vars.t_interval      = int(settings["t_interval"])
+            global_vars.bins_2          = int(settings["bins_2"])
+            global_vars.bin_2_size      = int(settings["bin_2_size"])
+            global_vars.peakfinder      = float(settings["peakfinder"])
+            global_vars.stereo          = bool(settings["stereo"])
+            global_vars.max_bins        = int(settings["max_bins"])
+            global_vars.chunk_size      = int(settings["chunk_size"])
+            global_vars.bins            = int(settings["bins"])
+            global_vars.device          = int(settings["device"])
+            global_vars.sample_rate     = int(settings["sample_rate"])
+            global_vars.sample_length   = int(settings["sample_length"])
+            global_vars.shapecatches    = int(settings["shapecatches"])
+            global_vars.peakshift       = int(settings["peakshift"])
+            global_vars.max_counts      = int(settings["max_counts"])
+            global_vars.max_seconds     = int(settings["max_seconds"])
+            global_vars.calib_bin_1     = int(settings["calib_bin_1"])
+            global_vars.calib_bin_2     = int(settings["calib_bin_2"])
+            global_vars.calib_bin_3     = int(settings["calib_bin_3"])
+            global_vars.sigma           = float(settings["sigma"])
+            global_vars.calib_e_1       = float(settings["calib_e_1"])
+            global_vars.calib_e_2       = float(settings["calib_e_2"])
+            global_vars.calib_e_3       = float(settings["calib_e_3"])
+            global_vars.coeff_1         = float(settings["coeff_1"])
+            global_vars.coeff_2         = float(settings["coeff_2"])
+            global_vars.coeff_3         = float(settings["coeff_3"])
+            global_vars.rolling_interval= int(settings["rolling_interval"])
+            global_vars.compression     = int(settings["compression"])
+
 
 store_device                = dcc.Store(id='store-device'             , data='')
 store_filename              = dcc.Store(id='store-filename'           , data='')
@@ -50,7 +87,7 @@ store_load_flag_tab3        = dcc.Store(id='store-load-flag-tab3'     , data=Fal
 store_load_flag_tab4        = dcc.Store(id='store-load-flag_tab4'     , data=False)
 
 # External CSS stylesheets
-external_stylesheets = [dbc.themes.BOOTSTRAP, f'https://www.gammaspectacular.com/steven/impulse/styles_{theme}.css']
+external_stylesheets = [dbc.themes.BOOTSTRAP, f'https://www.gammaspectacular.com/steven/impulse/styles_{global_vars.theme}.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
@@ -60,7 +97,7 @@ app.scripts.config.serve_locally = True
 
 app.config['suppress_callback_exceptions'] = True
 
-logger.info(f'Server GET: {external_stylesheets}')
-logger.info('Scripts on server.py completed')
+logger.info(f'Server GET: {external_stylesheets}\n')
+logger.info('Scripts on server.py completed\n')
 
 # -- End server.py

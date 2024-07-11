@@ -238,10 +238,10 @@ def update_output(first_name, first_name_f, last_name, last_name_f,
 
     try:
         save_user_settings(user_settings)
-        logger.info('User info saved to JSON file')
+        logger.info('User info saved to JSON file\n')
         return 'Details saved'
     except Exception as e:
-        logger.error(f'Error saving user info: {e}')
+        logger.error(f'Error saving user info: {e}\n')
         return f'Error: {str(e)}'
 
 @app.callback(
@@ -306,14 +306,14 @@ def request_api_key(n_clicks, first_name, first_name_f, last_name,
         try:
             response = req.post(url, json=data)
             if response.status_code == 200:
-                logger.info('API Key successfully requested')
+                logger.info('API Key successfully requested\n')
                 return "API key requested. Please check your email."
             else:
-                logger.error(f'Error requesting API key: {response.text}')
+                logger.error(f'Error requesting API key: {response.text}\n')
                 return f"Error requesting API key: {response.text}"
 
         except req.exceptions.RequestException as e:
-            logger.error(f'Error requesting API key: {e}')
+            logger.error(f'Error requesting API key: {e}\n')
             return f"An error occurred: {e}"
 
 @app.callback(
@@ -325,7 +325,7 @@ def update_my_spectra(n):
     api_key = user_settings.get('api_key')
 
     if not api_key:
-        logger.error('API key is missing')
+        logger.error('API key is missing\n')
         return html.P('Error: API key is missing')
 
     try:
@@ -364,11 +364,11 @@ def update_my_spectra(n):
             return table
 
         else:
-            logger.error(f'Error fetching spectra data: {response.status_code} - {response.text}')
+            logger.error(f'Error fetching spectra data: {response.status_code} - {response.text}\n')
             return html.P(f'Error fetching data: {response.status_code}')
 
     except req.exceptions.RequestException as e:
-        logger.error(f'Error fetching spectra data: {e}')
+        logger.error(f'Error fetching spectra data: {e}\n')
         return html.P('No internet connection - unable to update')
 
 @app.callback(
@@ -383,7 +383,7 @@ def delete_spectrum(active_cell, data):
         api_key = user_settings.get('api_key')
 
         if not api_key:
-            logger.error('API key is missing')
+            logger.error('API key is missing\n')
             return 'Error: API key is missing'
 
         try:
@@ -392,11 +392,11 @@ def delete_spectrum(active_cell, data):
             if response.status_code == 200:
                 return f"Spectrum with ID {row_id} has been deleted."
             else:
-                logger.error(f'Error deleting spectrum: {response.text}')
+                logger.error(f'Error deleting spectrum: {response.text}\n')
                 return f"Error deleting spectrum: {response.text}"
 
         except Exception as e:
-            logger.error(f'Error deleting spectrum: {e}')
+            logger.error(f'Error deleting spectrum: {e}\n')
             return f"An error occurred: {str(e)}"
 
     return ""

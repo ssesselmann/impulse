@@ -48,12 +48,12 @@ def connectdevice(sn=None):
     else:
         nanoport = getdevicebyserialnumber(sn)
     if nanoport is None:
-        logger.info('No serial port device found')
+        logger.info('No serial port device found.\n')
         sys.exit(0)
     tty = serial.Serial(nanoport, baudrate=600000, bytesize=8, parity='N', stopbits=1, timeout=5)
     return tty
 
 def send_command(command):
     shproto.dispatcher.process_03(command)
-    logger.info(f'Send command {command}')
+    logger.info(f'Send command {command}\n')
     return

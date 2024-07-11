@@ -24,10 +24,12 @@ from server import app
 from datetime import datetime
 from functions import (
     update_json_3d_file, 
-    load_3d_json, 
+    load_histogram_3d, 
     get_device_number,
     start_recording,
     stop_recording,
+    load_settings_from_json,
+    save_settings_to_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,14 +41,10 @@ with global_vars.write_lock:
 
 def show_tab3():
 
-    global_vars.load_settings_from_json()
-    logger.info("Loading settings from JSON")
-
     with global_vars.write_lock:
         filename = global_vars.filename
         data_directory = global_vars.data_directory
 
-    load_3d_json(filename)
 
     files = [os.path.relpath(file, data_directory).replace("\\", "/")
              for file in glob.glob(os.path.join(data_directory, "**", "*.json"), recursive=True)]
@@ -63,32 +61,36 @@ def show_tab3():
         file['value'] = file['value'].replace('.json', '')
 
     with global_vars.write_lock:
-        device = global_vars.device
-        sample_rate = global_vars.sample_rate
-        chunk_size = global_vars.chunk_size
-        threshold = global_vars.threshold
-        tolerance = global_vars.tolerance
-        bins = global_vars.bins
-        bin_size = global_vars.bin_size
-        max_counts = global_vars.max_counts
-        sample_length = global_vars.sample_length
-        calib_bin_1 = global_vars.calib_bin_1
-        calib_bin_2 = global_vars.calib_bin_2
-        calib_bin_3 = global_vars.calib_bin_3
-        calib_e_1 = global_vars.calib_e_1
-        calib_e_2 = global_vars.calib_e_2
-        calib_e_3 = global_vars.calib_e_3
-        coeff_1 = global_vars.coeff_1
-        coeff_2 = global_vars.coeff_2
-        coeff_3 = global_vars.coeff_3
-        max_seconds = global_vars.max_seconds
-        t_interval = global_vars.t_interval
-        compression = global_vars.compression
-        histogram_3d = global_vars.histogram_3d
+        device          = global_vars.device
+        sample_rate     = global_vars.sample_rate
+        chunk_size      = global_vars.chunk_size
+        threshold       = global_vars.threshold
+        tolerance       = global_vars.tolerance
+        bins            = global_vars.bins
+        bin_size        = global_vars.bin_size
+        max_counts      = global_vars.max_counts
+        sample_length   = global_vars.sample_length
+        calib_bin_1     = global_vars.calib_bin_1
+        calib_bin_2     = global_vars.calib_bin_2
+        calib_bin_3     = global_vars.calib_bin_3
+        calib_e_1       = global_vars.calib_e_1
+        calib_e_2       = global_vars.calib_e_2
+        calib_e_3       = global_vars.calib_e_3
+        coeff_1         = global_vars.coeff_1
+        coeff_2         = global_vars.coeff_2
+        coeff_3         = global_vars.coeff_3
+        max_seconds     = global_vars.max_seconds
+        t_interval      = global_vars.t_interval
+        compression     = global_vars.compression
+        histogram_3d    = global_vars.histogram_3d
 
+    load_histogram_3d(filename)    
+
+    device = int(device)
 
     serial = 'block' if device >= 100 else 'none'
-    audio = 'none' if device >= 100 else 'block'
+    audio  = 'none'  if device >= 100 else 'block'
+
     refresh_rate = t_interval * 1000
 
     html_tab3 = html.Div(id='tab3', children=[
@@ -234,24 +236,24 @@ def start_new_3d_spectrum(confirm_clicks, start_clicks, filename, compression, t
 
                 time.sleep(0.1)
                 shproto.dispatcher.process_03('-rst')
-                logger.info(f'tab2 sends reset command -rst')
+                logger.info(f'tab2 sends reset command -rst\n')
 
                 time.sleep(0.1)
                 shproto.dispatcher.process_03('-sta')
-                logger.info(f'tab2 sends start command -sta')
+                logger.info(f'tab2 sends start command -sta\n')
 
                 time.sleep(0.1)
                 shproto.dispatcher.process_02(filename, compression, "MAX", t_interval)
-                logger.info(f'tab2 calls process_01(){filename}, {compression}, MAX, {t_interval}')
+                logger.info(f'tab2 calls process_01(){filename}, {compression}, MAX, {t_interval}\n')
 
                 time.sleep(0.1)
             except Exception as e:
-                logger.error(f'tab 2 start_new_or_overwrite() error {e}')
+                logger.error(f'tab 2 start_new_or_overwrite() error {e}\n')
                 return f"tab2 Error: {str(e)}"
         else:
             start_recording(3)
 
-            logger.info(f'tab3 start_recording({3})')
+            logger.info(f'tab3 start_recording({3})\n')
             return ""
 
     raise PreventUpdate
@@ -259,7 +261,7 @@ def start_new_3d_spectrum(confirm_clicks, start_clicks, filename, compression, t
 @app.callback(Output('stop_text_3d', 'children'),
               [Input('stop_3d', 'n_clicks')])
 def update_output(n_clicks):
-    logger.info("update_output callback triggered")
+    logger.info("update_output callback triggered\n")
 
     if n_clicks is None:
         raise PreventUpdate
@@ -270,7 +272,7 @@ def update_output(n_clicks):
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
         time.sleep(0.1)
-        logger.info('Stop command sent from (tab3)')
+        logger.info('Stop command sent from (tab3)\n')
     else:
         stop_recording()
 
@@ -304,7 +306,7 @@ def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t
 
     axis_type   = 'log' if log_switch else 'linear'
     now         = datetime.now()
-    date        = now.strftime('%d/%m/%Y')
+    date        = now.strftime('%d-%m-%Y')
     filename_3d = f'{filename}_3d.json'
     file_path   = os.path.join(data_directory, filename_3d)
     y_range     = [0, len(histogram_3d)]
@@ -353,7 +355,7 @@ def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t
                 'y': 0.9,
                 'xanchor': 'center',
                 'yanchor': 'top',
-                'font': {'family': 'Arial', 'size': 24, 'color': 'black'}
+                'font': {'family': 'Arial', 'size': 16, 'color': 'black'}
             }
         )
 
@@ -364,7 +366,7 @@ def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t
 
     except Exception as e:
 
-        logger.error(f"tab3 error updating 3D chart: {e}")
+        logger.error(f"tab3 error updating 3D chart: {e}\n")
 
         data = [go.Scatter3d(
             x=[0],
@@ -396,7 +398,7 @@ def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t
      Input('calib_e_3', 'value')]
 )
 def save_settings(bins, bin_size, max_counts, max_seconds, t_interval, filename, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
-    logger.info("save_settings callback triggered")
+    logger.info("save_settings callback triggered\n")
 
     x_bins = [calib_bin_1, calib_bin_2, calib_bin_3]
     x_energies = [calib_e_1, calib_e_2, calib_e_3]
@@ -422,7 +424,7 @@ def save_settings(bins, bin_size, max_counts, max_seconds, t_interval, filename,
         global_vars.coeff_2 = coefficients[1]
         global_vars.coeff_3 = coefficients[2]
 
-        global_vars.save_settings_to_json()
+        save_settings_to_json()
 
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
 
@@ -432,7 +434,7 @@ def save_settings(bins, bin_size, max_counts, max_seconds, t_interval, filename,
     [State('filename', 'value')]
 )
 def update_current_calibration(n_clicks, filename):
-    logger.info("update_current_calibration callback triggered")
+    logger.info("update_current_calibration callback triggered\n")
 
     if n_clicks is None:
         raise PreventUpdate

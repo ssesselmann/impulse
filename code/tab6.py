@@ -220,7 +220,7 @@ def show_tab6():
 def shutdown_server(n_clicks):
     if n_clicks is not None:
         fn.shutdown()
-        logger.info('Port closed by user')
+        logger.info('Port closed by user\n')
         return 'Port Closed'
     else:
         return 'Click to Exit'
@@ -233,9 +233,10 @@ def theme_change(value):
 
     with global_vars.write_lock:
         global_vars.theme = value
-        global_vars.save_settings_to_json()
+        fn.save_settings_to_json()
+        logger.info('Settings saved from tab6\n')
 
-    logger.info('User clicked Exit')
+    logger.info('User clicked Exit\n')
     return 'Restart to see new theme'
 
 @app.callback(Output('export_histogram_output', 'children'),

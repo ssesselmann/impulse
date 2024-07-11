@@ -6,7 +6,7 @@ import numpy as np
 import logging
 import time
 import global_vars
-from functions import get_path
+from functions import get_path, save_settings_to_json
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -103,27 +103,26 @@ def capture_pulse_polarity(stereo, sample_rate, chunk_size, device, sample_lengt
     return pulse_sign_left, pulse_sign_right
 
 def shapecatcher(stereo):
-    # Load settings from JSON
-    global_vars.load_settings_from_json()
 
     # Extract settings from global_vars
-    name            = global_vars.filename
-    device          = global_vars.device
-    sample_rate     = global_vars.sample_rate
-    chunk_size      = global_vars.chunk_size
+    with global_vars.write_lock:
+        name            = global_vars.filename
+        device          = global_vars.device
+        sample_rate     = global_vars.sample_rate
+        chunk_size      = global_vars.chunk_size
+        tolerance       = global_vars.tolerance
+        bins            = global_vars.bins
+        bin_size        = global_vars.bin_size
+        max_counts      = global_vars.max_counts
+        shapecatches    = global_vars.shapecatches
+        sample_length   = global_vars.sample_length
+        peakshift       = global_vars.peakshift
+
+    peak            = int(((sample_length - 1) / 2) + peakshift)
     threshold       = 1000  # Hard coded for shapecatcher only
-    tolerance       = global_vars.tolerance
-    bins            = global_vars.bins
-    bin_size        = global_vars.bin_size
-    max_counts      = global_vars.max_counts
-    shapecatches    = global_vars.shapecatches
-    sample_length   = global_vars.sample_length
-    peakshift       = global_vars.peakshift
-    peak            = int((sample_length - 1) / 2) + peakshift
+    logger.info(f'Shapecatcher threshold fixed at {threshold}\n')
 
-    logger.info(f'Shapecatcher threshold fixed at {threshold}')
-    logger.info(f'Shapecatcher says Stereo is {stereo}')
-
+    logger.info(f'Shapecatcher says Stereo is {stereo}\n')
 
     if stereo:
         sc_info.append(f'Preparing for {sample_rate} kHz stereo')
@@ -142,7 +141,7 @@ def shapecatcher(stereo):
         return [], []
 
     # Log the signs for debugging
-    logging.info(f"Determined Pulse Signs Left: {pulse_sign_left} Right: {pulse_sign_right}")
+    logger.info(f"Determined Pulse Signs Left: {pulse_sign_left} Right: {pulse_sign_right}\n")
     sc_info.append(f"Positive pulse Left: {pulse_sign_left} Right: {pulse_sign_right}")
 
     # Encode pulse signs into a numeric value
@@ -151,8 +150,10 @@ def shapecatcher(stereo):
     logging.info(f"Encoded Pulse Sign: {encoded_pulse_sign}")
 
     # Save the encoded pulse sign to global_vars and JSON
-    global_vars.flip = encoded_pulse_sign
-    global_vars.save_settings_to_json()
+    with global_vars.write_lock:
+        global_vars.flip = encoded_pulse_sign
+        
+    save_settings_to_json()
 
     # Reinitialize PyAudio for shape catching
     p = pyaudio.PyAudio()
@@ -235,7 +236,7 @@ def shapecatcher(stereo):
         sc_info.append(f'Saving shape.csv')
 
         # Save DataFrame to CSV, include index as the first column (row numbers)
-        shapecsv = get_path(f'{data_directory}/shape.csv')
+        shapecsv = global_vars.shapecsv #get_path(f'{data_directory}/_shape.csv')
         df.to_csv(shapecsv, index=True, index_label='Row')
 
     finally:
