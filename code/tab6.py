@@ -40,6 +40,7 @@ def show_tab6():
                 className='dropdown',
                 options=[
                     {"label": "Lightgray", "value": "lightgray"},
+                    {"label": "Plasma", "value": "plasma"},
                     {"label": "Orange", "value": "orange"},
                     {"label": "Pink", "value": "pink"},
                     {"label": "Sunburst", "value": "sunburst"},

@@ -252,6 +252,7 @@ def process_01(filename, compression, device, t_interval):
         # Update global variables once per second
         if t1 - last_update_time >= 1 * t_interval:
             with global_vars.write_lock:
+                data_directory              = global_vars.data_directory
                 global_vars.counts          = counts
                 global_vars.elapsed         = elapsed
                 global_vars.count_history   = count_history 
@@ -300,7 +301,7 @@ def process_01(filename, compression, device, t_interval):
             json_data = json.dumps(data, separators=(",", ":"))
 
             # Construct the full path to the file
-            file_path = os.path.join(global_vars.data_directory, f'{filename}.json')
+            file_path = os.path.join(data_directory, f'{filename}.json')
 
             logger.info(f'file path = {file_path}\n')
 

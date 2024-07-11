@@ -94,7 +94,7 @@ def show_tab3():
     refresh_rate = t_interval * 1000
 
     html_tab3 = html.Div(id='tab3', children=[
-        html.Div(id='plolynomial-3d', children=''),
+        
         html.Div(id='bar-chart-div-3d', children=[
             dcc.Graph(id='chart-3d', figure={}),
             dcc.Interval(id='interval-component', interval=refresh_rate, n_intervals=0)
@@ -155,6 +155,7 @@ def show_tab3():
         ]),
         html.Div(children=[html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
         html.Div(id='subfooter', children=[]),
+        html.Div(id='polynomial-3d', children=''),
         
         dbc.Modal([
             dbc.ModalBody(id='modal-body-3d'),
@@ -381,7 +382,7 @@ def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t
         return fig, "0", "0", f'cps {cps}'
 
 @app.callback(
-    Output('plolynomial-3d', 'children'),
+    Output('polynomial-3d', 'children'),
     [Input('bins', 'value'),
      Input('bin_size', 'value'),
      Input('max_counts', 'value'),
