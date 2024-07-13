@@ -217,10 +217,7 @@ def process_01(filename, compression, device, t_interval):
         time.sleep(t_interval)
 
         # Get the device time
-        t1          = time.time()
-
-        # Calculate the time difference
-        elapsed     = int(t1 - t0)
+        t1          = time.time()        
 
         # Convert float timestamps to datetime objects
         start_time  = datetime.fromtimestamp(t0)
@@ -229,6 +226,10 @@ def process_01(filename, compression, device, t_interval):
         # Fetch the histogram from the device
         with shproto.dispatcher.histogram_lock:
             hst = shproto.dispatcher.histogram.copy()
+            tt  = shproto.dispatcher.total_time
+
+        # Time elapsed from device
+        elapsed     = tt 
 
         # Clear counts in the last bin
         hst[-1] = 0
