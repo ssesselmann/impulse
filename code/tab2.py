@@ -242,7 +242,7 @@ def show_tab2():
             html.Div(dcc.Input(id='calib_bin_2', type='number', value=calib_bin_2, className='input')),
             html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3, className='input')),
             html.Div('peakfinder'),
-            html.Div(dcc.Slider(id='peakfinder', min=0, max=1, step=0.1, value=peakfinder, marks={0: '0', 1: '1'})),
+            html.Div(dcc.Slider(id='peakfinder', min=0, max=5, step=0.1, value=peakfinder, marks={0: '0', 1: '1',2: '2', 3: '3' , 4: '4', 5: '5'})),
         ]),
 
         html.Div(id='t2_setting_div9', children=[
@@ -272,8 +272,6 @@ def update_filename_from_dropdown(selected_file, current_filename):
         load_histogram(selected_file)
         return selected_file
     return current_filename
-
-
 
 # Modal
 @app.callback(
@@ -599,15 +597,6 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             marker={'color': 'red', 'line': {'color': 'red', 'width': 0.5}},
         )
 
-        if sigma != 0:
-            trace4 = go.Bar(
-                x=x,
-                y=gaussian,
-                marker={'color': 'red', 'line': {'color': 'red', 'width': 0.5}},
-                width=1.0
-            )
-            fig.add_trace(trace4)
-
         if compare_switch: 
             fig.add_trace(trace2)
             fig.update_layout(xaxis=dict(autorange=False))
@@ -625,6 +614,15 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
 
         if not difference_switch:
             fig.update_layout(yaxis=dict(autorange=True))
+
+    if sigma > 0:
+        trace4 = go.Bar(
+            x=x,
+            y=gaussian,
+            marker={'color': 'red', 'line': {'color': 'red', 'width': 0.5}},
+            width=1.0
+        )
+        fig.add_trace(trace4)        
 
     if log_switch:
         fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0.1, max_log_value + 0.3]))
