@@ -51,6 +51,9 @@ default_settings = {
     "comparison": "",
     "flip": 1,
     "peakfinder": 0,
+    "log_switch": False,
+    "epb_switch": False,
+    "cal_switch": False,
     "theme": "lightgray",
     "sigma": 0,
     "max_seconds": 3600,
@@ -58,7 +61,8 @@ default_settings = {
     "peakshift": 0,
     "compression": 8,
     "stereo": False,
-    "rolling_interval": 60
+    "rolling_interval": 60,
+    "coefficients_1":[],
 }
 
 default_user = {
@@ -140,6 +144,10 @@ with global_vars.write_lock:
     filename    = global_vars.filename
     comparison  = global_vars.comparison
     
+fn.load_settings_from_json(settings_file)
+
+logger.info(f'1... {filename} loaded\n')
+
 fn.load_histogram(filename)
 
 logger.info(f'2...2D {filename} loaded\n')

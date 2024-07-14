@@ -389,13 +389,31 @@ def shutdown():
     logger.info('Shutting down server...\n')
     os._exit(0)
 
-def peak_finder(y_values, prominence, min_width):
-    y_bin = [y * i for i, y in enumerate(y_values)]
+import numpy as np
+from scipy.signal import find_peaks, peak_widths
+
+def rolling_average(data, window_size):
+    return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
+
+def peak_finder(y_values, prominence, min_width, smoothing_window=11):
+    # Apply rolling average for smoothing
+    smoothed_y_values = rolling_average(y_values, smoothing_window)
+    
+    # Adjust the indices after smoothing
+    y_bin = [y * (i + (smoothing_window - 1) / 2) for i, y in enumerate(smoothed_y_values)]
+    
+    # Find peaks in the smoothed data
     peaks, _ = find_peaks(y_bin, prominence=prominence, distance=40)
-    widths, _, _, _ = peak_widths(y_values, peaks, rel_height=0.5)
+    widths, _, _, _ = peak_widths(smoothed_y_values, peaks, rel_height=0.3)
+    
+    # Filter peaks based on minimum width
     filtered_peaks = [p for i, p in enumerate(peaks) if widths[i] >= min_width * i]
-    fwhm = [round(peak_widths(y_values, [p], rel_height=0.5)[0][0], 1) for p in filtered_peaks]
+    
+    # Calculate full width at half maximum (FWHM) for filtered peaks
+    fwhm = [round(peak_widths(smoothed_y_values, [p], rel_height=0.5)[0][0], 1) for p in filtered_peaks]
+    
     return filtered_peaks, fwhm
+
 
 def gaussian_correl(data, sigma):
     correl_values = []
@@ -546,23 +564,52 @@ def export_csv(filename):
             e = round((i ** coefficients[2] + i * coefficients[1] + coefficients[0]), 2)
             writer.writerow([e, value])
 
-def update_coeff(filename, coeff_1, coeff_2, coeff_3):
-    with open(f'{data_directory}/{filename}.json') as f:
-        data = json.load(f)
-    if data["schemaVersion"] == "NPESv1":
-        coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-    elif data["schemaVersion"] == "NPESv2":
-        coefficients = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-    coefficients[0] = coeff_3
-    coefficients[1] = coeff_2
-    coefficients[2] = coeff_1
-    with open(f'{data_directory}/{filename}.json', 'w') as f:
-        json.dump(data, f, separators=(',', ':'))
-    # update global_vars
-    global_vars.coeff_1 = coeff_3
-    global_vars.coeff_2 = coeff_2 
-    global_vars.coeff_3 = coeff_1 
-    global_vars.coefficients_1 = [coeff_3, coeff_2, coeff_1]
+
+def update_coeff(filename):
+    with global_vars.write_lock:
+        data_directory = global_vars.data_directory
+        coefficients_1 = global_vars.coefficients_1
+
+    file_path = os.path.join(data_directory, filename + ".json")
+
+    # Read the existing JSON file with error handling
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        logger.error(f"File not found: {file_path}")
+        return
+    except json.JSONDecodeError:
+        logger.error(f"Error decoding JSON from file: {file_path}")
+        return
+
+    # Update the coefficients based on schema version
+    try:
+        if data["schemaVersion"] == "NPESv1":
+            data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"] = coefficients_1
+        
+        elif data["schemaVersion"] == "NPESv2":
+            data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"] = coefficients_1
+
+        else:
+            raise ValueError(f"Unknown schemaVersion: {data['schemaVersion']}")
+    
+    except KeyError as e:
+        logger.error(f"Missing expected key in JSON data: {e}")
+        return
+
+    # Write the updated JSON back to the file with error handling
+    try:
+        with global_vars.write_lock:
+            with open(file_path, 'w') as f:
+                json.dump(data, f, separators=(',', ':'))
+    except IOError as e:
+        logger.error(f"Error writing to file: {file_path} - {e}")
+        return
+
+    logger.info(f"Coefficients updated in {file_path}")
+
+
 
 # removes the path from serial device list Mac only
 def cleanup_serial_options(options):
@@ -824,7 +871,6 @@ def reset_stores():
 
 
 def save_settings_to_json():
-
     settings = {key: getattr(global_vars, key) for key in [
         "flip", 
         "theme", 
@@ -848,7 +894,10 @@ def save_settings_to_json():
         "bins_2", 
         "bin_2_size", 
         "sigma", 
-        "peakfinder", 
+        "peakfinder",
+        "log_switch",
+        "epb_switch",
+        "cal_switch",
         "calib_bin_1", 
         "calib_bin_2", 
         "calib_bin_3",
@@ -860,29 +909,41 @@ def save_settings_to_json():
         "coeff_3", 
         "rolling_interval", 
         "compression",
+        "coefficients_1",
     ]}
-    with open(global_vars.settings_file, 'w') as f:
-        json.dump(settings, f, indent=4)
+    
+    try:
+        with open(global_vars.settings_file, 'w') as f:
+            json.dump(settings, f, indent=4)
         logger.info('functions save_settings_to_json(done)\n')
-    return    
+    except Exception as e:
+        logger.error(f'Error saving settings to JSON: {e}')
+
+    # Verify file content after writing
+    with open(global_vars.settings_file, 'r') as f:
+        content = f.read()
+        logger.info(f'File content after saving:\n{content}')
+    
+    return
 
 
-def load_settings_from_json():
-    path = global_vars.settings_file
-
+def load_settings_from_json(path):
     if os.path.exists(path):
-        with open(path, 'r') as f:
-            settings = json.load(f)
+        try:
+            with open(path, 'r') as f:
+                settings = json.load(f)
 
             logger.info(f'settings={settings}\n')
 
             for key, value in settings.items():
-                if key in [
-                    "flip", "theme", "max_bins", "device", "sample_rate", "sample_length", "shapecatches",
-                    "chunk_size", "stereo", "peakshift", "max_counts", "max_seconds", "filename",
-                    "bins", "threshold", "tolerance", "bin_size", "t_interval", "comparison",
-                    "bins_2", "bin_2_size", "sigma", "peakfinder", "calib_bin_1", "calib_bin_2", "calib_bin_3",
-                    "calib_e_1", "calib_e_2", "calib_e_3", "coeff_1", "coeff_2", "coeff_3", "rolling_interval", "compression",
+                if value is None:
+                    setattr(global_vars, key, None)
+                elif key in [
+                    "max_bins", "device", "sample_rate", "sample_length", "shapecatches",
+                    "chunk_size", "peakshift", "max_counts", "max_seconds", "bins",
+                    "threshold", "tolerance", "bin_size", "t_interval", "bins_2",
+                    "bin_2_size", "rolling_interval", "compression", "calib_bin_1",
+                    "calib_bin_2", "calib_bin_3", "coefficients_1",
                 ]:
                     try:
                         setattr(global_vars, key, int(value))
@@ -893,9 +954,21 @@ def load_settings_from_json():
                         setattr(global_vars, key, float(value))
                     except ValueError:
                         setattr(global_vars, key, value)
+                elif key in ["stereo", "log_switch", "epb_switch", "cal_switch"]:
+                    try:
+                        bool_value = str(value).lower() in ['true', '1', 't', 'y', 'yes']
+                        setattr(global_vars, key, bool_value)
+                    except ValueError:
+                        setattr(global_vars, key, value)
                 else:
-                    setattr(global_vars, key, value)   
-                    logger.info(f'load settings completed {settings}\n')                      
+                    setattr(global_vars, key, value)
+
+            logger.info(f'load settings completed {settings}\n')
+        except Exception as e:
+            logger.error(f'Error loading settings from JSON: {e}')
+
+
+
 
 def load_histogram(filename):
     with global_vars.write_lock:
@@ -912,12 +985,12 @@ def load_histogram(filename):
             # Validate the schema version
             if data["schemaVersion"] == "NPESv2":
                 with global_vars.write_lock:
-                    global_vars.histogram = data["data"][0]["resultData"]["energySpectrum"]["spectrum"]
-                    global_vars.bins = data["data"][0]["resultData"]["energySpectrum"]["numberOfChannels"]
-                    global_vars.elapsed = data["data"][0]["resultData"]["energySpectrum"]["measurementTime"]
-                    global_vars.coefficients_1 = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-                    global_vars.spec_notes = data["data"][0]["sampleInfo"]["note"]
-                    global_vars.counts = sum(global_vars.histogram)
+                    global_vars.histogram       = data["data"][0]["resultData"]["energySpectrum"]["spectrum"]
+                    global_vars.bins            = data["data"][0]["resultData"]["energySpectrum"]["numberOfChannels"]
+                    global_vars.elapsed         = data["data"][0]["resultData"]["energySpectrum"]["measurementTime"]
+                    global_vars.coefficients_1  = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+                    global_vars.spec_notes      = data["data"][0]["sampleInfo"]["note"]
+                    global_vars.counts          = sum(global_vars.histogram)
 
                 return True
             else:
@@ -936,12 +1009,13 @@ def load_histogram_2(filename):
             data = json.load(file)
 
         if data["schemaVersion"] == "NPESv2":
-            result_data = data["data"][0]["resultData"]["energySpectrum"]
-            global_vars.histogram_2     = result_data["spectrum"]
-            global_vars.bins_2          = result_data["numberOfChannels"]
-            global_vars.elapsed_2       = result_data["measurementTime"]
-            global_vars.coefficients_2  = result_data["energyCalibration"]["coefficients"]
-            global_vars.counts_2        = result_data["validPulseCount"]
+            with global_vars.write_lock:
+                global_vars.histogram_2     = data["data"][0]["resultData"]["energySpectrum"]["spectrum"]
+                global_vars.bins_2          = data["data"][0]["resultData"]["energySpectrum"]["numberOfChannels"]
+                global_vars.elapsed_2       = data["data"][0]["resultData"]["energySpectrum"]["measurementTime"]
+                global_vars.coefficients_2  = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+                global_vars.counts_2        = sum(global_vars.histogram_2)
+
             return True
         else:
             logger.info("Unsupported schema version\n")

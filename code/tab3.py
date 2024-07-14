@@ -28,7 +28,6 @@ from functions import (
     get_device_number,
     start_recording,
     stop_recording,
-    load_settings_from_json,
     save_settings_to_json,
 )
 
@@ -83,6 +82,9 @@ def show_tab3():
         t_interval      = global_vars.t_interval
         compression     = global_vars.compression
         histogram_3d    = global_vars.histogram_3d
+        log_switch      = global_vars.log_switch
+        epb_switch      = global_vars.epb_switch
+        cal_switch      = global_vars.cal_switch
 
     load_histogram_3d(filename)    
 
@@ -137,9 +139,9 @@ def show_tab3():
         ]),
         html.Div(id='t2_setting_div5', children=[]),
         html.Div(id='t2_setting_div6', children=[
-            html.Div(['Energy by bin', daq.BooleanSwitch(id='epb_switch', on=False, color='purple')]),
-            html.Div(['Show log(y)', daq.BooleanSwitch(id='log_switch', on=False, color='purple')]),
-            html.Div(['Calibration', daq.BooleanSwitch(id='cal_switch', on=False, color='purple')]),
+            html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='purple')]),
+            html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
+            html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
         ]),
         html.Div(id='t2_setting_div7', children=[
             html.Div('Calibration Bins'),
@@ -286,12 +288,13 @@ def update_output(n_clicks):
      Output('cps_3d', 'children')],
     [Input('interval-component', 'n_intervals'),
      Input('filename', 'value'),
-     Input('epb_switch', 'on'),
-     Input('log_switch', 'on'),
-     Input('cal_switch', 'on'),
+     Input('epb-switch', 'on'),
+     Input('log-switch', 'on'),
+     Input('cal-switch', 'on'),
      Input('t_interval', 'value')]
 )
 def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t_interval):
+    
     with global_vars.write_lock:
         device          = global_vars.device
         counts          = global_vars.counts
@@ -302,6 +305,7 @@ def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t
         coefficients_1  = [global_vars.coeff_1, global_vars.coeff_2, global_vars.coeff_3]
         filename        = global_vars.filename
         data_directory  = global_vars.data_directory
+
 
 
 
@@ -382,48 +386,57 @@ def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t
         return fig, "0", "0", f'cps {cps}'
 
 @app.callback(
-    Output('polynomial-3d', 'children'),
-    [Input('bins', 'value'),
-     Input('bin_size', 'value'),
-     Input('max_counts', 'value'),
-     Input('max_seconds', 'value'),
-     Input('t_interval', 'value'),
-     Input('filename', 'value'),
-     Input('threshold', 'value'),
-     Input('tolerance', 'value'),
-     Input('calib_bin_1', 'value'),
-     Input('calib_bin_2', 'value'),
-     Input('calib_bin_3', 'value'),
-     Input('calib_e_1', 'value'),
-     Input('calib_e_2', 'value'),
-     Input('calib_e_3', 'value')]
+    Output('polynomial-3d'  , 'children'),
+    [Input('bins'           , 'value'),
+     Input('bin_size'       , 'value'),
+     Input('max_counts'     , 'value'),
+     Input('max_seconds'    , 'value'),
+     Input('t_interval'     , 'value'),
+     Input('filename'       , 'value'),
+     Input('threshold'      , 'value'),
+     Input('tolerance'      , 'value'),
+     Input('calib_bin_1'    , 'value'),
+     Input('calib_bin_2'    , 'value'),
+     Input('calib_bin_3'    , 'value'),
+     Input('calib_e_1'      , 'value'),
+     Input('calib_e_2'      , 'value'),
+     Input('calib_e_3'      , 'value'),
+     Input('log-switch'     , 'on'),
+     Input('epb-switch'     , 'on'),
+     Input('cal-switch'     , 'on')]
 )
-def save_settings(bins, bin_size, max_counts, max_seconds, t_interval, filename, threshold, tolerance, calib_bin_1, calib_bin_2, calib_bin_3, calib_e_1, calib_e_2, calib_e_3):
+def save_settings(*args):
     logger.info("save_settings callback triggered\n")
 
-    x_bins = [calib_bin_1, calib_bin_2, calib_bin_3]
-    x_energies = [calib_e_1, calib_e_2, calib_e_3]
+    x_bins = [args[8], args[9], args[10]]
+    x_energies = [args[11], args[12], args[13]]
     coefficients = np.polyfit(x_bins, x_energies, 2)
     polynomial_fn = np.poly1d(coefficients)
 
     with global_vars.write_lock:
-        global_vars.bins = bins
-        global_vars.bin_size = bin_size
-        global_vars.max_counts = max_counts
-        global_vars.max_seconds = max_seconds
-        global_vars.filename = filename
-        global_vars.threshold = threshold
-        global_vars.tolerance = tolerance
-        global_vars.calib_bin_1 = calib_bin_1
-        global_vars.calib_bin_2 = calib_bin_2
-        global_vars.calib_bin_3 = calib_bin_3
-        global_vars.calib_e_1 = calib_e_1
-        global_vars.calib_e_2 = calib_e_2
-        global_vars.calib_e_3 = calib_e_3
-        global_vars.t_interval = t_interval
-        global_vars.coeff_1 = coefficients[0]
-        global_vars.coeff_2 = coefficients[1]
-        global_vars.coeff_3 = coefficients[2]
+        global_vars.bins            = args[0]
+        global_vars.bin_size        = args[1]
+        global_vars.max_counts      = args[2]
+        global_vars.max_seconds     = args[3]
+        global_vars.t_interval      = args[4]
+        global_vars.filename        = args[5]
+        global_vars.threshold       = args[6]
+        global_vars.tolerance       = args[7]
+        global_vars.calib_bin_1     = args[8]
+        global_vars.calib_bin_2     = args[9]
+        global_vars.calib_bin_3     = args[10]
+        global_vars.calib_e_1       = args[11]
+        global_vars.calib_e_2       = args[12]
+        global_vars.calib_e_3       = args[13]
+        global_vars.log_switch      = args[14]
+        global_vars.epb_switch      = args[15]
+        global_vars.cal_switch      = args[16]
+        global_vars.coefficients_1  = list(coefficients)
+        
+        global_vars.coeff_1         = round(coefficients[0], 6)
+        global_vars.coeff_2         = round(coefficients[1], 6)
+        global_vars.coeff_3         = round(coefficients[2], 6)
+
 
         save_settings_to_json()
 

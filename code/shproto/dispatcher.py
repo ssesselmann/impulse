@@ -114,7 +114,7 @@ def start(sn=None):
                             shproto.dispatcher.calibration_updated = 1
                         logger.info("Got calibration: {}\n".format(shproto.dispatcher.calibration))
                     else:
-                        logger.info("Wrong crc for calibration values got: {:08x} expected: {:08x}".format(int(resp_lines[10], 16), crc))
+                        logger.info("Dispatcher Wrong crc for calibration values got: {:08x} expected: {:08x}".format(int(resp_lines[10], 16), crc))
 
                 response.clear()
             elif response.cmd == shproto.MODE_HISTOGRAM:

@@ -99,12 +99,17 @@ def show_tab2():
         coeff_2         = global_vars.coeff_2
         coeff_3         = global_vars.coeff_3
         peakfinder      = global_vars.peakfinder
+        log_switch      = global_vars.log_switch
+        epb_switch      = global_vars.epb_switch
+        cal_switch      = global_vars.cal_switch
         sigma           = global_vars.sigma
         max_seconds     = global_vars.max_seconds
         t_interval      = global_vars.t_interval
         compression     = global_vars.compression
         spec_notes      = global_vars.spec_notes
 
+        coefficients    = global_vars.coefficients_1
+        coefficients_2  = global_vars.coefficients_2
 
     load_histogram(filename)
 
@@ -203,9 +208,9 @@ def show_tab2():
         ]),
 
         html.Div(id='t2_setting_div6', children=[
-            html.Div(['Energy by bin', daq.BooleanSwitch(id='epb_switch', on=False, color='purple')]),
-            html.Div(['Show log(y)', daq.BooleanSwitch(id='log_switch', on=False, color='purple')]),
-            html.Div(['Calibration', daq.BooleanSwitch(id='cal_switch', on=False, color='purple')]),
+            html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='purple')]),
+            html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
+            html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
             html.Div(['Coincidence', daq.BooleanSwitch(id='mode-switch', on=False, color='purple')], style={'display': audio}),
         ]),
 
@@ -224,7 +229,7 @@ def show_tab2():
 
             dcc.Store(id="confirmation-output", data=''),
             html.Button('isotope flags', id='toggle-annotations-button', n_clicks=0, className="action_button"),
-            dcc.Store(id='store-coefficients', data=[1, 0, 0]),
+            dcc.Store(id='store-coefficients', data=coefficients),
             dcc.Store(id='store-gaussian'),
             dcc.Store(id='store-annotations', data=[]),
             html.Div('Gaussian (sigma)'),
@@ -400,9 +405,9 @@ def stop_button(n_clicks, dn):
                Input('bar_chart'            , 'relayoutData'),
                Input('store-annotations'    , 'data')], 
               [State('filename'             , 'value'),
-               State('epb_switch'           , 'on'),
-               State('log_switch'           , 'on'),
-               State('cal_switch'           , 'on'),
+               State('epb-switch'           , 'on'),
+               State('log-switch'           , 'on'),
+               State('cal-switch'           , 'on'),
                State('filename_2'            , 'value'),
                State('compare_switch'       , 'on'),
                State('difference_switch'    , 'on'),
@@ -424,6 +429,15 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             except Exception as e:
                 logger.info(f'tab2 failed to load {filename_2}: {e}\n')    
 
+    coincidence     = 'coincidence<br>(left if right)' if mode_switch else ""
+    annotations     = []
+    coefficients    = []
+    prominence      = 0
+    lines           = []
+    gaussian        = []
+    now             = datetime.now()
+    date        = now.strftime('%d-%m-%Y')
+
     with global_vars.write_lock:
         counts          = global_vars.counts
         cps             = global_vars.cps
@@ -436,15 +450,6 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         coefficients_1  = global_vars.coefficients_1
         spec_notes      = global_vars.spec_notes
 
-
-    coincidence     = 'coincidence<br>(left if right)' if mode_switch else ""
-    annotations     = []
-    coefficients    = []
-    prominence      = 0
-    lines           = []
-    gaussian        = []
-    now             = datetime.now()
-    date        = now.strftime('%d-%m-%Y')
 
     layout = go.Layout(
         paper_bgcolor='white',
@@ -465,12 +470,13 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     if compare_switch:
         try:
             load_histogram_2(filename_2)
+
         except:
             logger.info(f'tab2 failed to load {histogram_2}\n')
 
     if counts > 0:
 
-        coefficients = coefficients_1
+        coefficients = coefficients_1[::-1]
 
         prominence = 0.5
 
@@ -522,7 +528,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         bin_counts  = y[peaks[i]]
         x_pos       = peaks[i]
         y_pos       = y[peaks[i]]
-        y_pos_ann   = y_pos + int(y_pos / 10)
+        y_pos_ann   = int(y_pos *1.1)
         resolution  = (fwhm[i] / peaks[i]) * 100
 
         if y_pos_ann > (max_value * 0.9):
@@ -533,7 +539,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             x_pos = peak_value
 
         if log_switch:
-            y_pos_ann = np.log10(y_pos)
+            y_pos_ann = np.log10(y_pos * 1.1)
 
         if peakfinder > 0:
             annotations.append(dict(
@@ -675,7 +681,10 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
      Input('peakfinder'     , 'value'),
      Input('sigma'          , 'value'),
      Input('t_interval'     , 'value'),
-     Input('compression'    , 'value')]
+     Input('compression'    , 'value'),
+     Input('log-switch'     , 'on'),
+     Input('epb-switch'     , 'on'),
+     Input('cal-switch'     , 'on')]
 )
 def save_settings(*args):
     n_clicks = args[0]
@@ -699,31 +708,41 @@ def save_settings(*args):
 
     coefficients = np.polyfit(x_bins, x_energies, 2)
 
-    global_vars.coefficients = coefficients
-
     polynomial_fn = np.poly1d(coefficients)
 
     with global_vars.write_lock:
-        global_vars.bin_size    = args[1]
-        global_vars.max_counts  = args[2]
-        global_vars.max_seconds = args[3]
-        global_vars.filename    = args[4]
-        global_vars.comparison  = args[5]
-        global_vars.threshold   = args[6]
-        global_vars.tolerance   = args[7]
-        global_vars.calib_bin_1 = x_bins[0]
-        global_vars.calib_bin_2 = x_bins[1]
-        global_vars.calib_bin_3 = x_bins[2]
-        global_vars.calib_e_1   = x_energies[0]
-        global_vars.calib_e_2   = x_energies[1]
-        global_vars.calib_e_3   = x_energies[2]
-        global_vars.peakfinder  = args[14]
-        global_vars.sigma       = args[15]
-        global_vars.t_interval  = args[16]
-        global_vars.coeff_1     = float(coefficients[0])
-        global_vars.coeff_2     = float(coefficients[1])
-        global_vars.coeff_3     = float(coefficients[2])
-        global_vars.compression = args[17]
+        global_vars.bin_size        = args[1]
+        global_vars.max_counts      = args[2]
+        global_vars.max_seconds     = args[3]
+        global_vars.filename        = args[4]
+        global_vars.comparison      = args[5]
+        global_vars.threshold       = args[6]
+        global_vars.tolerance       = args[7]
+        global_vars.calib_bin_1     = x_bins[0]
+        global_vars.calib_bin_2     = x_bins[1]
+        global_vars.calib_bin_3     = x_bins[2]
+        global_vars.calib_e_1       = x_energies[0]
+        global_vars.calib_e_2       = x_energies[1]
+        global_vars.calib_e_3       = x_energies[2]
+        global_vars.peakfinder      = args[14]
+        global_vars.sigma           = args[15]
+        global_vars.t_interval      = args[16]
+        global_vars.coeff_1         = round(coefficients[0], 6)
+        global_vars.coeff_2         = round(coefficients[1], 6)
+        global_vars.coeff_3         = round(coefficients[2], 6)
+        global_vars.compression     = args[17]
+        global_vars.log_switch      = args[18]
+        global_vars.epb_switch      = args[19]
+        global_vars.cal_switch      = args[20]
+        global_vars.coefficients_1  = list(coefficients)
+
+        global_vars.coeff_1         = round(coefficients[0], 6)
+        global_vars.coeff_2         = round(coefficients[1], 6)
+        global_vars.coeff_3         = round(coefficients[2], 6)
+
+
+    save_settings_to_json()
+        
 
     device = get_device_number()
 
@@ -732,7 +751,7 @@ def save_settings(*args):
     else:
         global_vars.bins    = args[0]
 
-    save_settings_to_json()
+    
     
     logger.info(f'Settings updated from tab2\n')
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
@@ -767,19 +786,14 @@ def play_sound(n_clicks, filename):
     [Input('update_calib_button', 'n_clicks'),
      Input('filename', 'value')]
 )
-def update_current_calibration(n_clicks, filename):
+def update_json_calibration(n_clicks, filename):
     if n_clicks is None:
         raise PreventUpdate
-    else:
-        coeff_1 = round(global_vars.coeff_1, 6)
-        coeff_2 = round(global_vars.coeff_2, 6)
-        coeff_3 = round(global_vars.coeff_3, 6)
 
-        with global_vars.write_lock:
-            update_coeff(filename, coeff_1, coeff_2, coeff_3)
+    update_coeff(filename)
 
-        logger.info(f'Calibration updated tab2: {filename, coeff_1, coeff_2, coeff_3}\n')
-        return f"Update {n_clicks}"
+    logger.info(f'tab2 Calibration updated')
+    return f"Update {n_clicks}"
 
 @app.callback(
     Output('cmd_text'       , 'children'),

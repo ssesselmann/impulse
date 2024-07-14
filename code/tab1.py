@@ -45,6 +45,7 @@ def show_tab1():
         sample_length   = global_vars.sample_length
         peakshift       = global_vars.peakshift
         stereo          = global_vars.stereo
+        
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
     shape_left, shape_right = fn.load_shape()
