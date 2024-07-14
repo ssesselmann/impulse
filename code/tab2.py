@@ -34,7 +34,6 @@ from server import (
     store_histogram_2, 
     store_histogram_3d,
     store_gaussian, 
-    store_coefficients, 
     store_sigma, 
     store_annotations,
     store_confirmation_output, 
@@ -68,7 +67,6 @@ from functions import (
     )
 
 logger = logging.getLogger(__name__)
-
 
 device = None
 with global_vars.write_lock:
@@ -113,7 +111,7 @@ def show_tab2():
 
     load_histogram(filename)
 
-    if device <= 100:
+    if device <= 100 and device:
         with global_vars.write_lock:
             global_vars.bins = bins
     else:
@@ -229,7 +227,6 @@ def show_tab2():
 
             dcc.Store(id="confirmation-output", data=''),
             html.Button('isotope flags', id='toggle-annotations-button', n_clicks=0, className="action_button"),
-            dcc.Store(id='store-coefficients', data=coefficients),
             dcc.Store(id='store-gaussian'),
             dcc.Store(id='store-annotations', data=[]),
             html.Div('Gaussian (sigma)'),
@@ -399,8 +396,7 @@ def stop_button(n_clicks, dn):
                Output('counts-output'       , 'children'),
                Output('elapsed'             , 'children'),
                Output('cps'                 , 'children'),
-               Output('store-gaussian'      , 'data'),
-               Output('store-coefficients'  , 'data')],
+               Output('store-gaussian'      , 'data')],
               [Input('interval-component'   , 'n_intervals'),
                Input('bar_chart'            , 'relayoutData'),
                Input('store-annotations'    , 'data')], 
@@ -655,8 +651,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             borderwidth=1
         )
 
-    return fig, f'{counts}', f'{elapsed}', f'cps {cps}', gaussian, coefficients
-
+    return fig, f'{counts}', f'{elapsed}', f'cps {cps}', gaussian
 
 # SAVE SETTINGS ------------------------------------    
 
@@ -748,8 +743,6 @@ def save_settings(*args):
         global_vars.bins    = int(8192/int(args[17]))
     else:
         global_vars.bins    = args[0]
-
-    
     
     logger.info(f'Settings updated from tab2\n')
     return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
@@ -872,7 +865,6 @@ def display_confirmation_result(confirm_publish_clicks, cancel_publish_clicks, f
         return "You canceled!"
     return ""
 
-
 @app.callback(
     Output('spec-notes-output'  , 'children'),
     [Input('spec-notes-input'   , 'value'),
@@ -900,15 +892,16 @@ app.layout = show_tab2()
     Input('toggle-annotations-button'   , 'n_clicks'),
     Input('flags'                       , 'value'),
     State('store-gaussian'              , 'data'),
-    State('store-coefficients'          , 'data'),
     State('sigma'                       , 'value'),
-    State('cal_switch'                  , 'on')
+    State('cal-switch'                  , 'on')
 )
-def toggle_annotations(n_clicks, flags, gaussian, coefficients, sigma, cal_switch):
+def toggle_annotations(n_clicks, flags, gaussian, sigma, cal_switch):
     if n_clicks is None:
         raise PreventUpdate
 
     n_clicks += 1
+    with global_vars.write_lock:
+        coefficients = global_vars.coefficients_1
 
     if n_clicks % 2 == 0:
         if gaussian is not None and coefficients is not None:
@@ -920,9 +913,11 @@ def toggle_annotations(n_clicks, flags, gaussian, coefficients, sigma, cal_switc
             matches         = matching_isotopes(gc_calibrated, peaks, isotopes_data, sigma)
             annotations     = []
 
+
             for idx, (x, y, isotopes) in matches.items():
                 isotope_names = ', '.join([isotope['isotope'] for isotope in isotopes])
                 y_pos = 0.85 - ((idx % 16) * 0.03)
+
                 annotations.append(
                     dict(
                         x=x,
