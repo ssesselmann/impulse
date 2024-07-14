@@ -302,7 +302,7 @@ def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t
         cps             = global_vars.cps
         bins            = global_vars.bins
         histogram_3d    = global_vars.histogram_3d
-        coefficients_1  = [global_vars.coeff_1, global_vars.coeff_2, global_vars.coeff_3]
+        coefficients_1  = global_vars.coefficients_1
         filename        = global_vars.filename
         data_directory  = global_vars.data_directory
 
@@ -321,9 +321,9 @@ def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t
         height=580,
         margin=dict(l=0, r=0, b=50, t=0),
         scene=dict(
-            xaxis=dict(title='Energy(x)', range=[0, bins]),
-            yaxis=dict(title='Time intervals(y)', range=y_range),
-            zaxis=dict(title='Counts(z)', type=axis_type),
+            xaxis=dict(title='bins(x)', range=[0, bins]),
+            yaxis=dict(title='time intervals(y)', range=y_range),
+            zaxis=dict(title='counts(z)', type=axis_type),
         )
     )
     
@@ -339,6 +339,8 @@ def update_graph_3d(n_intervals, filename, epb_switch, log_switch, cal_switch, t
 
         if cal_switch:
             x = np.polyval(np.poly1d(coefficients_1), x)
+            layout.scene.xaxis.range = [0, max(x)]
+            layout.scene.xaxis.title = "energy (x)"
 
         surface_trace = {
             'type': 'surface',

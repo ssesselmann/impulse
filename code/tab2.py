@@ -476,8 +476,6 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
 
     if counts > 0:
 
-        coefficients = coefficients_1[::-1]
-
         prominence = 0.5
 
         if sigma == 0:
