@@ -31,7 +31,7 @@ histogram_3d    = []
 spec_notes      = ""
 
 # Tab1 Settings
-theme           = "lightgray"
+theme           = "plasma"
 max_bins        = 8192
 device          = 1
 sample_rate     = 48000
