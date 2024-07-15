@@ -191,7 +191,7 @@ def update_count_rate_chart(n_intervals, filename, t_interval, full_monty, store
 def save_settings(rolling):
 
     with global_vars.write_lock:
-        global_vars.rolling_interval = rolling
+        global_vars.rolling_interval = int(rolling)
         
     save_settings_to_json()
 

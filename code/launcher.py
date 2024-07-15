@@ -54,6 +54,7 @@ default_settings = {
     "log_switch": False,
     "epb_switch": False,
     "cal_switch": False,
+    "coi_switch": False,
     "theme": "lightgray",
     "sigma": 0,
     "max_seconds": 3600,

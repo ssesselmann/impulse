@@ -39,10 +39,20 @@ def align_pulse(pulse, peak_position):
     return np.pad(pulse, (max(shift, 0), max(-shift, 0)), 'constant', constant_values=(0,))[:len(pulse)]
 
 #   Capture initial pulses to determine polarity.
-def capture_pulse_polarity(stereo, sample_rate, chunk_size, device, sample_length, peak, threshold, timeout=30):
+def capture_pulse_polarity(peak, timeout=30):
+
+    with global_vars.write_lock:
+        stereo          = bool(global_vars.stereo)
+        sample_rate     = int(global_vars.sample_rate)
+        chunk_size      = int(global_vars.chunk_size)
+        device          = int(global_vars.device) 
+        sample_length   = int(global_vars.sample_length)
+        threshold       = int(global_vars.threshold)
 
     p           = pyaudio.PyAudio()
+
     channels    = 2 if stereo else 1
+
     stream      = p.open(format=pyaudio.paInt16,
                     channels=channels,
                     rate=sample_rate,
@@ -82,8 +92,8 @@ def capture_pulse_polarity(stereo, sample_rate, chunk_size, device, sample_lengt
                 for i in range(len(channel) - sample_length):
                     samples = channel[i:i + sample_length]
 
-                    if abs(samples[peak]) > threshold:
-                        aligned_samples = align_pulse(samples, peak)
+                    if abs(samples[int(peak)]) > threshold:
+                        aligned_samples = align_pulse(samples, int(peak))
                         pulse_list.append(aligned_samples)
                         if len(pulse_list) >= 10:  # Use a small number for quick polarity determination
                             pulse_sign = determine_pulse_sign([sum(samples) for samples in pulse_list])
@@ -101,7 +111,7 @@ def capture_pulse_polarity(stereo, sample_rate, chunk_size, device, sample_lengt
 
     return pulse_sign_left, pulse_sign_right
 
-def shapecatcher(stereo):
+def shapecatcher():
 
     # Extract settings from global_vars
     with global_vars.write_lock:
@@ -116,8 +126,9 @@ def shapecatcher(stereo):
         shapecatches    = global_vars.shapecatches
         sample_length   = global_vars.sample_length
         peakshift       = global_vars.peakshift
+        stereo          = global_vars.stereo
 
-    peak            = int(((sample_length - 1) / 2) + peakshift)
+    peak            = int(((int(sample_length) - 1) / 2) + int(peakshift))
     threshold       = 1000  # Hard coded for shapecatcher only
     logger.info(f'Shapecatcher threshold fixed at {threshold}\n')
 
@@ -132,8 +143,7 @@ def shapecatcher(stereo):
 
     
     # First, determine the pulse polarity
-    pulse_sign_left, pulse_sign_right = capture_pulse_polarity(
-        stereo, sample_rate, chunk_size, device, sample_length, peak, threshold)
+    pulse_sign_left, pulse_sign_right = capture_pulse_polarity(peak)
 
     if stereo and pulse_sign_right is None:
         sc_info.append('No pulse on right channel... Exiting.')

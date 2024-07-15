@@ -100,6 +100,7 @@ def show_tab2():
         log_switch      = global_vars.log_switch
         epb_switch      = global_vars.epb_switch
         cal_switch      = global_vars.cal_switch
+        coi_switch      = global_vars.coi_switch
         sigma           = global_vars.sigma
         max_seconds     = global_vars.max_seconds
         t_interval      = global_vars.t_interval
@@ -209,7 +210,7 @@ def show_tab2():
             html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='purple')]),
             html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
             html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
-            html.Div(['Coincidence', daq.BooleanSwitch(id='mode-switch', on=False, color='purple')], style={'display': audio}),
+            html.Div(['Coincidence', daq.BooleanSwitch(id='coi-switch', on=coi_switch, color='purple')], style={'display': audio}),
         ]),
 
         html.Div(id='t2_setting_div7', children=[
@@ -312,16 +313,16 @@ def confirm_with_user_2d(start_clicks, confirm_clicks, cancel_clicks, filename, 
     [State('filename'           , 'value'),
      State('compression'        , 'value'),
      State('t_interval'         , 'value'),
-     State('mode-switch'        , 'on'),
+     State('coi-switch'        , 'on'),
      State('store-device'       , 'data')]
 )
-def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t_interval, mode_switch, dn):
+def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t_interval, coi_switch, dn):
     ctx = dash.callback_context
 
     if not ctx.triggered:
         raise PreventUpdate
 
-    mode = 4 if mode_switch else 2
+    mode = 4 if coi_switch else 2
 
     trigger_id      = ctx.triggered[0]['prop_id'].split('.')[0]
     trigger_value   = ctx.triggered[0]['value']
@@ -411,9 +412,9 @@ def stop_button(n_clicks, dn):
                State('sigma'                , 'value'),
                State('max_seconds'          , 'value'),
                State('max_counts'           , 'value'),
-               State('mode-switch'          , 'on')]
+               State('coi-switch'          , 'on')]
                )
-def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, cal_switch, filename_2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts, mode_switch):
+def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, cal_switch, filename_2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts, coi_switch):
         
     ctx = callback_context
 
@@ -425,7 +426,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             except Exception as e:
                 logger.info(f'tab2 failed to load {filename_2}: {e}\n')    
 
-    coincidence     = 'coincidence<br>(left if right)' if mode_switch else ""
+    coincidence     = 'coincidence<br>(left if right)' if coi_switch else ""
     annotations     = []
     coefficients    = []
     prominence      = 0
@@ -677,7 +678,8 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
      Input('compression'    , 'value'),
      Input('log-switch'     , 'on'),
      Input('epb-switch'     , 'on'),
-     Input('cal-switch'     , 'on')]
+     Input('cal-switch'     , 'on'),
+     Input('coi-switch'     , 'on')]
 )
 def save_settings(*args):
     n_clicks = args[0]
@@ -704,31 +706,32 @@ def save_settings(*args):
     polynomial_fn = np.poly1d(coefficients)
 
     with global_vars.write_lock:
-        global_vars.bin_size        = args[1]
-        global_vars.max_counts      = args[2]
-        global_vars.max_seconds     = args[3]
+        global_vars.bin_size        = int(args[1])
+        global_vars.max_counts      = int(args[2])
+        global_vars.max_seconds     = int(args[3])
         global_vars.filename        = args[4]
         global_vars.comparison      = args[5]
-        global_vars.threshold       = args[6]
-        global_vars.tolerance       = args[7]
-        global_vars.calib_bin_1     = x_bins[0]
-        global_vars.calib_bin_2     = x_bins[1]
-        global_vars.calib_bin_3     = x_bins[2]
-        global_vars.calib_e_1       = x_energies[0]
-        global_vars.calib_e_2       = x_energies[1]
-        global_vars.calib_e_3       = x_energies[2]
-        global_vars.peakfinder      = args[14]
-        global_vars.sigma           = args[15]
-        global_vars.t_interval      = args[16]
+        global_vars.threshold       = int(args[6])
+        global_vars.tolerance       = int(args[7])
+        global_vars.calib_bin_1     = int(args[8])
+        global_vars.calib_bin_2     = int(args[9])
+        global_vars.calib_bin_3     = int(args[10])
+        global_vars.calib_e_1       = int(args[11])
+        global_vars.calib_e_2       = int(args[12])
+        global_vars.calib_e_3       = int(args[13])
+        global_vars.peakfinder      = float(args[14])
+        global_vars.sigma           = float(args[15])
+        global_vars.t_interval      = int(args[16])
         global_vars.coeff_1         = round(coefficients[0], 6)
         global_vars.coeff_2         = round(coefficients[1], 6)
         global_vars.coeff_3         = round(coefficients[2], 6)
-        global_vars.compression     = args[17]
+        global_vars.compression     = int(args[17])
         global_vars.log_switch      = args[18]
         global_vars.epb_switch      = args[19]
         global_vars.cal_switch      = args[20]
-        global_vars.coefficients_1  = list(coefficients)
+        global_vars.coi_switch      = args[21]
 
+        global_vars.coefficients_1  = list(coefficients)
         global_vars.coeff_1         = round(coefficients[0], 6)
         global_vars.coeff_2         = round(coefficients[1], 6)
         global_vars.coeff_3         = round(coefficients[2], 6)

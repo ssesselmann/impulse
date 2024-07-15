@@ -257,28 +257,28 @@ def show_tab1():
 # Callback to save settings ---------------------------
 
 @app.callback(
-    [Output('selected_device_text', 'children'),
-     Output('sampling_time_output', 'children'),
-     Output('stereo', 'on')],
-    [Input('submit', 'n_clicks'),
-     Input('device_dropdown', 'value'),
-     Input('sample_rate', 'value'),
-     Input('chunk_size', 'value'),
-     Input('catch', 'value'),
-     Input('sample_length', 'value'),
-     Input('peakshifter', 'value'),
-     Input('stereo', 'on')]
-)
+    [Output('selected_device_text'  , 'children'),
+     Output('sampling_time_output'  , 'children'),
+     Output('stereo'                , 'on')],
+    [Input('submit'                 , 'n_clicks'),
+     Input('device_dropdown'        , 'value'),
+     Input('sample_rate'            , 'value'),
+     Input('chunk_size'             , 'value'),
+     Input('catch'                  , 'value'),
+     Input('sample_length'          , 'value'),
+     Input('peakshifter'            , 'value'),
+     Input('stereo'                 , 'on')
+     ])
 def save_settings(n_clicks, device, sample_rate, chunk_size, catch, sample_length, peakshift, stereo):
     if n_clicks is not None:
         with global_vars.write_lock:
-            global_vars.device          = device
-            global_vars.sample_rate     = sample_rate
-            global_vars.chunk_size      = chunk_size
-            global_vars.shapecatches    = catch
-            global_vars.sample_length   = sample_length
-            global_vars.peakshift       = peakshift
-            global_vars.stereo          = stereo
+            global_vars.device          = int(device)
+            global_vars.sample_rate     = int(sample_rate)
+            global_vars.chunk_size      = int(chunk_size)
+            global_vars.shapecatches    = int(catch)
+            global_vars.sample_length   = int(sample_length)
+            global_vars.peakshift       = int(peakshift)
+            global_vars.stereo          = bool(stereo)
 
         save_settings_to_json()
 
@@ -336,7 +336,7 @@ def capture_pulse_shape(n_clicks, stereo):
         return {'data': [{}], 'layout': layout}, {'data': [{}], 'layout': layout}
     else:
         
-        result = sc.shapecatcher(stereo)
+        result = sc.shapecatcher()
 
 
         if result is None or len(result) < 2:

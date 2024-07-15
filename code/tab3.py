@@ -416,23 +416,23 @@ def save_settings(*args):
     polynomial_fn = np.poly1d(coefficients)
 
     with global_vars.write_lock:
-        global_vars.bins            = args[0]
-        global_vars.bin_size        = args[1]
-        global_vars.max_counts      = args[2]
-        global_vars.max_seconds     = args[3]
-        global_vars.t_interval      = args[4]
+        global_vars.bins            = int(args[0])
+        global_vars.bin_size        = int(args[1])
+        global_vars.max_counts      = int(args[2])
+        global_vars.max_seconds     = int(args[3])
+        global_vars.t_interval      = int(args[4])
         global_vars.filename        = args[5]
-        global_vars.threshold       = args[6]
-        global_vars.tolerance       = args[7]
-        global_vars.calib_bin_1     = args[8]
-        global_vars.calib_bin_2     = args[9]
-        global_vars.calib_bin_3     = args[10]
-        global_vars.calib_e_1       = args[11]
-        global_vars.calib_e_2       = args[12]
-        global_vars.calib_e_3       = args[13]
-        global_vars.log_switch      = args[14]
-        global_vars.epb_switch      = args[15]
-        global_vars.cal_switch      = args[16]
+        global_vars.threshold       = int(args[6])
+        global_vars.tolerance       = int(args[7])
+        global_vars.calib_bin_1     = int(args[8])
+        global_vars.calib_bin_2     = int(args[9])
+        global_vars.calib_bin_3     = int(args[10])
+        global_vars.calib_e_1       = int(args[11])
+        global_vars.calib_e_2       = int(args[12])
+        global_vars.calib_e_3       = int(args[13])
+        global_vars.log_switch      = bool(args[14])
+        global_vars.epb_switch      = bool(args[15])
+        global_vars.cal_switch      = bool(args[16])
         global_vars.coefficients_1  = list(coefficients)
         
         global_vars.coeff_1         = round(coefficients[0], 6)

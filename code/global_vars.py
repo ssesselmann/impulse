@@ -57,6 +57,7 @@ peakfinder      = 0
 log_switch      = False
 epb_switch      = False
 cal_switch      = False
+coi_switch      = False
 
 calib_bin_1     = 0
 calib_bin_2     = 500

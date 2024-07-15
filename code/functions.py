@@ -898,6 +898,7 @@ def save_settings_to_json():
         "log_switch",
         "epb_switch",
         "cal_switch",
+        "coi_switch",
         "calib_bin_1", 
         "calib_bin_2", 
         "calib_bin_3",
@@ -935,30 +936,53 @@ def load_settings_from_json(path):
 
             logger.info(f'settings={settings}\n')
 
+            type_mappings = {
+                "max_bins": int, 
+                "device": int, 
+                "sample_rate": int, 
+                "sample_length": int, 
+                "shapecatches": int, 
+                "chunk_size": int, 
+                "peakshift": int, 
+                "max_counts": int, 
+                "max_seconds": int, 
+                "bins": int, 
+                "threshold": int, 
+                "tolerance": int, 
+                "bin_size": int, 
+                "t_interval": int, 
+                "bins_2": int, 
+                "bin_2_size": int, 
+                "rolling_interval": int, 
+                "compression": int, 
+                "calib_bin_1": int, 
+                "calib_bin_2": int, 
+                "calib_bin_3": int, 
+                "coefficients_1": list, 
+                "calib_e_1": float, 
+                "calib_e_2": float, 
+                "calib_e_3": float, 
+                "coeff_1": float, 
+                "coeff_2": float, 
+                "coeff_3": float, 
+                "peakfinder": float, 
+                "sigma": float, 
+                "stereo": bool, 
+                "log_switch": bool, 
+                "epb_switch": bool, 
+                "cal_switch": bool,
+                "coi_switch": bool
+            }
+
             for key, value in settings.items():
                 if value is None:
                     setattr(global_vars, key, None)
-                elif key in [
-                    "max_bins", "device", "sample_rate", "sample_length", "shapecatches",
-                    "chunk_size", "peakshift", "max_counts", "max_seconds", "bins",
-                    "threshold", "tolerance", "bin_size", "t_interval", "bins_2",
-                    "bin_2_size", "rolling_interval", "compression", "calib_bin_1",
-                    "calib_bin_2", "calib_bin_3", "coefficients_1",
-                ]:
+                elif key in type_mappings:
                     try:
-                        setattr(global_vars, key, int(value))
-                    except ValueError:
-                        setattr(global_vars, key, value)
-                elif key in ["calib_e_1", "calib_e_2", "calib_e_3", "coeff_1", "coeff_2", "coeff_3", "peakfinder", "sigma"]:
-                    try:
-                        setattr(global_vars, key, float(value))
-                    except ValueError:
-                        setattr(global_vars, key, value)
-                elif key in ["stereo", "log_switch", "epb_switch", "cal_switch"]:
-                    try:
-                        bool_value = str(value).lower() in ['true', '1', 't', 'y', 'yes']
-                        setattr(global_vars, key, bool_value)
-                    except ValueError:
+                        converted_value = type_mappings[key](value)
+                        setattr(global_vars, key, converted_value)
+                    except (ValueError, TypeError):
+                        logger.warning(f"Failed to convert {key}: {value}")
                         setattr(global_vars, key, value)
                 else:
                     setattr(global_vars, key, value)
@@ -966,6 +990,9 @@ def load_settings_from_json(path):
             logger.info(f'load settings completed {settings}\n')
         except Exception as e:
             logger.error(f'Error loading settings from JSON: {e}')
+    else:
+        logger.error(f"Settings file not found: {path}")
+
 
 
 
