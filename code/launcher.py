@@ -17,8 +17,6 @@ settings_file           = os.path.join(data_directory, "_settings.json")
 user_file               = os.path.join(data_directory, "_user.json")
 shapecsv                = os.path.join(data_directory, "_shape.csv")
 
-print(f'in launcher theme = {global_vars.theme}')
-
 with global_vars.write_lock:
     global_vars.data_directory = data_directory
     global_vars.settings_file  = settings_file
