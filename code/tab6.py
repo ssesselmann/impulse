@@ -226,8 +226,8 @@ def shutdown_server(n_clicks):
     else:
         return 'Click to Exit'
 
-@app.callback(Output('theme_output', 'children'),
-              [Input('theme', 'value')])
+@app.callback(Output('theme_output' , 'children'),
+              [Input('theme'        , 'value')])
 def theme_change(value):
     if value is None:
         raise PreventUpdate
