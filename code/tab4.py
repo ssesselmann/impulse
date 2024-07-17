@@ -98,7 +98,6 @@ def update_count_rate_chart(n_intervals, filename, t_interval, full_monty, store
     if os.path.exists(os.path.join(data_directory, f"{filename}_cps.json")) and not global_vars.run_flag:
         load_cps_file(filename)
 
-
     with global_vars.write_lock:
         count_history   = global_vars.count_history
         sum_counts      = sum(count_history)
