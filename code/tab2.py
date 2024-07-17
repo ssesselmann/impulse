@@ -706,6 +706,7 @@ def save_settings(*args):
     polynomial_fn = np.poly1d(coefficients)
 
     with global_vars.write_lock:
+        global_vars.bins            = int(args[0])
         global_vars.bin_size        = int(args[1])
         global_vars.max_counts      = int(args[2])
         global_vars.max_seconds     = int(args[3])

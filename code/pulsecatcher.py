@@ -19,11 +19,11 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     time_last_save          = time_start
     time_last_save_time     = time_start  # corrected variable initialization
     array_3d                = []
-    last_histogram          = [0] * global_vars.bins  # Initialize last_histogram
     spec_notes              = ""
 
     # Load settings from global variables
     with global_vars.write_lock:
+        last_histogram  = [0] * global_vars.bins  # Initialize last_histogram
         filename        = global_vars.filename
         device          = global_vars.device
         sample_rate     = global_vars.sample_rate
@@ -183,13 +183,13 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             time_last_save  = time_this_save
 
         # Save data to global_variables once per minute
-        if time_this_save - time_last_save_time >= 30 * t_interval or not global_vars.run_flag.is_set():
+        if time_this_save - time_last_save_time >= 60 * t_interval or not global_vars.run_flag.is_set():
             location    = ""
             spec_notes  = ""
             
             if mode == 2 or mode == 4:
                 fn.write_histogram_npesv2(t0, t1, bins, local_counts, int(local_elapsed), filename, local_histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes)
-                fn.write_cps_json(filename, local_count_history, global_vars.elapsed)
+                fn.write_cps_json(filename, local_count_history, int(local_elapsed))
 
             if mode == 3:
                 with global_vars.write_lock:
