@@ -143,7 +143,7 @@ def show_tab6():
                 html.P('This switch changes the y axis to log scale, a common way to make the high energy peaks visible.'),
                 
                 html.H4('Play Sound Button'),
-                html.P('This button generates a wav file from the gaussian correlation (1 sigma) from the current spectrum and plays a 2-second cacophony where the x axis represents frequency and the y axis represents volume. The result is a unique chord for each spectrum. The initial wav file takes a moment to generate, but once generated it can be replayed instantly.'),
+                html.P('This button generates a wav file from the gaussian correlation (sigma) from the current spectrum and plays an arpeggio where the x axis represents the frequency of a piano keyboard and the y axis represents volume. Just a fun function.'),
 
                 html.H4('Update Calibration Button'),
                 html.P('During normal recording your calibration settings are automatically saved in the JSON file, however when you want to re-calibrate a previously recorded spectrum you can do so by clicking on this button. The function opens the JSON file and edits the polynomial coefficients'),

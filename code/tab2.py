@@ -752,16 +752,20 @@ def save_settings(*args):
 
 
 # Callback for playing sound
-@app.callback(Output('audio', 'children'),
-              [Input('soundbyte', 'n_clicks')],
-              [State('filename', 'value')])    
+@app.callback(Output('audio'     , 'children'),
+              [Input('soundbyte' , 'n_clicks')],
+              [State('filename'  , 'value'),
+              State('sigma'      , 'value')])    
 
-def play_sound(n_clicks, filename):
+def play_sound(n_clicks, filename, sigma):
     if n_clicks is None:
         raise PreventUpdate
 
-    gaussian = gaussian_correl(global_vars.histogram, 1)
-    logger.info('calculating gaussian correlation\n')
+    if sigma == 0:
+        sigma = 1    
+
+    with global_vars.write_lock:
+        gaussian = gaussian_correl(global_vars.histogram, sigma)
 
     asp.make_wav_file(filename, gaussian)
     logger.info('Converting gaussian correlation to wav file\n')
