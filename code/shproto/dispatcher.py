@@ -332,8 +332,8 @@ def process_01(filename, compression, device, t_interval):
     return
 
 # This process records the 3D histogram 9spectrum)
-def process_02(filename, compression, device, t_interval):  # Compression reduces the number of channels by 8, 4, or 2
-    logger.info(f'dispatcher.process_02 ({filename})\n')
+def process_02(filename_3d, compression, device, t_interval):  # Compression reduces the number of channels by 8, 4, or 2
+    logger.info(f'dispatcher.process_02 ({filename_3d})\n')
 
     global counts, last_counts, histogram_3d
 
@@ -422,7 +422,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
         # Save JSON files once every 60 seconds or when global_vars.run_flag.clear()
         if t1 - last_save_time >= 60 or shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag:
 
-            logger.info(f'shproto process_02 attempting to save {filename}_3d.json\n')
+            logger.info(f'shproto process_02 attempting to save {filename_3d}_3d.json\n')
 
             data = {
                 "schemaVersion": "NPESv2",
@@ -433,7 +433,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
                             "deviceName": "{}{}".format(device, shproto.dispatcher.serial_number)
                         },
                         "sampleInfo": {
-                            "name": filename,
+                            "name": filename_3d,
                             "location": "",
                             "note": ""
                         },
@@ -458,7 +458,7 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
             json_data = json.dumps(data, separators=(",", ":"))
 
             # Construct the full path to the file
-            file_path = os.path.join(data_directory, f'{filename}_3d.json')
+            file_path = os.path.join(data_directory, f'{filename_3d}_3d.json')
 
             logger.info(f'file path = {file_path}\n')
 
@@ -468,12 +468,12 @@ def process_02(filename, compression, device, t_interval):  # Compression reduce
 
             # Save CPS data to a separate JSON file
             cps_data = {
-                "filename": filename,
+                "filename": filename_3d,
                 "count_history": count_history,
                 "elapsed": elapsed
             }
 
-            cps_file_path = os.path.join(data_directory, f'{filename}_cps.json')
+            cps_file_path = os.path.join(data_directory, f'{filename_3d}_cps.json')
 
             logger.info(f'CPS file path = {cps_file_path}\n')
 
