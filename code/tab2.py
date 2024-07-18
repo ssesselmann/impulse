@@ -25,11 +25,6 @@ from datetime import datetime
 
 # Importing store variables from server
 from server import (
-    store_device, 
-    store_filename, 
-    store_filename_2, 
-    store_bins,
-    store_bins_2, 
     store_histogram, 
     store_histogram_2, 
     store_histogram_3d,
@@ -75,9 +70,10 @@ with global_vars.write_lock:
 def show_tab2():
     options_sorted  = get_options()
 
+    # Load global variables
     with global_vars.write_lock:
         filename        = global_vars.filename
-        filename_2      = global_vars.comparison
+        filename_2      = global_vars.filename_2
         device          = global_vars.device
         sample_rate     = global_vars.sample_rate
         chunk_size      = global_vars.chunk_size
@@ -106,18 +102,19 @@ def show_tab2():
         t_interval      = global_vars.t_interval
         compression     = global_vars.compression
         spec_notes      = global_vars.spec_notes
-
         coefficients    = global_vars.coefficients_1
         coefficients_2  = global_vars.coefficients_2
 
-    load_histogram(filename)
+    load_histogram(filename)            # Load last histogram if it exists
 
-    if device <= 100 and device:
+    if device <= 100 and device:        # Sound card devices
         with global_vars.write_lock:
             global_vars.bins = bins
+
     else:
-        with global_vars.write_lock:
+        with global_vars.write_lock:    # Atom nano devices
             global_vars.bins = int(8192/compression)    
+
 
     millisec    = t_interval * 1000
 
@@ -132,135 +129,137 @@ def show_tab2():
     seconds_warning = 'red' if max_seconds == 0 else 'white'
 
     html_tab2 = html.Div(id='tab2', children=[
-        html.Div(id='polynomial', children=''),
-        html.Div(id='output-roi', children=''),
+        html.Div(id='main-div', children= [
+            html.Div(id='polynomial', children=''),
+            html.Div(id='output-roi', children=''),
 
-        html.Div(id='bar_chart_div', children=[
-            
-            dcc.Interval(id='interval-component', interval=millisec, n_intervals=0),  # Refresh rate 1s.
-            dcc.Graph(id='bar_chart'),
-        ]),
-
-        html.Div(id='t2_filler_div', children=''),
-
-        html.Div(id='t2_setting_div1', children=[
-            html.Button('START', id='start', n_clicks=0),
-            html.Div(id='start-text', children=''),
-            html.Div(id='counts-output', children=''),
-            html.Div(''),
-            html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1, readOnly=False, value=max_counts, className='input', style={'background-color': counts_warning})]),
-        ]),
-
-        html.Div(id='t2_setting_div2', children=[
-            dcc.Store(id='store-device', data=device),
-            html.Button('STOP', id='stop'),
-            html.Div(id='stop-text', children=''),
-            html.Div(id='elapsed', children=''),
-            html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1, readOnly=False, value=max_seconds, className='input', style={'background-color': seconds_warning})]),
-            html.Div(id='cps', children=''),
-        ]),
-
-        html.Div(id='t2_setting_div3', children=[
-            html.Div(id='compression_div', children=[
-                html.Div(['Resolution:', dcc.Dropdown(id='compression', options=[
-                    {'label': '512 Bins', 'value': '16'},
-                    {'label': '1024 Bins', 'value': '8'},
-                    {'label': '2048 Bins', 'value': '4'},
-                    {'label': '4096 Bins', 'value': '2'},
-                    {'label': '8192 Bins', 'value': '1'},
-                ], value=compression, className='dropdown')], style={'display': serial}),
-
-                html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, className='dropdown', optionHeight=40)]),
+            html.Div(id='bar_chart_div', children=[
                 
-                html.Div(['Or create new file:', dcc.Input(id='filename', type='text', value=filename, className='input', placeholder='Enter new filename')]),
-                
-                dbc.Modal([
-                    dbc.ModalBody(id='modal-body'),
-                    dbc.ModalFooter([
-                        dbc.Button("Overwrite", id="confirm-overwrite", className="ml-auto", n_clicks=0),
-                        dbc.Button("Cancel", id="cancel-overwrite", className="ml-auto", n_clicks=0),
-                    ]),
-                ], id='modal-overwrite', is_open=False, centered=True, size="md", className="custom-modal"),
-                html.Div(id='start_process_flag', style={'display': 'none'}),
-                html.Div(['Number of bins:', dcc.Input(id='bins', type='number', value=bins)], className='input', style={'display': audio}),
-                html.Div(['Bin size:', dcc.Input(id='bin_size', type='number', value=bin_size)], className='input', style={'display': audio}),
+                dcc.Interval(id='interval-component', interval=millisec, n_intervals=0),  # Refresh rate 1s.
+                dcc.Graph(id='bar_chart'),
             ]),
-        ]),
 
-        html.Div(id='t2_setting_div4', children=[
-            html.Div(['Serial Command:', dcc.Dropdown(id='selected_cmd', options=[
-                {'label': 'Pause MCA', 'value': '-sto'},
-                {'label': 'Restart MCA', 'value': '-sta'},
-                {'label': 'Reset histogram', 'value': '-rst'},
-            ], placeholder='Select command', value=None, className='dropdown')], style={'display': serial}),
-            html.Div(id='cmd_text', children='', style={'display': 'none'}),
-            html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold, className='input', style={'height': '35px'})], style={'display': audio}),
-            html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance, className='input')], style={'display': audio}),
-            html.Div(['Update Interval(s)', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval, className='input')]),
-        ], style={'width': '10%'}),
+            html.Div(id='t2_filler_div', children=''),
 
-        html.Div(id='t2_setting_div5', children=[
-            html.Div('Comparison'),
-            html.Div(dcc.Dropdown(id='filename_2', options=options_sorted, placeholder='Select comparison', value=filename_2, className='dropdown', optionHeight=40)),
-            html.Div(['Show Comparison', daq.BooleanSwitch(id='compare_switch', on=False, color='purple')]),
-            html.Div(['Subtract Comparison', daq.BooleanSwitch(id='difference_switch', on=False, color='purple')]),
-        ]),
+            html.Div(id='t2_setting_div1', children=[
+                html.Button('START', id='start', n_clicks=0),
+                html.Div(id='start-text', children=''),
+                html.Div(id='counts-output', children=''),
+                html.Div(''),
+                html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1, readOnly=False, value=max_counts, className='input', style={'background-color': counts_warning})]),
+            ]),
 
-        html.Div(id='t2_setting_div6', children=[
-            html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='purple')]),
-            html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
-            html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
-            html.Div(['Coincidence', daq.BooleanSwitch(id='coi-switch', on=coi_switch, color='purple')], style={'display': audio}),
-        ]),
+            html.Div(id='t2_setting_div2', children=[
+                dcc.Store(id='store-device', data=device),
+                html.Button('STOP', id='stop'),
+                html.Div(id='stop-text', children=''),
+                html.Div(id='elapsed', children=''),
+                html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1, readOnly=False, value=max_seconds, className='input', style={'background-color': seconds_warning})]),
+                html.Div(id='cps', children=''),
+            ]),
 
-        html.Div(id='t2_setting_div7', children=[
-            html.Button('Sound <)', id='soundbyte', className='action_button'),
-            html.Div(id='audio', children=''),
-            html.Button('Update calib.', id='update_calib_button', className='action_button'),
-            html.Div(id='update_calib_message', children=''),
-            dbc.Button("Publish spectrum", id="publish-button", color="primary", className="action_button"),
-            dbc.Modal(children=[
-                dbc.ModalBody(f"Are you sure you want to publish \"{filename}\" spectrum?"),
-                dbc.ModalFooter([
-                    dbc.Button("Confirm", id="confirm-publish", className="ml-auto", color="primary"),
-                    dbc.Button("Cancel", id="cancel-publish", className="mr-auto", color="secondary"),
-                ])], id="confirmation-modal", centered=True, size="md", className="custom-modal"),
+            html.Div(id='t2_setting_div3', children=[
+                html.Div(id='compression_div', children=[
+                    html.Div(['Resolution:', dcc.Dropdown(id='compression', options=[
+                        {'label': '512 Bins', 'value': '16'},
+                        {'label': '1024 Bins', 'value': '8'},
+                        {'label': '2048 Bins', 'value': '4'},
+                        {'label': '4096 Bins', 'value': '2'},
+                        {'label': '8192 Bins', 'value': '1'},
+                    ], value=compression, className='dropdown')], style={'display': serial}),
 
-            dcc.Store(id="confirmation-output", data=''),
-            html.Button('isotope flags', id='toggle-annotations-button', n_clicks=0, className="action_button"),
-            dcc.Store(id='store-gaussian'),
-            dcc.Store(id='store-annotations', data=[]),
-            html.Div('Gaussian (sigma)'),
-            html.Div(dcc.Slider(id='sigma', min=0, max=3, step=0.25, value=sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
-            dcc.Dropdown(id='flags', options=[
-                {'label': 'gamma flags', 'value': 'i/tbl/gamma.json'},
-                {'label': 'x-ray flags', 'value': 'i/tbl/xray.json'},
-                {'label': 'n-capture flags', 'value': 'i/tbl/ncapture.json'},
-            ], style={'height': '15px', 'fontSize': '12px', 'borderwidth': '0px'}, value='i/tbl/gamma.json', className='dropdown', optionHeight=15),
-        ]),
+                    html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, className='dropdown', optionHeight=40)]),
+                    
+                    html.Div(['Or create new file:', dcc.Input(id='filename', type='text', value=filename, className='input', placeholder='Enter new filename')]),
+                    
+                    dbc.Modal([
+                        dbc.ModalBody(id='modal-body'),
+                        dbc.ModalFooter([
+                            dbc.Button("Overwrite", id="confirm-overwrite", className="ml-auto", n_clicks=0),
+                            dbc.Button("Cancel", id="cancel-overwrite", className="ml-auto", n_clicks=0),
+                        ]),
+                    ], id='modal-overwrite', is_open=False, centered=True, size="md", className="custom-modal"),
+                    html.Div(id='start_process_flag', style={'display': 'none'}),
+                    html.Div(['Number of bins:', dcc.Input(id='bins', type='number', value=bins)], className='input', style={'display': audio}),
+                    html.Div(['Bin size:', dcc.Input(id='bin_size', type='number', value=bin_size)], className='input', style={'display': audio}),
+                ]),
+            ]),
 
-        html.Div(id='t2_setting_div8', children=[
-            html.Div('Calibration Bins'),
-            html.Div(dcc.Input(id='calib_bin_1', type='number', value=calib_bin_1, className='input')),
-            html.Div(dcc.Input(id='calib_bin_2', type='number', value=calib_bin_2, className='input')),
-            html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3, className='input')),
-            html.Div('peakfinder'),
-            html.Div(dcc.Slider(id='peakfinder', min=0, max=5, step=0.1, value=peakfinder, marks={0: '0', 1: '1',2: '2', 3: '3' , 4: '4', 5: '5'})),
-        ]),
+            html.Div(id='t2_setting_div4', children=[
+                html.Div(['Serial Command:', dcc.Dropdown(id='selected_cmd', options=[
+                    {'label': 'Pause MCA', 'value': '-sto'},
+                    {'label': 'Restart MCA', 'value': '-sta'},
+                    {'label': 'Reset histogram', 'value': '-rst'},
+                ], placeholder='Select command', value=None, className='dropdown')], style={'display': serial}),
+                html.Div(id='cmd_text', children='', style={'display': 'none'}),
+                html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold, className='input', style={'height': '35px'})], style={'display': audio}),
+                html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance, className='input')], style={'display': audio}),
+                html.Div(['Update Interval(s)', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval, className='input')]),
+            ], style={'width': '10%'}),
 
-        html.Div(id='t2_setting_div9', children=[
-            html.Div('Energies'),
-            html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1, className='input')),
-            html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2, className='input')),
-            html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3, className='input')),
-            html.Div(id='specNoteDiv', children=[
-                dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='spectrum notes', cols=20, rows=6)], style={'marginTop': '15px', 'fontSize': '12px'}),
-            html.Div(id='notes-warning', children=['Update notes after recording !']),
-            html.Div(id='spec-notes-output', children='', style={'visibility': 'hidden'}),
-        ]),
+            html.Div(id='t2_setting_div5', children=[
+                html.Div('Comparison'),
+                html.Div(dcc.Dropdown(id='filename_2', options=options_sorted, placeholder='Select comparison', value=filename_2, className='dropdown', optionHeight=40)),
+                html.Div(['Show Comparison', daq.BooleanSwitch(id='compare_switch', on=False, color='purple')]),
+                html.Div(['Subtract Comparison', daq.BooleanSwitch(id='difference_switch', on=False, color='purple')]),
+            ]),
 
+            html.Div(id='t2_setting_div6', children=[
+                html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='purple')]),
+                html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
+                html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
+                html.Div(['Coincidence', daq.BooleanSwitch(id='coi-switch', on=coi_switch, color='purple')], style={'display': audio}),
+            ]),
+
+            html.Div(id='t2_setting_div7', children=[
+                html.Button('Sound <)', id='soundbyte', className='action_button'),
+                html.Div(id='audio', children=''),
+                html.Button('Update calib.', id='update_calib_button', className='action_button'),
+                html.Div(id='update_calib_message', children=''),
+                dbc.Button("Publish spectrum", id="publish-button", color="primary", className="action_button"),
+                dbc.Modal(children=[
+                    dbc.ModalBody(f"Are you sure you want to publish \"{filename}\" spectrum?"),
+                    dbc.ModalFooter([
+                        dbc.Button("Confirm", id="confirm-publish", className="ml-auto", color="primary"),
+                        dbc.Button("Cancel", id="cancel-publish", className="mr-auto", color="secondary"),
+                    ])], id="confirmation-modal", centered=True, size="md", className="custom-modal"),
+
+                dcc.Store(id="confirmation-output", data=''),
+                html.Button('isotope flags', id='toggle-annotations-button', n_clicks=0, className="action_button"),
+                dcc.Store(id='store-gaussian'),
+                dcc.Store(id='store-annotations', data=[]),
+                html.Div('Gaussian (sigma)'),
+                html.Div(dcc.Slider(id='sigma', min=0, max=3, step=0.25, value=sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
+                dcc.Dropdown(id='flags', options=[
+                    {'label': 'gamma flags', 'value': 'i/tbl/gamma.json'},
+                    {'label': 'x-ray flags', 'value': 'i/tbl/xray.json'},
+                    {'label': 'n-capture flags', 'value': 'i/tbl/ncapture.json'},
+                ], style={'height': '15px', 'fontSize': '12px', 'borderwidth': '0px'}, value='i/tbl/gamma.json', className='dropdown', optionHeight=15),
+            ]),
+
+            html.Div(id='t2_setting_div8', children=[
+                html.Div('Calibration Bins'),
+                html.Div(dcc.Input(id='calib_bin_1', type='number', value=calib_bin_1, className='input')),
+                html.Div(dcc.Input(id='calib_bin_2', type='number', value=calib_bin_2, className='input')),
+                html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3, className='input')),
+                html.Div('peakfinder'),
+                html.Div(dcc.Slider(id='peakfinder', min=0, max=5, step=0.1, value=peakfinder, marks={0: '0', 1: '1',2: '2', 3: '3' , 4: '4', 5: '5'})),
+            ]),
+
+            html.Div(id='t2_setting_div9', children=[
+                html.Div('Energies'),
+                html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1, className='input')),
+                html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2, className='input')),
+                html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3, className='input')),
+                html.Div(id='specNoteDiv', children=[
+                    dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='spectrum notes', cols=20, rows=6)], style={'marginTop': '15px', 'fontSize': '12px'}),
+                html.Div(id='notes-warning', children=['Update notes after recording !']),
+                html.Div(id='spec-notes-output', children='', style={'visibility': 'hidden'}),
+            ]),
+        ], style={'width':'100%', 'float':'left'}),
         html.Div(children=[html.Img(id='footer_tab2', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
         html.Div(id='subfooter', children=[]),
+
     ])  # End of tab 2 render
 
     return html_tab2
@@ -711,7 +710,7 @@ def save_settings(*args):
         global_vars.max_counts      = int(args[2])
         global_vars.max_seconds     = int(args[3])
         global_vars.filename        = args[4]
-        global_vars.comparison      = args[5]
+        global_vars.filename_2      = args[5]
         global_vars.threshold       = int(args[6])
         global_vars.tolerance       = int(args[7])
         global_vars.calib_bin_1     = int(args[8])
@@ -761,20 +760,15 @@ def play_sound(n_clicks, filename):
     if n_clicks is None:
         raise PreventUpdate
 
-    if os.path.exists(f'{data_directory}/{filename}.wav'):
-        asp.play_wav_file(filename)
-        logger.info(f'Playing existing wav file: {filename}.wav\n')
-        return
-    else:
-        gaussian = gaussian_correl(global_vars.histogram, 1)
-        logger.info('calculating gaussian correlation\n')
+    gaussian = gaussian_correl(global_vars.histogram, 1)
+    logger.info('calculating gaussian correlation\n')
 
-        asp.make_wav_file(filename, gaussian)
-        logger.info('Converting gaussian correlation to wav file\n')
+    asp.make_wav_file(filename, gaussian)
+    logger.info('Converting gaussian correlation to wav file\n')
 
-        asp.play_wav_file(filename)
-        logger.info(f'Playing soundfile {filename}.wav\n')
-        return
+    asp.play_wav_file(filename)
+    logger.info(f'Playing soundfile {filename}.wav\n')
+    return
 
 @app.callback(
     Output('update_calib_message', 'children'),
