@@ -813,10 +813,11 @@ def get_options():
     files = [os.path.relpath(file, data_directory).replace("\\", "/")
              for file in glob.glob(os.path.join(data_directory, "**", "*.json"), recursive=True)]
     
-    options = [{'label': "~ " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json")
+    options = [{'label': "• " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json")
         else {'label': os.path.basename(file), 'value': file} for file in files]
 
     options = [opt for opt in options if not opt['value'].endswith("_cps.json")]
+    options = [opt for opt in options if not opt['value'].endswith("-cps.json")]
     options = [opt for opt in options if not opt['value'].endswith("_3d.json")]
     options = [opt for opt in options if not opt['value'].endswith("_settings.json")]
     options = [opt for opt in options if not opt['value'].endswith("_user.json")]
@@ -827,6 +828,24 @@ def get_options():
         file['value'] = file['value'].replace('.json', '')
 
     return options_sorted
+
+def get_options_3d():
+    with global_vars.write_lock:
+        data_directory = global_vars.data_directory
+
+    files = [os.path.relpath(file, data_directory).replace("\\", "/")
+             for file in glob.glob(os.path.join(data_directory, "**", "*_3d.json"), recursive=True)]
+    
+    options = [{'label': "~ " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json")
+        else {'label': os.path.basename(file), 'value': file} for file in files]
+
+    options_sorted = sorted(options, key=lambda x: x['label'])
+    for file in options_sorted:
+        file['label'] = file['label'].replace('.json', '')
+        file['value'] = file['value'].replace('.json', '')
+
+    return options_sorted
+
 
 # Calibrates the x-axis of the Gaussian correlation
 def calibrate_gc(gc, coefficients):
@@ -872,46 +891,49 @@ def reset_stores():
 
 def save_settings_to_json():
     settings = {key: getattr(global_vars, key) for key in [
-        "flip", 
-        "theme", 
-        "max_bins", 
-        "device", 
-        "sample_rate", 
-        "sample_length", 
-        "shapecatches",
-        "chunk_size", 
-        "stereo", 
-        "peakshift", 
-        "max_counts", 
-        "max_seconds", 
-        "filename",
-        "bins", 
-        "threshold", 
-        "tolerance", 
-        "bin_size", 
-        "t_interval", 
-        "comparison",
-        "bins_2", 
-        "bin_2_size", 
-        "sigma", 
-        "peakfinder",
-        "log_switch",
-        "epb_switch",
-        "cal_switch",
-        "coi_switch",
-        "calib_bin_1", 
-        "calib_bin_2", 
-        "calib_bin_3",
-        "calib_e_1", 
-        "calib_e_2", 
-        "calib_e_3", 
-        "coeff_1", 
-        "coeff_2", 
-        "coeff_3", 
-        "rolling_interval", 
-        "compression",
-        "coefficients_1",
-    ]}
+            "bin_size", 
+            "bin_size_2", 
+            "bin_size_3d", 
+            "bins", 
+            "bins_2", 
+            "bins_3d",
+            "cal_switch", 
+            "calib_bin_1", 
+            "calib_bin_2", 
+            "calib_bin_3", 
+            "calib_e_1", 
+            "calib_e_2", 
+            "calib_e_3", 
+            "chunk_size", 
+            "coeff_1", 
+            "coeff_2", 
+            "coeff_3", 
+            "coefficients_1",
+            "coi_switch",  
+            "compression",
+            "device", 
+            "epb_switch", 
+            "filename",
+            "filename_2",
+            "filename_3d",
+            "flip", 
+            "log_switch",
+            "max_bins", 
+            "max_counts", 
+            "max_seconds", 
+            "peakfinder",
+            "peakshift", 
+            "rolling_interval", 
+            "sample_length", 
+            "sample_rate", 
+            "shapecatches",
+            "sigma", 
+            "stereo", 
+            "t_interval", 
+            "theme", 
+            "threshold", 
+            "tolerance"
+            ]}
     
     try:
         with open(global_vars.settings_file, 'w') as f:
@@ -937,42 +959,48 @@ def load_settings_from_json(path):
             logger.info(f'settings={settings}\n')
 
             type_mappings = {
-                "max_bins": int, 
-                "device": int, 
-                "sample_rate": int, 
-                "sample_length": int, 
-                "shapecatches": int, 
-                "chunk_size": int, 
-                "peakshift": int, 
-                "max_counts": int, 
-                "max_seconds": int, 
-                "bins": int, 
-                "threshold": int, 
-                "tolerance": int, 
-                "bin_size": int, 
-                "t_interval": int, 
-                "bins_2": int, 
-                "bin_2_size": int, 
-                "rolling_interval": int, 
-                "compression": int, 
-                "calib_bin_1": int, 
-                "calib_bin_2": int, 
-                "calib_bin_3": int, 
-                "coefficients_1": list, 
-                "calib_e_1": float, 
-                "calib_e_2": float, 
-                "calib_e_3": float, 
-                "coeff_1": float, 
-                "coeff_2": float, 
-                "coeff_3": float, 
-                "peakfinder": float, 
-                "sigma": float, 
-                "stereo": bool, 
-                "log_switch": bool, 
-                "epb_switch": bool, 
-                "cal_switch": bool,
-                "coi_switch": bool
-            }
+                    "bin_size":             int, 
+                    "bin_size_2":           int, 
+                    "bin_size_3d":          int,
+                    "bins":                 int, 
+                    "bins_2":               int, 
+                    "bins_3d":              int,
+                    "cal_switch":           bool,
+                    "calib_bin_1":          int, 
+                    "calib_bin_2":          int, 
+                    "calib_bin_3":          int, 
+                    "calib_e_1":            float, 
+                    "calib_e_2":            float, 
+                    "calib_e_3":            float, 
+                    "chunk_size":           int, 
+                    "coeff_1":              float, 
+                    "coeff_2":              float, 
+                    "coeff_3":              float, 
+                    "coefficients_1":       list, 
+                    "coi_switch":           bool, 
+                    "compression":          int, 
+                    "device":               int, 
+                    "epb_switch":           bool, 
+                    "filename":             str,
+                    "filename_2":           str,
+                    "filename_3d":          str,
+                    "flip":                 int, 
+                    "log_switch":           bool, 
+                    "max_bins":             int, 
+                    "max_counts":           int, 
+                    "max_seconds":          int, 
+                    "peakfinder":           float, 
+                    "peakshift":            int, 
+                    "rolling_interval":     int, 
+                    "sample_length":        int, 
+                    "sample_rate":          int, 
+                    "shapecatches":         int, 
+                    "sigma":                float, 
+                    "stereo":               bool, 
+                    "t_interval":           int, 
+                    "threshold":            int, 
+                    "tolerance":            int
+                    }   
 
             for key, value in settings.items():
                 if value is None:
@@ -993,10 +1021,6 @@ def load_settings_from_json(path):
     else:
         logger.error(f"Settings file not found: {path}")
 
-
-
-
-
 def load_histogram(filename):
     with global_vars.write_lock:
         data_directory = global_vars.data_directory
@@ -1011,18 +1035,18 @@ def load_histogram(filename):
 
             # Validate the schema version
             if data["schemaVersion"] == "NPESv2":
-                with global_vars.write_lock:
-                    global_vars.histogram       = data["data"][0]["resultData"]["energySpectrum"]["spectrum"]
-                    global_vars.bins            = data["data"][0]["resultData"]["energySpectrum"]["numberOfChannels"]
-                    global_vars.elapsed         = data["data"][0]["resultData"]["energySpectrum"]["measurementTime"]
-                    global_vars.coefficients_1  = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-                    global_vars.spec_notes      = data["data"][0]["sampleInfo"]["note"]
-                    global_vars.counts          = sum(global_vars.histogram)
+                data = data["data"][0]
 
-                return True
-            else:
-                print("Invalid schema version.")
-                return False
+            with global_vars.write_lock:
+                global_vars.histogram       = data["resultData"]["energySpectrum"]["spectrum"]
+                global_vars.bins            = data["resultData"]["energySpectrum"]["numberOfChannels"]
+                global_vars.elapsed         = data["resultData"]["energySpectrum"]["measurementTime"]
+                global_vars.coefficients_1  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+                global_vars.spec_notes      = data["sampleInfo"]["note"]
+                global_vars.counts          = sum(global_vars.histogram)
+                #global_vars.compression     = int(8196/global_vars.bins)
+
+            return True
 
     except Exception as e:
         logger.info(f"Error in functions load_histogram({e})\n")
@@ -1032,21 +1056,19 @@ def load_histogram_2(filename):
     path = get_path(os.path.join(global_vars.data_directory, f'{filename}.json'))
     try:
         with open(path, 'r') as file:
-
             data = json.load(file)
 
         if data["schemaVersion"] == "NPESv2":
-            with global_vars.write_lock:
-                global_vars.histogram_2     = data["data"][0]["resultData"]["energySpectrum"]["spectrum"]
-                global_vars.bins_2          = data["data"][0]["resultData"]["energySpectrum"]["numberOfChannels"]
-                global_vars.elapsed_2       = data["data"][0]["resultData"]["energySpectrum"]["measurementTime"]
-                global_vars.coefficients_2  = data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-                global_vars.counts_2        = sum(global_vars.histogram_2)
+            data = data["data"][0]
+
+        with global_vars.write_lock:
+            global_vars.histogram_2     = data["resultData"]["energySpectrum"]["spectrum"]
+            global_vars.bins_2          = data["resultData"]["energySpectrum"]["numberOfChannels"]
+            global_vars.elapsed_2       = data["resultData"]["energySpectrum"]["measurementTime"]
+            global_vars.coefficients_2  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+            global_vars.counts_2        = sum(global_vars.histogram_2)
 
             return True
-        else:
-            logger.info("Unsupported schema version\n")
-            return False
 
     except Exception as e:
 
@@ -1058,7 +1080,7 @@ def load_histogram_3d(filename):
 
     logging.info('1.. load_histogram_3d\n')
 
-    file_path = os.path.join(global_vars.data_directory, f'{filename}_3d.json')
+    file_path = os.path.join(global_vars.data_directory, f'{filename}.json')
     
     if not os.path.exists(file_path):
         logger.error(f"load_histogram_3d File not found: {file_path}\n")
@@ -1069,22 +1091,27 @@ def load_histogram_3d(filename):
             logger.info('2.. loading 3d file\n')
             data = json.load(file)
             logger.info('3.. loading 3d file\n')
-    except Exception as e:
-        logger.error(f"Error reading {file_path}: {e}\n")
-        return
 
-    try:
+        if data["schemaVersion"] == "NPESv2":
+            data = data["data"][0]
+
         with global_vars.write_lock:
-            global_vars.histogram_3d = data['data'][0]['resultData']['energySpectrum']['spectrum']
-            global_vars.counts = data['data'][0]['resultData']['energySpectrum']['validPulseCount']
-            global_vars.elapsed = data['data'][0]['resultData']['energySpectrum']['measurementTime']
-            global_vars.coeff_1 = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][0]
-            global_vars.coeff_2 = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][1]
-            global_vars.coeff_3 = data['data'][0]['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
+            global_vars.histogram_3d    = data['resultData']['energySpectrum']['spectrum']
+            global_vars.counts          = data['resultData']['energySpectrum']['validPulseCount']
+            global_vars.bins_3d         = data['resultData']['energySpectrum']['numberOfChannels']
+            global_vars.elapsed         = data['resultData']['energySpectrum']['measurementTime']
+            global_vars.coeff_1         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][0]
+            global_vars.coeff_2         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][1]
+            global_vars.coeff_3         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
+
+            global_vars.compression     = int(8196/global_vars.bins)
+
 
         logger.info(f"4.. global_vars updated from {file_path}\n")
+
     except KeyError as e:
         logger.error(f"Missing expected data key in {file_path}: {e}\not")
+
 
 def load_cps_file(filename):
 
