@@ -29,6 +29,7 @@ sign-tool.log
 simplesign.py
 appsimplesigndmg.py
 entitlements.plist
+createdmg.py
 
 
 *.dmg
