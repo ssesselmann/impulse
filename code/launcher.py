@@ -24,45 +24,48 @@ with global_vars.write_lock:
     global_vars.shapecsv       = shapecsv
 
 default_settings = {
-    "filename": "my_spectrum",
-    "device": 1,
-    "sample_rate": 48000,
-    "chunk_size": 1024,
-    "threshold": 100,
-    "tolerance": 50000,
-    "bins": 1000,
     "bin_size": 30,
+    "bin_size_2": 30,
+    "bin_size_3d": 60,
+    "bins": 1000,
     "bins_2": 1000,
-    "bin_2_size": 30,
-    "max_counts": 1000000,
-    "shapecatches": 10,
-    "sample_length": 16,
+    "bins_3d": 500,
+    "cal_switch": False,
     "calib_bin_1": 0,
     "calib_bin_2": 500,
     "calib_bin_3": 1000,
     "calib_e_1": 0,
     "calib_e_2": 1500,
     "calib_e_3": 3000,
+    "chunk_size": 1024,
     "coeff_1": 1,
     "coeff_2": 1,
     "coeff_3": 0,
-    "comparison": "",
-    "flip": 1,
-    "peakfinder": 0,
-    "log_switch": False,
-    "epb_switch": False,
-    "cal_switch": False,
+    "coefficients_1": [],
     "coi_switch": False,
-    "theme": "plasma",
-    "sigma": 0,
-    "max_seconds": 3600,
-    "t_interval": 1,
-    "peakshift": 0,
     "compression": 8,
-    "stereo": False,
+    "device": 1,
+    "epb_switch": False,
+    "filename": "my_spectrum",
+    "filename_2": "",
+    "filename_3d": "my_3d_spectrum",
+    "flip": 1,
+    "log_switch": False,
+    "max_counts": 1000000,
+    "max_seconds": 3600,
+    "peakfinder": 0,
+    "peakshift": 0,
     "rolling_interval": 60,
-    "coefficients_1":[],
-}
+    "sample_length": 16,
+    "sample_rate": 48000,
+    "shapecatches": 10,
+    "sigma": 0,
+    "stereo": False,
+    "t_interval": 1,
+    "theme": "plasma",
+    "threshold": 100,
+    "tolerance": 50000
+    }
 
 default_user = {
     "first_name": "first_name",
@@ -141,7 +144,7 @@ if not os.path.exists(tbl_directory_path):
 
 with global_vars.write_lock:
     filename    = global_vars.filename
-    comparison  = global_vars.comparison
+    filename_2  = global_vars.filename_2
     
 fn.load_settings_from_json(settings_file)
 
@@ -151,9 +154,9 @@ fn.load_histogram(filename)
 
 logger.info(f'2...2D {filename} loaded\n')
 
-fn.load_histogram_2(comparison)
+fn.load_histogram_2(filename_2)
 
-logger.info(f'3...2D {comparison} loaded\n')
+logger.info(f'3...2D {filename_2} loaded\n')
 
 fn.load_histogram_3d(filename)
 
