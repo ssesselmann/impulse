@@ -21,13 +21,7 @@ from functions import (
     )
 
 # Importing store variables from server
-from server import (
-    store_device, 
-    store_filename, 
-    store_bins,
-    store_count_history,
-    store_load_flag_tab4,
-)
+from server import store_load_flag_tab4
 
 logger = logging.getLogger(__name__)
 
