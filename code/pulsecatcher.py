@@ -25,13 +25,16 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     with global_vars.write_lock:
         last_histogram  = [0] * global_vars.bins  # Initialize last_histogram
         filename        = global_vars.filename
+        filename_3d     = global_vars.filename_3d
         device          = global_vars.device
         sample_rate     = global_vars.sample_rate
         chunk_size      = global_vars.chunk_size
         threshold       = global_vars.threshold
         tolerance       = global_vars.tolerance
         bins            = global_vars.bins
+        bins_3d         = global_vars.bins_3d
         bin_size        = global_vars.bin_size
+        bin_size_3d     = global_vars.bin_size_3d
         max_counts      = global_vars.max_counts
         sample_length   = global_vars.sample_length
         coeff_1         = global_vars.coeff_1
@@ -194,7 +197,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             if mode == 3:
                 with global_vars.write_lock:
                     histogram_3d = global_vars.histogram_3d
-                fn.update_json_3d_file(t0, t1, bins, local_counts, local_elapsed, filename, histogram_3d, coeff_1, coeff_2, coeff_3, device)
+                fn.update_json_3d_file(t0, t1, bins_3d, local_counts, local_elapsed, filename_3d, histogram_3d, coeff_1, coeff_2, coeff_3, device)
             
             time_last_save_time = time.time()
 
