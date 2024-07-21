@@ -804,8 +804,6 @@ def is_valid_json(file_path):
     except (json.JSONDecodeError, FileNotFoundError):
         return False
 
-
-
 def get_options():
     with global_vars.write_lock:
         data_directory = global_vars.data_directory
@@ -816,11 +814,13 @@ def get_options():
     options = [{'label': "• " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json")
         else {'label': os.path.basename(file), 'value': file} for file in files]
 
+    # Exclude specific file patterns and files within i/tbl
     options = [opt for opt in options if not opt['value'].endswith("_cps.json")]
     options = [opt for opt in options if not opt['value'].endswith("-cps.json")]
     options = [opt for opt in options if not opt['value'].endswith("_3d.json")]
     options = [opt for opt in options if not opt['value'].endswith("_settings.json")]
     options = [opt for opt in options if not opt['value'].endswith("_user.json")]
+    options = [opt for opt in options if not "i/tbl/" in opt['value']]  # Exclude files in i/tbl
 
     options_sorted = sorted(options, key=lambda x: x['label'])
     for file in options_sorted:
@@ -828,6 +828,7 @@ def get_options():
         file['value'] = file['value'].replace('.json', '')
 
     return options_sorted
+
 
 def get_options_3d():
     with global_vars.write_lock:

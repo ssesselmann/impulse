@@ -296,6 +296,10 @@ def confirm_with_user_2d(start_clicks, confirm_clicks, cancel_clicks, filename, 
     if button_id == "start":
         file_exists = os.path.exists(f'{global_vars.data_directory}/{filename}.json')
 
+        # Prevent overwriting files in the "i/" directory
+        if filename.startswith("i/"):
+            return False, f'Overwriting files in the "i/" directory is not allowed.'
+
         if file_exists:
             return True, f'Overwrite "{filename}.json"?'
 

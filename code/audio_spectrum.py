@@ -36,12 +36,10 @@ def make_wav_file(filename, gc, bpm=120, threshold_factor=0.01):
     """
     with global_vars.write_lock:
         data_directory = global_vars.data_directory
-
     # Find peaks in the histogram
     peaks = find_peaks(gc, threshold_factor)
     if not peaks:
         return
-
     # Normalize the list of peak volumes to be between 0 and 1
     peak_volumes = np.array([volume for _, volume in peaks])
     min_volume = np.min(peak_volumes)

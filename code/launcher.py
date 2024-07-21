@@ -1,6 +1,4 @@
-# launcher.py
-import dash
-import time
+import sys
 import os
 import csv
 import shutil
@@ -9,19 +7,31 @@ import json
 import global_vars
 from server import app
 import functions as fn  
+import dash
+import time
 
-logger                  = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-data_directory          = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
-settings_file           = os.path.join(data_directory, "_settings.json")
-user_file               = os.path.join(data_directory, "_user.json")
-shapecsv                = os.path.join(data_directory, "_shape.csv")
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+data_directory = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
+settings_file = os.path.join(data_directory, "_settings.json")
+user_file = os.path.join(data_directory, "_user.json")
+shapecsv = os.path.join(data_directory, "_shape.csv")
 
 with global_vars.write_lock:
     global_vars.data_directory = data_directory
-    global_vars.settings_file  = settings_file
-    global_vars.user_settings  = user_file
-    global_vars.shapecsv       = shapecsv
+    global_vars.settings_file = settings_file
+    global_vars.user_settings = user_file
+    global_vars.shapecsv = shapecsv
 
 default_settings = {
     "bin_size": 30,
@@ -65,7 +75,7 @@ default_settings = {
     "theme": "plasma",
     "threshold": 100,
     "tolerance": 50000
-    }
+}
 
 default_user = {
     "first_name": "first_name",
@@ -123,28 +133,25 @@ except Exception as e:
 create_file_if_not_exists(settings_file, default_settings)
 create_file_if_not_exists(user_file, default_user)
 
-
 # Set the paths for isotopes and tbl folders
-isotopes    = "i"
-tbl         = "tbl"
-data_directory_path = os.path.join(data_directory, isotopes)
-tbl_directory_path = os.path.join(data_directory_path, tbl)
+i_directory = os.path.join(data_directory, "i")
+tbl_directory = os.path.join(i_directory, "tbl")
 
 # Check if the isotope folder exists in the data directory, if not, copy it
-if not os.path.exists(data_directory_path):
-    isotope_folder_path = os.path.join(os.getcwd(), isotopes)
+if not os.path.exists(i_directory):
+    isotope_folder_path = resource_path("i")
     if os.path.exists(isotope_folder_path):
-        shutil.copytree(isotope_folder_path, data_directory_path)
+        shutil.copytree(isotope_folder_path, i_directory)
 
 # Check if the tbl folder exists within the isotope folder, if not, copy it
-if not os.path.exists(tbl_directory_path):
-    tbl_folder_path = os.path.join(os.getcwd(), isotopes, tbl)
+if not os.path.exists(tbl_directory):
+    tbl_folder_path = resource_path(os.path.join("i", "tbl"))
     if os.path.exists(tbl_folder_path):
-        shutil.copytree(tbl_folder_path, tbl_directory_path)
+        shutil.copytree(tbl_folder_path, tbl_directory)
 
 with global_vars.write_lock:
-    filename    = global_vars.filename
-    filename_2  = global_vars.filename_2
+    filename = global_vars.filename
+    filename_2 = global_vars.filename_2
     
 fn.load_settings_from_json(settings_file)
 
@@ -166,8 +173,5 @@ fn.load_cps_file(filename)
 
 logger.info(f'5...cps {filename} loaded\n')        
 
-
 if __name__ == "__main__":
     app.run_server(debug=True)
-
-# -- End of launcher.py
