@@ -946,10 +946,8 @@ def save_settings_to_json():
     # Verify file content after writing
     with open(global_vars.settings_file, 'r') as f:
         content = f.read()
-        logger.info(f'File content after saving:\n{content}')
     
     return
-
 
 def load_settings_from_json(path):
     if os.path.exists(path):
@@ -957,7 +955,7 @@ def load_settings_from_json(path):
             with open(path, 'r') as f:
                 settings = json.load(f)
 
-            logger.info(f'settings={settings}\n')
+            logger.info(f'settings saved\n')
 
             type_mappings = {
                     "bin_size":             int, 
@@ -1016,7 +1014,7 @@ def load_settings_from_json(path):
                 else:
                     setattr(global_vars, key, value)
 
-            logger.info(f'load settings completed {settings}\n')
+            logger.info(f'load settings completed \n')
         except Exception as e:
             logger.error(f'Error loading settings from JSON: {e}')
     else:
