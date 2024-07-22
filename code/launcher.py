@@ -1,3 +1,4 @@
+import sys
 import os
 import shutil
 import logging
@@ -6,34 +7,33 @@ import global_vars
 from server import app
 import functions as fn  
 import dash
-import time
 
 logger = logging.getLogger(__name__)
 
 def resource_path(relative_path):
-    """Get absolute path to resource, works for dev and for PyInstaller/py2app"""
+    """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
-        # PyInstaller and py2app create a temp folder and store path in _MEIPASS
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
-    except Exception:
+    except AttributeError:
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
 
 # Define paths
-data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
-settings_file   = os.path.join(data_directory, "_settings.json")
-user_file       = os.path.join(data_directory, "_user.json")
-shapecsv        = os.path.join(data_directory, "_shape.csv")
-i_directory     = os.path.join(data_directory, "i")
-tbl_directory   = os.path.join(i_directory, "tbl")
+data_directory = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
+settings_file = os.path.join(data_directory, "_settings.json")
+user_file = os.path.join(data_directory, "_user.json")
+shapecsv = os.path.join(data_directory, "_shape.csv")
+i_directory = os.path.join(data_directory, "i")
+tbl_directory = os.path.join(i_directory, "tbl")
 
 # Set global variables
 with global_vars.write_lock:
-    global_vars.data_directory  = data_directory
-    global_vars.settings_file   = settings_file
-    global_vars.user_settings   = user_file
-    global_vars.shapecsv        = shapecsv
+    global_vars.data_directory = data_directory
+    global_vars.settings_file = settings_file
+    global_vars.user_settings = user_file
+    global_vars.shapecsv = shapecsv
 
 # Default settings and user data
 default_settings = {
