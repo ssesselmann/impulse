@@ -436,7 +436,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     lines           = []
     gaussian        = []
     now             = datetime.now()
-    date        = now.strftime('%d-%m-%Y')
+    date            = now.strftime('%d-%m-%Y')
 
     with global_vars.write_lock:
         counts          = global_vars.counts
