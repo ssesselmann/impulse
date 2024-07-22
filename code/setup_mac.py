@@ -38,9 +38,7 @@ setup(
                 'threading',
                 'platform'
             ],
-            'resources': [
-                ('i', 'i')  # Include the 'i' folder and its contents
-            ]
+            'resources': "i",
         }
     },
     setup_requires=['py2app'],
