@@ -1,6 +1,4 @@
-import sys
 import os
-import csv
 import shutil
 import logging
 import json
@@ -13,26 +11,31 @@ import time
 logger = logging.getLogger(__name__)
 
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
+    """Get absolute path to resource, works for dev and for PyInstaller/py2app"""
     try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        # PyInstaller and py2app create a temp folder and store path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
 
-data_directory = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
-settings_file = os.path.join(data_directory, "_settings.json")
-user_file = os.path.join(data_directory, "_user.json")
-shapecsv = os.path.join(data_directory, "_shape.csv")
+# Define paths
+data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
+settings_file   = os.path.join(data_directory, "_settings.json")
+user_file       = os.path.join(data_directory, "_user.json")
+shapecsv        = os.path.join(data_directory, "_shape.csv")
+i_directory     = os.path.join(data_directory, "i")
+tbl_directory   = os.path.join(i_directory, "tbl")
 
+# Set global variables
 with global_vars.write_lock:
-    global_vars.data_directory = data_directory
-    global_vars.settings_file = settings_file
-    global_vars.user_settings = user_file
-    global_vars.shapecsv = shapecsv
+    global_vars.data_directory  = data_directory
+    global_vars.settings_file   = settings_file
+    global_vars.user_settings   = user_file
+    global_vars.shapecsv        = shapecsv
 
+# Default settings and user data
 default_settings = {
     "bin_size": 30,
     "bin_size_2": 30,
@@ -107,52 +110,35 @@ def create_file_if_not_exists(file_path, default_content):
             json.dump(default_content, f, indent=4)
         logger.info(f'Created new file at {file_path}\n')
 
-try:
-    if not os.path.exists(data_directory):
-        os.makedirs(data_directory)
-        logger.info(f'Created new data directory {data_directory}\n')
-except Exception as e:
-    logger.error(f'Failed to create data directory: {str(e)}\n')
+# 1. Check if data directory exists, if not create it
+if not os.path.exists(data_directory):
+    os.makedirs(data_directory)
+    logger.info(f'Created new data directory {data_directory}\n')
 
-try:
-    if not os.path.exists(shapecsv):
-        fn.create_dummy_csv(shapecsv)
-        logger.info(f'Created a blank shape.csv file \n')
-    else:
-        try:
-            # Open the CSV file and determine the number of columns
-            with open(shapecsv, 'r', newline='') as file:
-                reader = csv.reader(file)
-                headers = next(reader, None)
-        except Exception as e:
-            logger.error(f'Failed to process the CSV file: {str(e)}\n')
-except Exception as e:
-    logger.error(f'Error during initialization: {str(e)}\n')
-
-# Ensure the settings and user files exist
+# 2. Check if _settings.json file exists, if not create the file
 create_file_if_not_exists(settings_file, default_settings)
+
+# 3. Check if _user.json file exists, if not create it
 create_file_if_not_exists(user_file, default_user)
 
-# Set the paths for isotopes and tbl folders
-i_directory = os.path.join(data_directory, "i")
-tbl_directory = os.path.join(i_directory, "tbl")
-
-# Check if the isotope folder exists in the data directory, if not, copy it
+# 4. Check if there is an "i" directory in the data directory, if not copy it from resources
 if not os.path.exists(i_directory):
     isotope_folder_path = resource_path("i")
     if os.path.exists(isotope_folder_path):
         shutil.copytree(isotope_folder_path, i_directory)
+        logger.info(f'Copied i directory to {i_directory}\n')
 
-# Check if the tbl folder exists within the isotope folder, if not, copy it
+# 5. Check if there is a "tbl" directory in the "i" directory, if not copy it from resources
 if not os.path.exists(tbl_directory):
     tbl_folder_path = resource_path(os.path.join("i", "tbl"))
     if os.path.exists(tbl_folder_path):
         shutil.copytree(tbl_folder_path, tbl_directory)
+        logger.info(f'Copied tbl directory to {tbl_directory}\n')
 
 with global_vars.write_lock:
     filename = global_vars.filename
     filename_2 = global_vars.filename_2
-    
+
 fn.load_settings_from_json(settings_file)
 
 logger.info(f'1... {filename} loaded\n')
@@ -171,7 +157,7 @@ logger.info(f'4...3D {filename} loaded\n')
 
 fn.load_cps_file(filename)
 
-logger.info(f'5...cps {filename} loaded\n')        
+logger.info(f'5...cps {filename} loaded\n')
 
 if __name__ == "__main__":
     app.run_server(debug=True)
