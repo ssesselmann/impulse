@@ -47,12 +47,10 @@ def capture_pulse_polarity(peak, timeout=30):
         chunk_size      = int(global_vars.chunk_size)
         device          = int(global_vars.device) 
         sample_length   = int(global_vars.sample_length)
-        threshold       = int(global_vars.threshold)
+        threshold       = 1000 
 
     p           = pyaudio.PyAudio()
-
     channels    = 2 if stereo else 1
-
     stream      = p.open(format=pyaudio.paInt16,
                     channels=channels,
                     rate=sample_rate,
@@ -61,8 +59,8 @@ def capture_pulse_polarity(peak, timeout=30):
                     frames_per_buffer=chunk_size * channels,
                     input_device_index=device)
 
-    pulse_sign_left = None
-    pulse_sign_right = True if not stereo else None  # Default to True if stereo is False
+    pulse_sign_left     = None
+    pulse_sign_right    = True if not stereo else None  # Default to True if stereo is False
 
     start_time = time.time()
 

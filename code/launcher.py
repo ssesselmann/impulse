@@ -60,8 +60,8 @@ default_settings = {
     "device": 1,
     "epb_switch": False,
     "filename": "my_spectrum",
-    "filename_2": "",
-    "filename_3d": "my_3d_spectrum",
+    "filename_2": "background",
+    "filename_3d": "my_spectrum",
     "flip": 1,
     "log_switch": False,
     "max_counts": 1000000,
@@ -139,25 +139,32 @@ with global_vars.write_lock:
     filename = global_vars.filename
     filename_2 = global_vars.filename_2
 
-fn.load_settings_from_json(settings_file)
+try:
+    fn.load_settings_from_json(settings_file)
+    logger.info(f'1... {filename} loaded\n')
+except:
+     logger.info(f'Loading settings failed\n')   
 
-logger.info(f'1... {filename} loaded\n')
-
-fn.load_histogram(filename)
-
-logger.info(f'2...2D {filename} loaded\n')
-
-fn.load_histogram_2(filename_2)
-
-logger.info(f'3...2D {filename_2} loaded\n')
-
-fn.load_histogram_3d(filename)
-
-logger.info(f'4...3D {filename} loaded\n')
-
-fn.load_cps_file(filename)
-
-logger.info(f'5...cps {filename} loaded\n')
+try:
+    fn.load_histogram(filename)
+    logger.info(f'2...2D {filename}.json loaded\n')
+except:
+     logger.info(f'Loading {filename}.json failed\n')  
+try:
+    fn.load_histogram_2(filename_2)
+    logger.info(f'3...2D {filename_2}.json loaded\n')
+except:
+     logger.info(f'Loading {filename_2}.json failed\n')
+try:
+    fn.load_histogram_3d(filename)
+    logger.info(f'4...3D {filename}_3d.json loaded\n')
+except:
+     logger.info(f'Loading {filename}_3d.json failed\n')    
+try:
+    fn.load_cps_file(filename)
+    logger.info(f'5...cps {filename}_cps.json loaded\n')
+except:
+     logger.info(f'Loading {filename}_cps.json failed\n')    
 
 if __name__ == "__main__":
     app.run_server(debug=True)

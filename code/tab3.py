@@ -34,33 +34,16 @@ from functions import (
 
 logger = logging.getLogger(__name__)
 
-with global_vars.write_lock:
-    data_directory  = global_vars.data_directory
-    device          = global_vars.device
-    filename_3d     = global_vars.filename_3d
-
 def show_tab3():
 
     with global_vars.write_lock:
-        filename_3d     = global_vars.filename_3d
         data_directory  = global_vars.data_directory
 
 
     files = [os.path.relpath(file, data_directory).replace("\\", "/")
              for file in glob.glob(os.path.join(data_directory, "**", "*.json"), recursive=True)]
 
-    options = [{'label': "~ " + os.path.basename(file), 'value': file} if "i/" in file and file.endswith(".json")
-               else {'label': os.path.basename(file), 'value': file} for file in files]
-
-    options = [opt for opt in options if not opt['value'].endswith("-cps.json")]
-
-    options_sorted = sorted(options, key=lambda x: x['label'])
-
     options_3d = get_options_3d()
-
-    for file in options_sorted:
-        file['label'] = file['label'].replace('.json', '')
-        file['value'] = file['value'].replace('.json', '')
 
     with global_vars.write_lock:
         device          = global_vars.device
@@ -88,6 +71,8 @@ def show_tab3():
         log_switch      = global_vars.log_switch
         epb_switch      = global_vars.epb_switch
         cal_switch      = global_vars.cal_switch
+        filename_3d     = global_vars.filename_3d
+
 
     load_histogram_3d(filename_3d)    
 
@@ -302,18 +287,17 @@ def update_output(n_clicks):
      Output('elapsed_3d'        , 'children'),
      Output('cps_3d'            , 'children')],
     [Input('interval-component' , 'n_intervals'),
-     Input('filename'           , 'value'),
      Input('filename-list'      , 'value'),
      Input('epb-switch'         , 'on'),
      Input('log-switch'         , 'on'),
      Input('cal-switch'         , 'on'),
      Input('t_interval'         , 'value')]
 )
-def update_graph_3d(n_intervals, filename_3d, filename_list, epb_switch, log_switch, cal_switch, t_interval):
+def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_switch, t_interval):
     
     with global_vars.write_lock:
-        if filename_list:
-            global_vars.filename_3d = filename_list
+        # if filename_list:
+        #     global_vars.filename_3d = filename_list
         device          = global_vars.device
         counts          = global_vars.counts
         elapsed         = global_vars.elapsed
@@ -329,7 +313,6 @@ def update_graph_3d(n_intervals, filename_3d, filename_list, epb_switch, log_swi
     axis_type   = 'log' if log_switch else 'linear'
     now         = datetime.now()
     date        = now.strftime('%d-%m-%Y')
-    filename_3d = f'{filename_3d}_3d.json'
     file_path   = os.path.join(data_directory, filename_3d)
     y_range     = [0, len(histogram_3d)]
 
@@ -459,8 +442,6 @@ def save_settings(*args):
                 global_vars.bins_3d = int(8192/int(args[15]))
             except:
                 global_vars.bins_3d = 8192
-
-        print(args[15])    
 
         save_settings_to_json()
 

@@ -184,72 +184,69 @@ def write_blank_json_schema(filename, device):
         logger.error(f"Error writing blank JSON file: {e}\n")
 
 
-# Function to update keys and append histogram
-def update_json_3d_file(t0, t1, bins, counts, elapsed, filename, last_histogram, coeff_1, coeff_2, coeff_3, device):
+def update_json_3d_file(t0, t1, bins, counts, elapsed, filename_3d, last_histogram, coeff_1, coeff_2, coeff_3, device):
     
-    jsonfile = get_path(os.path.join(global_vars.data_directory, f'{filename}_3d.json'))
+    with global_vars.write_lock:
+        data_directory = global_vars.data_directory
+
+    jsonfile = get_path(os.path.join(data_directory, f'{filename_3d}_3d.json'))
     
     # Check if the file exists
-    if not os.path.isfile(jsonfile):
+    if os.path.isfile(jsonfile):
+        logger.info(f"JSON file exists, updating file: {jsonfile}\n")
+        try:
+            with open(jsonfile, "r") as f:
+                data = json.load(f)
+        except Exception as e:
+            logger.error(f"Error reading JSON file: {e}\n")
+            return
+        
+        # Append the new histogram to the existing spectrum list
+        data['data'][0]['resultData']['energySpectrum']['spectrum'].append(last_histogram)
+        
+        # Update other fields
+        result_data = data["data"][0]["resultData"]
+        result_data["startTime"] = t0.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        result_data["endTime"] = t1.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        result_data["energySpectrum"]["numberOfChannels"] = bins
+        result_data["energySpectrum"]["energyCalibration"]["coefficients"] = [coeff_3, coeff_2, coeff_1]
+        result_data["energySpectrum"]["validPulseCount"] = counts
+        result_data["energySpectrum"]["measurementTime"] = elapsed
+    else:
         logger.info(f"JSON file does not exist, creating new file: {jsonfile}\n")
         
         data = {
-                "schemaVersion": "NPESv2",
-                "data": [
-                    {
-                        "deviceData": {
-                            "softwareName": "IMPULSE",
-                            "deviceName":device
-                        },
-                        "sampleInfo": {
-                            "name":filename,
-                            "location": "",
-                            "note": ""
-                        },
-                        "resultData": {
-                            "startTime":t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-                            "endTime":t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-                            "energySpectrum": {
-                                "numberOfChannels":bins,
-                                "energyCalibration": {
-                                    "polynomialOrder": 2,
-                                    "coefficients":[coeff_3, coeff_2, coeff_1]
-                                },
-                                "validPulseCount":counts,
-                                "measurementTime":elapsed,
-                                "spectrum":last_histogram,
-                            }
+            "schemaVersion": "NPESv2",
+            "data": [
+                {
+                    "deviceData": {
+                        "softwareName": "IMPULSE",
+                        "deviceName": device
+                    },
+                    "sampleInfo": {
+                        "name": filename_3d,
+                        "location": "",
+                        "note": ""
+                    },
+                    "resultData": {
+                        "startTime": t0.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                        "endTime": t1.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                        "energySpectrum": {
+                            "numberOfChannels": bins,
+                            "energyCalibration": {
+                                "polynomialOrder": 2,
+                                "coefficients": [coeff_3, coeff_2, coeff_1]
+                            },
+                            "validPulseCount": counts,
+                            "measurementTime": elapsed,
+                            "spectrum": [last_histogram],  # Initialize with the first histogram
                         }
                     }
-                ]
-            }
-        
-        try:
-            with open(jsonfile, "w+") as f:
-                json.dump(data, f, separators=(',', ':'))
-            logger.info(f"New JSON 3D file created: {jsonfile}\n")
-        except Exception as e:
-            logger.error(f"Error writing new JSON file: {e}\n")
-        return
+                }
+            ]
+        }
     
-    # If file exists, update the existing data
-    try:
-        with open(jsonfile, "r") as f:
-            data = json.load(f)
-    except Exception as e:
-        logger.error(f"Error reading JSON file: {e}\n")
-        return
-    
-    # Update the necessary fields
-    result_data = data["data"][0]["resultData"]
-    result_data["startTime"] = t0.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-    result_data["endTime"] = t1.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-    result_data["energySpectrum"]["numberOfChannels"] = bins
-    result_data["energySpectrum"]["energyCalibration"]["coefficients"] = [coeff_3, coeff_2, coeff_1]
-    result_data["energySpectrum"]["validPulseCount"] = counts
-    result_data["energySpectrum"]["measurementTime"] = elapsed
-    result_data["energySpectrum"]["spectrum"].append(last_histogram)
-    
+    # Save the updated or new JSON data back to the file
     try:
         with open(jsonfile, "w") as f:
             json.dump(data, f, separators=(',', ':'))

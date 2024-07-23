@@ -14,7 +14,7 @@ user_settings   = ""
 shapecsv        = ""
 
 # Main spectrum
-filename        = "my_spectrum"
+filename        = ""
 histogram       = []
 bins            = 1000
 bin_size        = 30
@@ -35,7 +35,7 @@ elapsed_2       = 0
 coefficients_2  = []
 
 # 3D spectrum
-filename_3d     = "my_3d_spectrum"
+filename_3d     = ""
 histogram_3d    = []
 bins_3d         = 500
 bin_size_3d     = 60
@@ -44,7 +44,7 @@ coefficients_3d = []
 
 
 # Tab1 Settings
-theme           = "plasma"
+theme           = ""
 device          = 1
 sample_rate     = 48000
 sample_length   = 16

@@ -191,13 +191,15 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             spec_notes  = ""
             
             if mode == 2 or mode == 4:
+                with global_vars.write_lock:
+                    filename = global_vars.filename
                 fn.write_histogram_npesv2(t0, t1, bins, local_counts, int(local_elapsed), filename, local_histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes)
                 fn.write_cps_json(filename, local_count_history, int(local_elapsed))
 
             if mode == 3:
                 with global_vars.write_lock:
-                    histogram_3d = global_vars.histogram_3d
-                fn.update_json_3d_file(t0, t1, bins_3d, local_counts, local_elapsed, filename_3d, histogram_3d, coeff_1, coeff_2, coeff_3, device)
+                    filename_3d = global_vars.filename_3d
+                fn.update_json_3d_file(t0, t1, bins_3d, local_counts, local_elapsed, filename_3d, last_histogram, coeff_1, coeff_2, coeff_3, device)
             
             time_last_save_time = time.time()
 
