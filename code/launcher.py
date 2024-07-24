@@ -66,6 +66,7 @@ default_settings = {
     "log_switch": False,
     "max_counts": 1000000,
     "max_seconds": 3600,
+    "max_bins": 1000,
     "peakfinder": 0,
     "peakshift": 0,
     "rolling_interval": 60,
