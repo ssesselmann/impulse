@@ -40,7 +40,7 @@ def show_tab3():
     with global_vars.write_lock:
         device      = global_vars.device
         bins_3d     = 512
-        bin_size = global_vars.bin_size
+        bin_size_3d = global_vars.bin_size_3d
         max_counts  = global_vars.max_counts
         max_seconds = global_vars.max_seconds
         t_interval  = global_vars.t_interval
@@ -93,7 +93,7 @@ def show_tab3():
                 html.Div(['File name:', dcc.Input(id='filename_3d', type='text', value=filename_3d)], style={'marginTop': '5px'}),
             ]),
             html.Div(id='t2_setting_div4', children=[
-                html.Div(['Bin size:', dcc.Input(id='bin_size', type='number', value=bin_size)], style={'display': audio}),
+                html.Div(['Bin size:', dcc.Input(id='bin_size_3d', type='number', value=bin_size_3d)], style={'display': audio}),
                 html.Div(['Number of bins:', dcc.Input(id='bins', type='number', value=bins_3d)], style={'visibility': 'hidden'}),
                 html.Div(['Resolution:', dcc.Dropdown(id='compression',
                                                       options=[
@@ -399,7 +399,7 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
 @app.callback(
     Output('polynomial-3d'  , 'children'),
     [Input('bins'           , 'value'),
-     Input('bin_size'       , 'value'),
+     Input('bin_size_3d'       , 'value'),
      Input('max_counts'     , 'value'),
      Input('max_seconds'    , 'value'),
      Input('t_interval'     , 'value'),
@@ -428,7 +428,7 @@ def save_settings(*args):
 
     with global_vars.write_lock:
         global_vars.bins_3d         = 512 # hard coded
-        global_vars.bin_size        = int(args[1])
+        global_vars.bin_size_3d        = int(args[1])
         global_vars.max_counts      = int(args[2])
         global_vars.max_seconds     = int(args[3])
         global_vars.t_interval      = int(args[4])

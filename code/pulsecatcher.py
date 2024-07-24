@@ -47,6 +47,10 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         peak            = int((sample_length - 1) / 2) + peakshift
         spec_notes      = global_vars.spec_notes
 
+    
+    if mode == 3:
+        bin_size = bin_size_3d
+
     right_threshold = 1000  # Set a stricter threshold for right channel to filter out noise    
 
     audio_format    = pyaudio.paInt16
