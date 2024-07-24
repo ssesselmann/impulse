@@ -105,7 +105,10 @@ def show_tab2():
         coefficients    = global_vars.coefficients_1
         coefficients_2  = global_vars.coefficients_2
 
-    load_histogram(filename)            # Load last histogram if it exists
+    try:
+        load_histogram(filename)            # Load last histogram if it exists
+    except:
+        pass    
 
     if device <= 100 and device:        # Sound card devices
         with global_vars.write_lock:
