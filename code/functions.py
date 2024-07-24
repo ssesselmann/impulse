@@ -239,7 +239,7 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename_3d, last_histogr
                             },
                             "validPulseCount": counts,
                             "measurementTime": elapsed,
-                            "spectrum": [last_histogram],  # Initialize with the first histogram
+                            "spectrum": last_histogram,  # Initialize with the first histogram
                         }
                     }
                 }
@@ -839,8 +839,8 @@ def get_options_3d():
 
     options_sorted = sorted(options, key=lambda x: x['label'])
     for file in options_sorted:
-        file['label'] = file['label'].replace('.json', '')
-        file['value'] = file['value'].replace('.json', '')
+        file['label'] = file['label'].replace('_3d.json', '')
+        file['value'] = file['value'].replace('_3d.json', '')
 
     return options_sorted
 
@@ -1040,7 +1040,6 @@ def load_histogram(filename):
                 global_vars.coefficients_1  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
                 global_vars.spec_notes      = data["sampleInfo"]["note"]
                 global_vars.counts          = sum(global_vars.histogram)
-                #global_vars.compression     = int(8196/global_vars.bins)
 
             return True
 
@@ -1076,7 +1075,7 @@ def load_histogram_3d(filename):
 
     logging.info('1.. load_histogram_3d\n')
 
-    file_path = os.path.join(global_vars.data_directory, f'{filename}.json')
+    file_path = os.path.join(global_vars.data_directory, f'{filename}_3d.json')
     
     if not os.path.exists(file_path):
         logger.error(f"load_histogram_3d File not found: {file_path}\n")
@@ -1099,8 +1098,8 @@ def load_histogram_3d(filename):
             global_vars.coeff_1         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][0]
             global_vars.coeff_2         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][1]
             global_vars.coeff_3         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
-
-            global_vars.compression     = int(8196/global_vars.bins)
+            global_vars.compression     = int(8196/data['resultData']['energySpectrum']['numberOfChannels'])
+            global_vars.startTime3d     = data['resultData']['startTime']
 
 
         logger.info(f"4.. global_vars updated from {file_path}\n")
@@ -1140,6 +1139,15 @@ def load_cps_file(filename):
     except Exception as e:
         raise RuntimeError(f"An error occurred while loading CPS data from {cps_file_path}: {e}")        
 
+def format_date(iso_datetime_str):
+    # Parse the datetime string to a datetime object
+    datetime_obj = datetime.fromisoformat(iso_datetime_str)
 
+    # Reformat the datetime object to a new format
+    formatted_date = datetime_obj.strftime("%d/%m/%Y")
+    formatted_time = datetime_obj.strftime("%H:%M:%S")
+    formatted_datetime = f"{formatted_date} {formatted_time}"
+    
+    return formatted_datetime
 
 
