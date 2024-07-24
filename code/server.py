@@ -74,11 +74,6 @@ if os.path.exists(path):
             global_vars.threshold       = int(settings["threshold"])
             global_vars.tolerance       = int(settings["tolerance"])
 
-# store_device                = dcc.Store(id='store-device'             , data='')
-# store_filename              = dcc.Store(id='store-filename'           , data='')
-# store_filename_2            = dcc.Store(id='store-filename_2'         , data='')
-# store_bins                  = dcc.Store(id='store-bins'               , data='')
-# store_bins_2                = dcc.Store(id='store-bins-2'             , data='')
 store_histogram             = dcc.Store(id='store-histogram'          , data=[])
 store_histogram_2           = dcc.Store(id='store-histogram-2'        , data=[])
 store_histogram_3d          = dcc.Store(id='store-histogram-3d'       , data={'histogram_3d': []})
