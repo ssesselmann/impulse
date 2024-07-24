@@ -179,6 +179,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 if mode == 3:
                     interval_histogram = [local_histogram[i] - last_histogram[i] for i in range(bins)]
                     global_vars.histogram_3d.append(interval_histogram)
+
                     last_histogram = local_histogram.copy()
 
             local_count_history.append(counts_per_sec)
@@ -199,7 +200,8 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             if mode == 3:
                 with global_vars.write_lock:
                     filename_3d = global_vars.filename_3d
-                fn.update_json_3d_file(t0, t1, bins_3d, local_counts, local_elapsed, filename_3d, last_histogram, coeff_1, coeff_2, coeff_3, device)
+                    hist3d = global_vars.histogram_3d
+                fn.update_json_3d_file(t0, t1, bins_3d, local_counts, local_elapsed, filename_3d, hist3d, coeff_1, coeff_2, coeff_3, device)
             
             time_last_save_time = time.time()
 
