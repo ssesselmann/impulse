@@ -201,9 +201,6 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename_3d, last_histogr
             logger.error(f"Error reading JSON file: {e}\n")
             return
         
-        # Append the new histogram to the existing spectrum list
-        data['data'][0]['resultData']['energySpectrum']['spectrum'].append(last_histogram)
-        
         # Update other fields
         result_data = data["data"][0]["resultData"]
         result_data["startTime"] = t0.strftime("%Y-%m-%dT%H:%M:%S+00:00")
@@ -212,6 +209,9 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename_3d, last_histogr
         result_data["energySpectrum"]["energyCalibration"]["coefficients"] = [coeff_3, coeff_2, coeff_1]
         result_data["energySpectrum"]["validPulseCount"] = counts
         result_data["energySpectrum"]["measurementTime"] = elapsed
+        # Append the new histogram to the existing spectrum list
+        result_data['energySpectrum']['spectrum'].append(last_histogram)
+
     else:
         logger.info(f"JSON file does not exist, creating new file: {jsonfile}\n")
         
