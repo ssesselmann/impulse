@@ -137,8 +137,9 @@ if not os.path.exists(tbl_directory):
         logger.info(f'Copied tbl directory to {tbl_directory}\n')
 
 with global_vars.write_lock:
-    filename = global_vars.filename
-    filename_2 = global_vars.filename_2
+    filename    = global_vars.filename
+    filename_2  = global_vars.filename_2
+    filename_3d = global_vars.filename_3d
 
 try:
     fn.load_settings_from_json(settings_file)
@@ -157,10 +158,10 @@ try:
 except:
      logger.info(f'Loading {filename_2}.json failed\n')
 try:
-    fn.load_histogram_3d(filename)
-    logger.info(f'4...3D {filename}_3d.json loaded\n')
+    fn.load_histogram_3d(filename_3d)
+    logger.info(f'4...3D {filename_3d}_3d.json loaded\n')
 except:
-     logger.info(f'Loading {filename}_3d.json failed\n')    
+     logger.info(f'Loading {filename_3d}_3d.json failed\n')    
 try:
     fn.load_cps_file(filename)
     logger.info(f'5...cps {filename}_cps.json loaded\n')

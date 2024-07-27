@@ -35,7 +35,7 @@ if os.path.exists(path):
             settings = json.load(f)
             try:
                 global_vars.filename_3d     = settings["filename_3d"]
-                global_vars.bin_size_3d = int(settings["bin_size_3d"])
+                global_vars.bin_size_3d     = int(settings["bin_size_3d"])
                 global_vars.bins_3d         = int(settings["bins_3d"])
             except: 
                 pass
@@ -76,7 +76,7 @@ if os.path.exists(path):
 
 store_histogram             = dcc.Store(id='store-histogram'          , data=[])
 store_histogram_2           = dcc.Store(id='store-histogram-2'        , data=[])
-store_histogram_3d          = dcc.Store(id='store-histogram-3d'       , data={'histogram_3d': []})
+#store_histogram_3d          = dcc.Store(id='store-histogram-3d'       , data={'histogram_3d': []})
 store_count_history         = dcc.Store(id='store-count-history'      , data=[])
 store_gaussian              = dcc.Store(id='store-gc'                 , data=[])
 store_coefficients          = dcc.Store(id='store-coefficients'       , data=[1, 0, 0])

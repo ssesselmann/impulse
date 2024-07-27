@@ -61,6 +61,7 @@ def show_tab3():
     audio   = 'none' if device >= 100 else 'block'
     refresh_rate = t_interval * 1000
 
+
     return html.Div(id='tab3', children=[
         html.Div(id='main-div', children=[
             html.Div(id='bar-chart-div-3d', children=[
@@ -136,8 +137,9 @@ def show_tab3():
         dbc.Modal([
             dbc.ModalBody(id='modal-body-3d'),
             dbc.ModalBody(children=[
-                html.P('Avoid huge arrays.'),
-                html.P('Try 500 bins and 10 second intervals'),
+                html.P('To avoid huge arrays.'),
+                html.P('This histogram is hard coded for 512 channels'),
+                html.P('Longer intervals will further reduce file size.')
             ], style={'color': 'red', 'align': 'center', 'fontWeight': 'bold', 'textAlign': 'center'}),
             dbc.ModalFooter([
                 dbc.Button("Overwrite", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
@@ -310,8 +312,7 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
         coefficients_1  = global_vars.coefficients_1
         filename_3d     = global_vars.filename_3d
         data_directory  = global_vars.data_directory
-
-        cps = int(cps/t_interval)
+        cps             = int(cps/t_interval)
 
         try:
             start_time  = global_vars.startTime3d

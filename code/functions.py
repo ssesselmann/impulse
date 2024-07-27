@@ -456,11 +456,12 @@ def start_recording(mode):
     logger.info(f'functions start_recording({mode})\n')
 
     with global_vars.write_lock:
-        filename = global_vars.filename
+        filename    = global_vars.filename
+        device      = global_vars.device
         global_vars.run_flag.clear()
 
     clear_global_vars(mode)
-
+    write_blank_json_schema(filename, device)
     write_cps_json(filename, [[0]], 0)
 
     with global_vars.run_flag_lock:
@@ -1090,6 +1091,7 @@ def load_histogram_3d(filename):
         if data["schemaVersion"] == "NPESv2":
             data = data["data"][0]
 
+
         with global_vars.write_lock:
             global_vars.histogram_3d    = data['resultData']['energySpectrum']['spectrum']
             global_vars.counts          = data['resultData']['energySpectrum']['validPulseCount']
@@ -1100,7 +1102,6 @@ def load_histogram_3d(filename):
             global_vars.coeff_3         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
             global_vars.compression     = int(8196/data['resultData']['energySpectrum']['numberOfChannels'])
             global_vars.startTime3d     = data['resultData']['startTime']
-
 
         logger.info(f"4.. global_vars updated from {file_path}\n")
 

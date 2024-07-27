@@ -25,14 +25,9 @@ from datetime import datetime
 
 # Importing store variables from server
 from server import (
-    store_histogram, 
-    store_histogram_2, 
-    store_histogram_3d,
     store_gaussian, 
-    store_sigma, 
     store_annotations,
     store_confirmation_output, 
-    store_count_history
 )
 # Functions imported
 from functions import (
