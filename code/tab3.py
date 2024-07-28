@@ -89,11 +89,11 @@ def show_tab3():
                         className='dropdown',
                         optionHeight=40,
                         style={'text-align': 'left', 'fontSize': '10px'})]),
-                    html.Div(['File name:', dcc.Input(id='filename_3d', type='text', value=filename_3d)], style={'marginTop': '5px'}),
+                    html.Div(['Or enter new file name:', dcc.Input(id='filename_3d', type='text', value=filename_3d)], style={'marginTop': '5px'}),
                 ]),
 
                 html.Div(className='t3subdiv', children=[
-                    html.Div(['Bin size:', dcc.Input(id='bin_size_3d', type='number', value=bin_size_3d)], style={'display': audio}),
+                    html.Div(['3D Bin size:', dcc.Input(id='bin_size_3d', type='number', value=bin_size_3d)], style={'display': audio}),
                     html.Div(['Number of bins:', dcc.Input(id='bins', type='number', value=bins_3d)], style={'visibility': 'hidden'}),
                     html.Div(['Resolution:', dcc.Dropdown(id='compression',
                                                           options=[
@@ -163,7 +163,7 @@ def show_tab3():
                 html.P('Longer intervals will further reduce file size.')
             ], style={'color': 'red', 'align': 'center', 'fontWeight': 'bold', 'textAlign': 'center'}),
             dbc.ModalFooter([
-                dbc.Button("Overwrite", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
+                dbc.Button(f"Extend {filename_3d}", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
                 dbc.Button("Cancel", id="cancel-overwrite-tab3", className="ml-auto", n_clicks=0),
             ]),
         ],
@@ -217,7 +217,7 @@ def confirm_with_user_3d(start_clicks, confirm_clicks, cancel_clicks, filename_3
         file_exists = os.path.exists(f'{data_directory}/{filename_3d}_3d.json')
 
         if file_exists:
-            return True, f'Overwrite "{filename_3d}_3d.json"?'
+            return True, f'Continue {filename_3d}_3d.json ?'
         else:
             return False, ''
 
@@ -350,8 +350,7 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
 
     layout = go.Layout(
             uirevision='nochange',
-            #height=800,
-            margin=dict(l=0, r=0, b=0, t=0),
+            margin=dict(l=10, r=10, b=10, t=10),
             scene=dict(
                 xaxis=dict(title='bins(x)', range=[0, bins_3d]),
                 yaxis=dict(title='time intervals(y)', range=y_range),
@@ -390,9 +389,9 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
         layout.update(
             title={
                 'text': title_text,
-                'x': 0.85,
+                'x': 0.05,
                 'y': 0.9,
-                'xanchor': 'center',
+                'xanchor': 'left',
                 'yanchor': 'top',
                 'font': {'family': 'Arial', 'size': 16, 'color': 'black'}
             }

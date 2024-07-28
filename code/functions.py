@@ -210,7 +210,7 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename_3d, last_histogr
         result_data["energySpectrum"]["validPulseCount"] = counts
         result_data["energySpectrum"]["measurementTime"] = elapsed
         # Append the new histogram to the existing spectrum list
-        result_data['energySpectrum']['spectrum'].append(last_histogram)
+        result_data['energySpectrum']['spectrum'].extend(last_histogram)
 
     else:
         logger.info(f"JSON file does not exist, creating new file: {jsonfile}\n")
@@ -237,9 +237,9 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename_3d, last_histogr
                                 "polynomialOrder": 2,
                                 "coefficients": [coeff_3, coeff_2, coeff_1]
                             },
-                            "validPulseCount": counts,
-                            "measurementTime": elapsed,
-                            "spectrum": last_histogram,  # Initialize with the first histogram
+                            "validPulseCount": 0,
+                            "measurementTime": 0,
+                            "spectrum": [],  # Initialize with the first histogram
                         }
                     }
                 }

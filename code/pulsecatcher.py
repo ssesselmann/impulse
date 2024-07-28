@@ -34,8 +34,8 @@ def save_data(save_queue):
 
         if 'filename_3d' in data:
             filename_3d = data['filename_3d']
-            hist3d      = data['hist3d']
-            fn.update_json_3d_file(t0, t1, bins, local_counts, local_elapsed, filename_3d, hist3d, coeff_1, coeff_2, coeff_3, device)
+            last_minute      = data['last_minute']
+            fn.update_json_3d_file(t0, t1, bins, local_counts, local_elapsed, filename_3d, last_minute, coeff_1, coeff_2, coeff_3, device)
         else:
             fn.write_histogram_npesv2(t0, t1, bins, local_counts, local_elapsed, filename, local_histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes)
             fn.write_cps_json(filename, local_count_history, local_elapsed)
@@ -104,6 +104,8 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     local_histogram     = [0] * bins
     local_count_history = []
     right_pulses        = []
+
+    last_minute_histogram_3d = []
     
     # Open the selected audio input device
     stream = p.open(
@@ -138,9 +140,6 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             right_channel   = [flip * x for x in right_channel]
         if flip == 21:
             left_channel    = [flip * x for x in left_channel]
-
-        logger.debug(f"Left channel data: {left_channel[:10]}\n")
-        logger.debug(f"Right channel data: {right_channel[:10]}\n")
 
         # Extend detection to right channel if mode == 4
         if mode == 4:
@@ -199,8 +198,13 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                     global_vars.count_history.append(counts_per_sec)
 
                 if mode == 3:
+
                     interval_histogram = [local_histogram[i] - last_histogram[i] for i in range(bins)]
+
                     global_vars.histogram_3d.append(interval_histogram)
+
+                    last_minute_histogram_3d.append(interval_histogram)
+
                     last_histogram = local_histogram.copy()
 
             local_count_history.append(counts_per_sec)
@@ -209,7 +213,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
 
         # Save data to global_variables once per minute
-        if time_this_save - time_last_save_time >= 60 * t_interval or not global_vars.run_flag.is_set():
+        if time_this_save - time_last_save_time >= 10 * t_interval or not global_vars.run_flag.is_set():
             save_data_dict = {
                 't0': t0, 
                 't1': t1, 
@@ -229,8 +233,9 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             
             if mode == 3:
                 save_data_dict['filename_3d'] = filename_3d
-                save_data_dict['hist3d'] = global_vars.histogram_3d
+                save_data_dict['last_minute'] = last_minute_histogram_3d
             save_queue.put(save_data_dict)
+            last_minute_histogram = []
             time_last_save_time = time.time()
 
     # Signal the save thread to exit
