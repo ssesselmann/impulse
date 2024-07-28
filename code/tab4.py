@@ -28,6 +28,8 @@ try:
 except:
     pass
 
+window_size = 300    
+
 def show_tab4():   
 
     html_tab4 = html.Div(id='tab4', children=[
@@ -38,9 +40,11 @@ def show_tab4():
             html.Div(id='saved', style={'textAlign': 'left', 'marginLeft': '20px'}),
             html.Div(children=[dcc.Slider(
                      id='rolling',
-                     min=0, max=3600,
-                     step=1, value=rolling,
-                     marks={i: str(i) for i in range(0, 3601, 300)}
+                     min=0, 
+                     max= window_size,
+                     step=1, 
+                     value=rolling,
+                     marks={i: str(i) for i in range(0, window_size, 10)}
             )]),
             html.Div(id="last-hour", children=[
                 daq.ToggleSwitch(
@@ -79,12 +83,12 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
         x = [str(i * t_interval) for i in range(len(count_history))]
         y = count_history
     else:
-        if len(count_history) < 100:
+        if len(count_history) < window_size:
             x = [str(i * t_interval) for i in range(len(count_history))]
             y = count_history
         else:
-            x = [str(i * t_interval) for i in range(len(count_history) - 100, len(count_history))]
-            y = count_history[-100:]
+            x = [str(i * t_interval) for i in range(len(count_history) - window_size, len(count_history))]
+            y = count_history[-window_size:]
 
     if not y:
         return go.Figure()
