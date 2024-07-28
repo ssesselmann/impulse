@@ -153,7 +153,7 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
             )
         ],
         uirevision="Don't change",
-        height=600,
+        height=500,
         margin=dict(l=80, r=50, t=100, b=50),
         paper_bgcolor='white',
         plot_bgcolor='#efefef',

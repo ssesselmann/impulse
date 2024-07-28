@@ -39,30 +39,21 @@ def show_tab6():
                 id="theme",
                 className='dropdown',
                 options=[
-                    {"label": "Lightgray", "value": "lightgray"},
-                    {"label": "Plasma", "value": "plasma"},
-                    {"label": "Orange", "value": "orange"},
-                    {"label": "Pink", "value": "pink"},
-                    {"label": "Sunburst", "value": "sunburst"},
-                    {"label": "Potassium", "value": "potassium"},
-                    {"label": "Under Water", "value": "underwater"},
-                    {"label": "Milky Way", "value": "milkyway"},
+                    {"label": "Lightgray"   , "value": "lightgray"},
+                    {"label": "Plasma"      , "value": "plasma"},
+                    {"label": "Orange"      , "value": "orange"},
+                    {"label": "Pink"        , "value": "pink"},
+                    {"label": "Sunburst"    , "value": "sunburst"},
+                    {"label": "Potassium"   , "value": "potassium"},
+                    {"label": "Under Water" , "value": "underwater"},
+                    {"label": "Milky Way"   , "value": "milkyway"},
                 ],
                 value=theme,  # pre-selected option
                 clearable=False,
             )),
             html.Div(id='theme_output', children=' '),
-            html.Div(dcc.Dropdown(
-                id='export_histogram',
-                className='dropdown',
-                options=options_sorted,
-                placeholder='Export spectrum to csv file',
-                value=None
-            )),
-            html.Div(id='export_histogram_output_div', children=[
-                html.P(id='export_histogram_output', children='')
-            ])
-        ]),
+            
+            ]),
 
         html.Div(id='tab6_text_div', children=[
             html.Hr(),
@@ -139,6 +130,9 @@ def show_tab6():
                 html.H4('Energy by bin'),
                 html.P('This function enhances the peaks exponentially towards the right in the spectrum the function (counts)*(bin) = energy by bin'),
                 
+                html.H4('Export to csv'),
+                html.P('This function saves the spectrum as a simple csv file in your Downloads folder, activate the calibration switch before downloading if required.'),
+
                 html.H4('Show Log'),
                 html.P('This switch changes the y axis to log scale, a common way to make the high energy peaks visible.'),
                 
@@ -240,10 +234,3 @@ def theme_change(value):
     logger.info('User clicked Exit\n')
     return 'Restart to see new theme'
 
-@app.callback(Output('export_histogram_output', 'children'),
-              [Input('export_histogram', 'value')])
-def export_histogram(filename):
-    if filename is None:
-        raise PreventUpdate
-    fn.export_csv(filename)
-    return f'{filename} exported as csv to ~/Downloads'

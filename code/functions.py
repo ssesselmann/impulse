@@ -543,24 +543,33 @@ def stop_recording():
     logger.info('functions recording stopped\n')
     return
 
-def export_csv(filename):
+def export_csv(filename, data_directory, calib_switch):
     download_folder = os.path.expanduser("~/Downloads")
-    base_filename = filename.rsplit(".", 1)[0]
-    output_file = f'{base_filename}.csv'
-    with open(f'{data_directory}/{filename}') as f:
+    output_file = f'{filename}.csv'
+    
+    with open(os.path.join(data_directory, f'{filename}.json')) as f:
         data = json.load(f)
+
     if data["schemaVersion"] == "NPESv2":
         data = data["data"][0]
+
     spectrum = data["resultData"]["energySpectrum"]["spectrum"]
     coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-    if coefficients[2] <= 0:
-        coefficients[2] = 0
+
+
+    # Ensure the download folder exists
+    if not os.path.exists(download_folder):
+        os.makedirs(download_folder)
+    
     with open(os.path.join(download_folder, output_file), "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["bin", "counts"])
+        writer.writerow(["energy", "counts"])
         for i, value in enumerate(spectrum):
-            e = round((i ** coefficients[2] + i * coefficients[1] + coefficients[0]), 2)
-            writer.writerow([e, value])
+            if calib_switch:
+                energy = round((i ** coefficients[2] + i * coefficients[1] + coefficients[0]), 2)
+            else:
+                energy = i
+            writer.writerow([energy, value])
 
 
 def update_coeff(filename):

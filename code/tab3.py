@@ -9,13 +9,14 @@ import dash_bootstrap_components as dbc
 import dash_daq as daq
 import plotly.graph_objs as go
 import shproto.dispatcher
+import global_vars
+
 from dash import dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from server import app
 from datetime import datetime
 from functions import (
-    update_json_3d_file,
     load_histogram_3d,
     get_options_3d,
     start_recording,
@@ -24,7 +25,6 @@ from functions import (
     format_date,
     get_device_number,
 )
-import global_vars
 
 logger = logging.getLogger(__name__)
 
@@ -35,16 +35,12 @@ def show_tab3():
     files = [os.path.relpath(file, data_directory).replace("\\", "/")
              for file in glob.glob(os.path.join(data_directory, "**", "*.json"), recursive=True)]
 
-    options_3d = get_options_3d()
-
     with global_vars.write_lock:
         device      = global_vars.device
-        bins_3d     = 512
         bin_size_3d = global_vars.bin_size_3d
         max_counts  = global_vars.max_counts
         max_seconds = global_vars.max_seconds
         t_interval  = global_vars.t_interval
-        compression = 8
         filename_3d = global_vars.filename_3d
         log_switch  = global_vars.log_switch
         epb_switch  = global_vars.epb_switch
@@ -56,84 +52,109 @@ def show_tab3():
         calib_e_2   = global_vars.calib_e_2
         calib_e_3   = global_vars.calib_e_3
 
-    device  = int(device)
-    serial  = 'block' if device >= 100 else 'none'
-    audio   = 'none' if device >= 100 else 'block'
-    refresh_rate = t_interval * 1000
-
+    device          = int(device)
+    serial          = 'block'   if device >= 100 else 'none'
+    audio           = 'none'    if device >= 100 else 'block'
+    refresh_rate    = t_interval * 1000
+    options_3d      = get_options_3d()
+    compression     = 8
+    bins_3d         = 512
 
     return html.Div(id='tab3', children=[
-        html.Div(id='main-div', children=[
-            html.Div(id='bar-chart-div-3d', children=[
+        # vertical screen divider
+        html.Div(className='tab3-split-div', children=[
+            # 3x3 grid 
+            html.Div(className='grid-container', children=[
+
+                html.Div(className='t3subdiv', children=[
+                    html.Button('START', id='start_3d', n_clicks=0),
+                    html.Div(id='counts_3d', children=''),
+                    html.Div(id='start_text_3d', children=''),
+                    html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1000, readOnly=False, value=max_counts)]),
+                ]),
+
+                html.Div(className='t3subdiv', children=[
+                    html.Button('STOP', id='stop_3d'),
+                    html.Div(id='elapsed_3d', children=''),
+                    html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=60, readOnly=False, value=max_seconds)]),
+                    html.Div(id='cps_3d', children=''),
+                    html.Div(id='stop_text_3d', children=''),
+                ]),
+
+                html.Div(className='t3subdiv', children=[
+                    html.Div(['Select existing file:', dcc.Dropdown(
+                        id='filename-list',
+                        options=options_3d,
+                        value="",
+                        className='dropdown',
+                        optionHeight=40,
+                        style={'text-align': 'left', 'fontSize': '10px'})]),
+                    html.Div(['File name:', dcc.Input(id='filename_3d', type='text', value=filename_3d)], style={'marginTop': '5px'}),
+                ]),
+
+                html.Div(className='t3subdiv', children=[
+                    html.Div(['Bin size:', dcc.Input(id='bin_size_3d', type='number', value=bin_size_3d)], style={'display': audio}),
+                    html.Div(['Number of bins:', dcc.Input(id='bins', type='number', value=bins_3d)], style={'visibility': 'hidden'}),
+                    html.Div(['Resolution:', dcc.Dropdown(id='compression',
+                                                          options=[
+                                                              {'label': '512 Bins', 'value': '16'},
+                                                              {'label': '1024 Bins', 'value': '8'},
+                                                              {'label': '2048 Bins', 'value': '4'},
+                                                              {'label': '4096 Bins', 'value': '2'},
+                                                              {'label': '8192 Bins', 'value': '1'},
+                                                          ],
+                                                          value=compression,
+                                                          clearable=False,
+                                                          className='dropdown')],
+                             style={'visibility': 'hidden'}),
+                ]),
+
+                html.Div(className='t3subdiv', children=[
+                    html.Div(['Time Interval Sec.', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval)]),
+                ]),
+
+                html.Div(className='t3subdiv', children=[
+                    html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='purple')]),
+                    html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
+                    html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
+                ]),
+
+                html.Div(className='t3subdiv', children=[
+                    html.Div('Calibration Bins'),
+                    html.Div(dcc.Input(id='calib_bin_1', type='number', value=calib_bin_1)),
+                    html.Div(dcc.Input(id='calib_bin_2', type='number', value=calib_bin_2)),
+                    html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3)),
+                    
+                ]),
+
+                html.Div(className='t3subdiv', children=[
+                    html.Div('Energies'),
+                    html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1)),
+                    html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2)),
+                    html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3)),
+                ]),
+
+                html.Div(className='t3subdiv', children=[
+                    html.P('Calibration setting are shared with 2D histogram.'),
+                    html.P('Large arrays take time..', style={'color':'red'}),
+                    html.P('Patience is a virtue 🙄', style={'color':'red'}),
+                    ]),
+
+            ]),
+
+            html.Div(children=[html.Img(id='t3footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
+            html.Div(id='polynomial-3d' , children=''),
+
+            ]),
+            
+        html.Div(className='tab3-split-div', children=[
+            html.Div(id='chartbox', children=[
                 dcc.Graph(id='chart-3d', figure={}),
-                dcc.Interval(id='interval-component', interval=refresh_rate, n_intervals=0)
+                dcc.Interval(id='interval-component', interval=1000, n_intervals=0),
+                ]),
             ]),
-            html.Div(id='last-filename', children=''),
-            html.Div(id='t2_filler_div', children=''),
-            html.Div(id='t2_setting_div1', children=[
-                html.Button('START', id='start_3d', n_clicks=0),
-                html.Div(id='counts_3d', children=''),
-                html.Div(id='start_text_3d', children=''),
-                html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1000, readOnly=False, value=max_counts)]),
-            ]),
-            html.Div(id='t2_setting_div2', children=[
-                html.Button('STOP', id='stop_3d'),
-                html.Div(id='elapsed_3d', children=''),
-                html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=60, readOnly=False, value=max_seconds)]),
-                html.Div(id='cps_3d', children=''),
-                html.Div(id='stop_text_3d', children=''),
-            ]),
-            html.Div(id='t2_setting_div3', children=[
-                html.Div(['Select existing file:', dcc.Dropdown(
-                    id='filename-list',
-                    options=options_3d,
-                    value="",
-                    className='dropdown',
-                    optionHeight=40,
-                    style={'text-align': 'left', 'fontSize': '10px'})]),
-                html.Div(['File name:', dcc.Input(id='filename_3d', type='text', value=filename_3d)], style={'marginTop': '5px'}),
-            ]),
-            html.Div(id='t2_setting_div4', children=[
-                html.Div(['Bin size:', dcc.Input(id='bin_size_3d', type='number', value=bin_size_3d)], style={'display': audio}),
-                html.Div(['Number of bins:', dcc.Input(id='bins', type='number', value=bins_3d)], style={'visibility': 'hidden'}),
-                html.Div(['Resolution:', dcc.Dropdown(id='compression',
-                                                      options=[
-                                                          {'label': '512 Bins', 'value': '16'},
-                                                          {'label': '1024 Bins', 'value': '8'},
-                                                          {'label': '2048 Bins', 'value': '4'},
-                                                          {'label': '4096 Bins', 'value': '2'},
-                                                          {'label': '8192 Bins', 'value': '1'},
-                                                      ],
-                                                      value=compression,
-                                                      clearable=False,
-                                                      className='dropdown')],
-                         style={'visibility': 'hidden'}),
-            ]),
-            html.Div(id='t2_setting_div5', children=[
-                html.Div(['Time Interval Sec.', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval)]),
-            ]),
-            html.Div(id='t2_setting_div6', children=[
-                html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='purple')]),
-                html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
-                html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
-            ]),
-            html.Div(id='t2_setting_div7', children=[
-                html.Div('Calibration Bins'),
-                html.Div(dcc.Input(id='calib_bin_1', type='number', value=calib_bin_1)),
-                html.Div(dcc.Input(id='calib_bin_2', type='number', value=calib_bin_2)),
-                html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3)),
-                html.P('Calibration shared with 2D histogram.'),
-            ]),
-            html.Div(id='t2_setting_div8', children=[
-                html.Div('Energies'),
-                html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1)),
-                html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2)),
-                html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3)),
-            ]),
-        ], style={'width': '100%', 'float': 'left'}),
-        html.Div(children=[html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
-        html.Div(id='subfooter', children=[]),
-        html.Div(id='polynomial-3d', children=''),
+
+        # pop up start confirmation
         dbc.Modal([
             dbc.ModalBody(id='modal-body-3d'),
             dbc.ModalBody(children=[
@@ -152,10 +173,10 @@ def show_tab3():
             size="md",
             className="custom-modal",
         ),
+        
     ])
 
 app.layout = html.Div([show_tab3()])
-
 
 # Pull down file selection loads histogram
 @app.callback(
@@ -171,13 +192,13 @@ def switch_spectrum(selected_filename, current_filename):
 
 # Pop up window asking user to confirm overwrite if file exists
 @app.callback(
-    [Output('modal-overwrite-tab3', 'is_open'),
-     Output('modal-body-3d', 'children')],
-    [Input('start_3d', 'n_clicks'),
-     Input('confirm-overwrite-tab3', 'n_clicks'),
-     Input('cancel-overwrite-tab3', 'n_clicks')],
-    [State('filename_3d', 'value'),
-     State('modal-overwrite-tab3', 'is_open')]
+    [Output('modal-overwrite-tab3'  , 'is_open'),
+     Output('modal-body-3d'         , 'children')],
+    [Input('start_3d'               , 'n_clicks'),
+     Input('confirm-overwrite-tab3' , 'n_clicks'),
+     Input('cancel-overwrite-tab3'  , 'n_clicks')],
+    [State('filename_3d'            , 'value')  ,
+     State('modal-overwrite-tab3'   , 'is_open')]
 )
 def confirm_with_user_3d(start_clicks, confirm_clicks, cancel_clicks, filename_3d, is_open):
     ctx = callback_context
@@ -186,7 +207,8 @@ def confirm_with_user_3d(start_clicks, confirm_clicks, cancel_clicks, filename_3
         raise PreventUpdate
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    logging.info(f"Tab3 Modal triggered by {button_id}")
+
+    logging.info(f"tab3 Modal triggered by {button_id}")
 
     if button_id == "start_3d":
         with global_vars.write_lock:
@@ -199,7 +221,7 @@ def confirm_with_user_3d(start_clicks, confirm_clicks, cancel_clicks, filename_3
         else:
             return False, ''
 
-    elif button_id in ["confirm-overwrite-tab3", "cancel-overwrite-tab3"]:
+    elif button_id in ["tab-3 confirm-overwrite", "tab3-cancel-overwrite"]:
         return False, ''
 
     return False, ''
@@ -207,11 +229,11 @@ def confirm_with_user_3d(start_clicks, confirm_clicks, cancel_clicks, filename_3
 
 # Function to start spectrum 
 @app.callback(
-    Output('start_text_3d', 'children'),
-    [Input('confirm-overwrite-tab3', 'n_clicks'),
-     Input('start_3d', 'n_clicks')],
-    [State('filename_3d', 'value'),
-     State('t_interval', 'value')]
+    Output('start_text_3d'          , 'children'),
+    [Input('confirm-overwrite-tab3' , 'n_clicks'),
+     Input('start_3d'               , 'n_clicks')],
+    [State('filename_3d'            , 'value'),
+     State('t_interval'             , 'value')]
 )
 def start_new_3d_spectrum(confirm_clicks, start_clicks, filename_3d, t_interval):
     ctx = dash.callback_context
@@ -242,15 +264,15 @@ def start_new_3d_spectrum(confirm_clicks, start_clicks, filename_3d, t_interval)
 
                 time.sleep(0.1)
                 shproto.dispatcher.process_03('-rst')
-                logger.info(f'tab2 sends reset command -rst\n')
+                logger.info(f'tab3 sends reset command -rst\n')
 
                 time.sleep(0.1)
                 shproto.dispatcher.process_03('-sta')
-                logger.info(f'tab2 sends start command -sta\n')
+                logger.info(f'tab3 sends start command -sta\n')
 
                 time.sleep(0.1)
                 shproto.dispatcher.process_02(filename_3d, compression, "MAX", t_interval)
-                logger.info(f'tab2 calls process_01(){filename_3d}, {compression}, MAX, {t_interval}\n')
+                logger.info(f'tab3 process_01(){filename_3d}, {compression}, MAX, {t_interval}\n')
 
                 time.sleep(0.1)
             except Exception as e:
@@ -265,8 +287,8 @@ def start_new_3d_spectrum(confirm_clicks, start_clicks, filename_3d, t_interval)
 
 # Function to stop recording
 @app.callback(
-    Output('stop_text_3d', 'children'),
-    [Input('stop_3d', 'n_clicks')]
+    Output('stop_text_3d'   , 'children'),
+    [Input('stop_3d'        , 'n_clicks')]
 )
 def update_output(n_clicks):
     logger.info("update_output callback triggered\n")
@@ -280,12 +302,11 @@ def update_output(n_clicks):
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
         time.sleep(0.1)
-        logger.info('Stop command sent from (tab3)\n')
+        logger.info('tab3 Stop command sent\n')
     else:
         stop_recording()
 
     return " "
-
 
 # Main function which updates the graph on the page
 @app.callback(
@@ -321,22 +342,22 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
             start_time  = ""
             pass
 
-    axis_type = 'log' if log_switch else 'linear'
-    now = datetime.now()
-    date = now.strftime('%d-%m-%Y')
-    file_path = os.path.join(data_directory, filename_3d)
-    y_range = [0, len(histogram_3d)]
+    axis_type   = 'log' if log_switch else 'linear'
+    now         = datetime.now()
+    date        = now.strftime('%d-%m-%Y')
+    file_path   = os.path.join(data_directory, filename_3d)
+    y_range     = [0, len(histogram_3d)]
 
     layout = go.Layout(
-        uirevision='nochange',
-        height=580,
-        margin=dict(l=0, r=0, b=50, t=0),
-        scene=dict(
-            xaxis=dict(title='bins(x)', range=[0, bins_3d]),
-            yaxis=dict(title='time intervals(y)', range=y_range),
-            zaxis=dict(title='counts(z)', type=axis_type),
+            uirevision='nochange',
+            #height=800,
+            margin=dict(l=0, r=0, b=0, t=0),
+            scene=dict(
+                xaxis=dict(title='bins(x)', range=[0, bins_3d]),
+                yaxis=dict(title='time intervals(y)', range=y_range),
+                zaxis=dict(title='counts(z)', type=axis_type),
+            )
         )
-    )
 
     try:
         z = histogram_3d
@@ -362,9 +383,9 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
             'showlegend': False
         }
 
-        traces = [surface_trace]
-
-        title_text = f'{filename_3d}_3d.json<br>{start_time}<br>{counts} counts<br>{elapsed} seconds'
+        traces      = [surface_trace]
+        
+        title_text  = f'{filename_3d}_3d.json<br>{start_time}<br>{counts} counts<br>{elapsed} seconds'
 
         layout.update(
             title={

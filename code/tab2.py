@@ -54,6 +54,7 @@ from functions import (
     handle_modal_confirmation,
     clear_global_vars,
     save_settings_to_json,
+    export_csv
     )
 
 logger = logging.getLogger(__name__)
@@ -64,6 +65,9 @@ with global_vars.write_lock:
 
 def show_tab2():
     options_sorted  = get_options()
+
+    filtered_options = [option for option in options_sorted if not option['label'].startswith('•')]
+    
 
     # Load global variables
     with global_vars.write_lock:
@@ -154,7 +158,7 @@ def show_tab2():
                 html.Div(id='elapsed', children=''),
                 html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1, readOnly=False, value=max_seconds, className='input', style={'background-color': seconds_warning})]),
                 html.Div(id='cps', children=''),
-            ]),
+                    ]),
 
             html.Div(id='t2_setting_div3', children=[
                 html.Div(id='compression_div', children=[
@@ -193,6 +197,20 @@ def show_tab2():
                 html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold, className='input', style={'height': '35px'})], style={'display': audio}),
                 html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance, className='input')], style={'display': audio}),
                 html.Div(['Update Interval(s)', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval, className='input')]),
+            
+                html.Div(['Export to csv', dcc.Dropdown(
+                        id='export_histogram',
+                        className='dropdown',
+                        options=filtered_options,
+                        placeholder='Export to csv file',
+                        value=None
+                    )]),
+
+                    html.Div(id='export_histogram_output_div', children=[html.P(id='export_histogram_output', children='')]),
+
+
+
+
             ], style={'width': '10%'}),
 
             html.Div(id='t2_setting_div5', children=[
@@ -950,7 +968,18 @@ def toggle_annotations(n_clicks, flags, gaussian, sigma, cal_switch):
 
     return [], 'Isotopes Flags off', flags
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
+# callback for exporting to csv
+@app.callback(Output('export_histogram_output'  , 'children'),
+              Input('export_histogram'         , 'value'),
+              State('cal-switch'                , 'on')
+              )
+def export_histogram(filename, cal_switch):
+    if filename is None:
+        raise PreventUpdate
+    try:
+        export_csv(filename, data_directory, cal_switch)
+        return f'Exported to Downloads'
+    except:
+        f'Export failed'    
 
 # -- End of tab2.py --
