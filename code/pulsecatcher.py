@@ -235,7 +235,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 save_data_dict['filename_3d'] = filename_3d
                 save_data_dict['last_minute'] = last_minute_histogram_3d
             save_queue.put(save_data_dict)
-            last_minute_histogram = []
+            last_minute_histogram_3d = []
             time_last_save_time = time.time()
 
     # Signal the save thread to exit

@@ -50,7 +50,7 @@ default_settings = {
     "calib_e_1": 0,
     "calib_e_2": 1500,
     "calib_e_3": 3000,
-    "chunk_size": 1024,
+    "chunk_size": 2048,
     "coeff_1": 1,
     "coeff_2": 1,
     "coeff_3": 0,

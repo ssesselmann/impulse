@@ -135,9 +135,10 @@ def show_tab3():
                 ]),
 
                 html.Div(className='t3subdiv', children=[
-                    html.P('Calibration setting are shared with 2D histogram.'),
-                    html.P('Large arrays take time..', style={'color':'red'}),
-                    html.P('Patience is a virtue 🙄', style={'color':'red'}),
+                    html.P('Calibration setting are shared with 2D histogram,', style={'textAlign':'center'}),
+                    html.P('large arrays take time,', style={'textAlign':'center'}),
+                    html.P('patience is a virtue.', style={'textAlign':'center'}),
+                    html.P('🙄', style={'textAlign':'center'}),
                     ]),
 
             ]),
