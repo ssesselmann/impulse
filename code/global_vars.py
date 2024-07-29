@@ -42,6 +42,7 @@ bin_size_3d     = 60
 elapsed_3d      = 0
 coefficients_3d = []
 startTime3d     = ""
+endTime3d       = ""
 
 
 # Tab1 Settings

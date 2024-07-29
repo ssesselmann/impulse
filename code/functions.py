@@ -1111,6 +1111,7 @@ def load_histogram_3d(filename):
             global_vars.coeff_3         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
             global_vars.compression     = int(8196/data['resultData']['energySpectrum']['numberOfChannels'])
             global_vars.startTime3d     = data['resultData']['startTime']
+            global_vars.endTime3d       = data['resultData']['startTime']
 
         logger.info(f"4.. global_vars updated from {file_path}\n")
 

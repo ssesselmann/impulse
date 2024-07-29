@@ -149,6 +149,14 @@ Change log
 64) Program settings and user setings file format changed from an sql file to json
 65) All settings are preloaded into global variables and uopdated when change occurrs
 66) Gamma spectra are saved to dcc.Store memore and only saved to file once per minute or when stopped.
+# IMPULSE v2.1.3
+67) dcc.Store() changed to global variables with write lock
+68) Reformatted tab3 and improved functionality of the 3d spectrum recording
+69) 3d Specterum hard coded to 512 channels
+70) Fixed export csv function and moved it to tab2
+71) Spectra are saved to global_vars and saved to json at 10 second intervals
+72) Calibration settings are saved to global_vars and can be updated at any time
+73) Added functionality to show isotope flags for gaussian peaks
 
 
 Things to do
