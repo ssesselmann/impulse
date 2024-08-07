@@ -22,8 +22,6 @@ def save_data(save_queue):
         bins                = data['bins']
         local_counts        = data['local_counts']
         local_elapsed       = data['local_elapsed']
-        filename            = data['filename']
-        local_histogram     = data['local_histogram']
         coeff_1             = data['coeff_1']
         coeff_2             = data['coeff_2']
         coeff_3             = data['coeff_3']
@@ -32,13 +30,17 @@ def save_data(save_queue):
         spec_notes          = data['spec_notes']
         local_count_history = data['local_count_history']
 
-        if 'filename_3d' in data:
-            filename_3d = data['filename_3d']
-            last_minute      = data['last_minute']
-            fn.update_json_3d_file(t0, t1, bins, local_counts, local_elapsed, filename_3d, last_minute, coeff_1, coeff_2, coeff_3, device)
-        else:
+        if 'filename' in data and 'local_histogram' in data:
+            filename        = data['filename']
+            local_histogram = data['local_histogram']
             fn.write_histogram_npesv2(t0, t1, bins, local_counts, local_elapsed, filename, local_histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes)
             fn.write_cps_json(filename, local_count_history, local_elapsed)
+
+        if 'filename_3d' in data and 'last_minute' in data:
+            filename_3d = data['filename_3d']
+            last_minute = data['last_minute']
+            fn.update_json_3d_file(t0, t1, bins, local_counts, local_elapsed, filename_3d, last_minute, coeff_1, coeff_2, coeff_3, device)
+
 
 # Function reads audio stream and finds pulses then outputs time, pulse height, and distortion
 def pulsecatcher(mode, run_flag, run_flag_lock):
@@ -214,14 +216,13 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
         # Save data to global_variables once per minute
         if time_this_save - time_last_save_time >= 10 * t_interval or not global_vars.run_flag.is_set():
+            
             save_data_dict = {
                 't0': t0, 
                 't1': t1, 
                 'bins': bins, 
                 'local_counts': local_counts, 
                 'local_elapsed': local_elapsed,
-                'filename': filename, 
-                'local_histogram': local_histogram, 
                 'coeff_1': coeff_1, 
                 'coeff_2': coeff_2,
                 'coeff_3': coeff_3, 
@@ -230,12 +231,17 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 'spec_notes': spec_notes,
                 'local_count_history': local_count_history
             }
-            
+            if mode == 2:
+                save_data_dict['filename']          = filename
+                save_data_dict['local_histogram']   = local_histogram
+
             if mode == 3:
-                save_data_dict['filename_3d'] = filename_3d
-                save_data_dict['last_minute'] = last_minute_histogram_3d
+                save_data_dict['filename_3d']   = filename_3d
+                save_data_dict['last_minute']   = last_minute_histogram_3d
+                last_minute_histogram_3d        = []
+
             save_queue.put(save_data_dict)
-            last_minute_histogram_3d = []
+            
             time_last_save_time = time.time()
 
     # Signal the save thread to exit

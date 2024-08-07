@@ -164,7 +164,7 @@ def show_tab3():
                 html.P('Longer intervals will further reduce file size.')
             ], style={'color': 'red', 'align': 'center', 'fontWeight': 'bold', 'textAlign': 'center'}),
             dbc.ModalFooter([
-                dbc.Button(f"Extend {filename_3d}", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
+                dbc.Button(f"Overwrite {filename_3d}", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
                 dbc.Button("Cancel", id="cancel-overwrite-tab3", className="ml-auto", n_clicks=0),
             ]),
         ],
@@ -252,6 +252,9 @@ def start_new_3d_spectrum(confirm_clicks, start_clicks, filename_3d, t_interval)
     compression = 8
 
     file_exists = os.path.exists(f'{data_directory}/{filename_3d}_3d.json')
+
+    if file_exists:
+        load_histogram_3d(filename_3d)
 
     if trigger_value == 0:
         raise PreventUpdate
@@ -412,6 +415,8 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
             mode='markers',
             marker=dict(size=5, color='blue')
         )]
+
+        layout.scene.yaxis.range = [0, 0]
 
         fig = go.Figure(data=data, layout=layout)
 

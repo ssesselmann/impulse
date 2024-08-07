@@ -1105,7 +1105,6 @@ def load_histogram_3d(filename):
         if data["schemaVersion"] == "NPESv2":
             data = data["data"][0]
 
-
         with global_vars.write_lock:
             global_vars.histogram_3d    = data['resultData']['energySpectrum']['spectrum']
             global_vars.counts          = data['resultData']['energySpectrum']['validPulseCount']
@@ -1121,6 +1120,7 @@ def load_histogram_3d(filename):
         logger.info(f"4.. global_vars updated from {file_path}\n")
 
     except KeyError as e:
+
         logger.error(f"Missing expected data key in {file_path}: {e}\not")
 
 
