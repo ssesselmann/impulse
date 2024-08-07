@@ -21,6 +21,7 @@ import requests as req
 import shproto.dispatcher
 import serial.tools.list_ports
 import global_vars
+import numpy as np
 
 from pulsecatcher import pulsecatcher
 from dash import dash_table
@@ -32,7 +33,8 @@ from shproto.dispatcher import process_03
 
 logger          = logging.getLogger(__name__)
 cps_list        = []
-data_directory  = global_vars.data_directory
+with global_vars.write_lock:
+    data_directory  = global_vars.data_directory
 
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
@@ -386,9 +388,6 @@ def shutdown():
     logger.info('Shutting down server...\n')
     os._exit(0)
 
-import numpy as np
-from scipy.signal import find_peaks, peak_widths
-
 def rolling_average(data, window_size):
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
 
@@ -396,20 +395,22 @@ def peak_finder(y_values, prominence, min_width, smoothing_window=11):
     # Apply rolling average for smoothing
     smoothed_y_values = rolling_average(y_values, smoothing_window)
     
-    # Adjust the indices after smoothing
-    y_bin = [y * (i + (smoothing_window - 1) / 2) for i, y in enumerate(smoothed_y_values)]
-    
     # Find peaks in the smoothed data
-    peaks, _ = find_peaks(y_bin, prominence=prominence, distance=40)
+    peaks, _ = find_peaks(smoothed_y_values, prominence=prominence, distance=40)
+    
+    # Calculate widths at relative height 0.3
     widths, _, _, _ = peak_widths(smoothed_y_values, peaks, rel_height=0.3)
     
     # Filter peaks based on minimum width
-    filtered_peaks = [p for i, p in enumerate(peaks) if widths[i] >= min_width * i]
+    filtered_peaks = [p for i, p in enumerate(peaks) if widths[i] >= min_width]
     
     # Calculate full width at half maximum (FWHM) for filtered peaks
     fwhm = [round(peak_widths(smoothed_y_values, [p], rel_height=0.5)[0][0], 1) for p in filtered_peaks]
     
-    return filtered_peaks, fwhm
+    # Adjust filtered peaks indices to match original data indices
+    adjusted_peaks = [p + (smoothing_window - 1) // 2 for p in filtered_peaks]
+    
+    return adjusted_peaks, fwhm
 
 
 def gaussian_correl(data, sigma):
@@ -630,13 +631,13 @@ import json
 import os
 
 def get_api_key():
+    with global_vars.write_lock:
+        data_directory = global_vars.data_directory
     try:
         user_file_path = get_path(f'{data_directory}/_user.json')
 
         if not os.path.exists(user_file_path):
-
             logger.error(f"User file not found: {user_file_path}\n")
-            
             return None
 
         with open(user_file_path, 'r') as file:
@@ -653,6 +654,10 @@ def get_api_key():
         return None
 
 def publish_spectrum(filename):
+
+    with global_vars.write_lock:
+        data_directory = global_vars.data_directory
+        
     logger.info(f'functions.publish_spectrum {filename}\n')
     url = "https://gammaspectacular.com/spectra/publish_spectrum"
     api_key = get_api_key()

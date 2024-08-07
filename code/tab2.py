@@ -134,7 +134,6 @@ def show_tab2():
         html.Div(id='main-div', children= [
             html.Div(id='polynomial', children=''),
             html.Div(id='output-roi', children=''),
-
             html.Div(id='bar_chart_div', children=[
                 
                 dcc.Interval(id='interval-component', interval=millisec, n_intervals=0),  # Refresh rate 1s.
@@ -233,6 +232,8 @@ def show_tab2():
                 html.Button('Update calib.', id='update_calib_button', className='action_button'),
                 html.Div(id='update_calib_message', children=''),
                 dbc.Button("Publish spectrum", id="publish-button", color="primary", className="action_button"),
+                dcc.Store(id='store-confirmation-output', data=''),
+                
                 dbc.Modal(children=[
                     dbc.ModalBody(f"Are you sure you want to publish \"{filename}\" spectrum?"),
                     dbc.ModalFooter([
@@ -260,6 +261,7 @@ def show_tab2():
                 html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3, className='input')),
                 html.Div('peakfinder'),
                 html.Div(dcc.Slider(id='peakfinder', min=0, max=5, step=0.1, value=peakfinder, marks={0: '0', 1: '1',2: '2', 3: '3' , 4: '4', 5: '5'})),
+                html.Div(id='publish-output', children=''),
             ]),
 
             html.Div(id='t2_setting_div9', children=[
@@ -275,6 +277,7 @@ def show_tab2():
         ], style={'width':'100%', 'float':'left'}),
         html.Div(children=[html.Img(id='footer_tab2', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
         html.Div(id='subfooter', children=[]),
+        
 
     ])  # End of tab 2 render
 
@@ -542,18 +545,18 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         bin_counts  = y[peaks[i]]
         x_pos       = peaks[i]
         y_pos       = y[peaks[i]]
-        y_pos_ann   = int(y_pos *1.1)
+        y_pos_ann   = int(y_pos * 1.05)
         resolution  = (fwhm[i] / peaks[i]) * 100
 
         if y_pos_ann > (max_value * 0.9):
-            y_pos_ann -= int(max_value * 0.03)
+            y_pos_ann -= int(max_value * 0.1)
 
         if cal_switch:
             peak_value = np.polyval(np.poly1d(coefficients_1), peak_value)
             x_pos = peak_value
 
         if log_switch:
-            y_pos_ann = np.log10(y_pos * 1.1)
+            y_pos_ann = np.log10(y_pos * 1.05)
 
         if peakfinder > 0:
             annotations.append(dict(
@@ -562,6 +565,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
                 xref='x',
                 yref='y',
                 text=f'Y{bin_counts}<br>X{peak_value:.1f}<br>{resolution:.1f}%',
+                font=dict(size=10),
                 align='center',
                 showarrow=True,
                 arrowhead=0,
@@ -832,11 +836,11 @@ def update_output(selected_cmd, active_tab):
         return "An error occurred."
 
 @app.callback(
-    Output("confirmation-modal", "is_open"),
-    [Input("publish-button", "n_clicks"),
-     Input("confirm-publish", "n_clicks"),
-     Input("cancel-publish", "n_clicks")],
-    [State("confirmation-modal", "is_open")]
+    Output("confirmation-modal" , "is_open"),
+    [Input("publish-button"     , "n_clicks"),
+     Input("confirm-publish"    , "n_clicks"),
+     Input("cancel-publish"     , "n_clicks")],
+    [State("confirmation-modal" , "is_open")]
 )
 def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_publish_clicks, is_open):
     ctx = dash.callback_context
@@ -848,16 +852,18 @@ def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_publish_click
 
     if button_id == "publish-button" and open_button_clicks:
         return not is_open
+
     elif button_id in ["confirm-publish", "cancel-publish"]:
         return not is_open
+
     return is_open
 
 
 @app.callback(
-    Output("store-confirmation-output", "data"),
-    [Input("confirm-publish", "n_clicks"),
-     Input("cancel-publish", "n_clicks")],
-    [State("filename", "value")]
+    Output("publish-output"             , "children"),
+    [Input("confirm-publish"            , "n_clicks"),
+     Input("cancel-publish"             , "n_clicks")],
+    [State("filename"                   , "value")]
 )
 def display_confirmation_result(confirm_publish_clicks, cancel_publish_clicks, filename):
 
@@ -868,23 +874,18 @@ def display_confirmation_result(confirm_publish_clicks, cancel_publish_clicks, f
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    
-
     if button_id == "confirm-publish" and confirm_publish_clicks:
-
         logger.info(f'tab2 user confirmed publishing of {filename}\n')
 
         response_message = publish_spectrum(filename)
 
         logger.info(f'{filename} published successfully')
-
         return f'{filename} \nPublished'
 
     elif button_id == "cancel-publish" and cancel_publish_clicks:
-
         logger.info(f'Publish cancelled')
-
         return "You canceled!"
+
     return ""
 
 @app.callback(
