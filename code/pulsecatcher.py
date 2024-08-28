@@ -78,6 +78,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         peakshift       = global_vars.peakshift
         peak            = int((sample_length - 1) / 2) + peakshift
         spec_notes      = global_vars.spec_notes
+        stereo          = global_vars.stereo
         # Set global vars
         global_vars.elapsed         = 0
         global_vars.counts          = 0
@@ -85,7 +86,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         global_vars.count_history   = []
 
     if mode == 3:
-        bin_size    = bin_size_3d
+        bin_size    = bin_size * int(bins/bins_3d)
         bins        = bins_3d
 
     # Fixed variables
@@ -110,15 +111,17 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     last_minute_histogram_3d = []
     
     # Open the selected audio input device
-    stream = p.open(
-        format=audio_format,
-        channels=2,
-        rate=sample_rate,
-        input=True,
-        output=False,
-        input_device_index=device,
-        frames_per_buffer=chunk_size * 2
-    )
+    channels = 2 if stereo else 1
+
+    channels    = 2 if stereo else 1
+    stream      = p.open(format=pyaudio.paInt16,
+                    channels=channels,
+                    rate=sample_rate,
+                    input=True,
+                    output=False,
+                    frames_per_buffer=chunk_size * channels,
+                    input_device_index=device,
+                    )
 
     save_queue  = queue.Queue()
     save_thread = threading.Thread(target=save_data, args=(save_queue,))
@@ -129,7 +132,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         # Read one chunk of audio data from stream into memory.
         data    = stream.read(chunk_size, exception_on_overflow=False)
         # Convert hex values into a list of decimal values
-        values  = list(wave.struct.unpack("%dh" % (chunk_size * 2), data))
+        values  = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))
         # Extract every other element (left channel)
         left_channel    = values[::2]
         right_channel   = values[1::2]
