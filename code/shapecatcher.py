@@ -57,7 +57,8 @@ def capture_pulse_polarity(peak, timeout=30):
                     input=True,
                     output=False,
                     frames_per_buffer=chunk_size * channels,
-                    input_device_index=device)
+                    input_device_index=device,
+                    )
 
     pulse_sign_left     = None
     pulse_sign_right    = True if not stereo else None  # Default to True if stereo is False
