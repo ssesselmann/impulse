@@ -949,7 +949,9 @@ def save_settings_to_json():
             "t_interval", 
             "theme", 
             "threshold", 
-            "tolerance"
+            "tolerance",
+            "shape_lld",
+            "shape_uld"
             ]}
     
     try:
@@ -1014,7 +1016,9 @@ def load_settings_from_json(path):
                     "stereo":               bool, 
                     "t_interval":           int, 
                     "threshold":            int, 
-                    "tolerance":            int
+                    "tolerance":            int,
+                    "shape_lld":            int,
+                    "shape_uld":            int
                     }   
 
             for key, value in settings.items():

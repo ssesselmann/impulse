@@ -82,7 +82,9 @@ default_settings = {
     "t_interval": 1,
     "theme": "plasma",
     "threshold": 100,
-    "tolerance": 50000
+    "tolerance": 50000,
+    "shape_lld": 500,
+    "shape_uld": 3000
 }
 
 default_user = {

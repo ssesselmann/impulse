@@ -47,7 +47,7 @@ def capture_pulse_polarity(peak, timeout=30):
         chunk_size      = int(global_vars.chunk_size)
         device          = int(global_vars.device) 
         sample_length   = int(global_vars.sample_length)
-        threshold       = 1000 
+        shape_lld       = int(global_vars.shape_lld) 
 
     p           = pyaudio.PyAudio()
     channels    = 2 if stereo else 1
@@ -91,7 +91,7 @@ def capture_pulse_polarity(peak, timeout=30):
                 for i in range(len(channel) - sample_length):
                     samples = channel[i:i + sample_length]
 
-                    if abs(samples[int(peak)]) > threshold:
+                    if abs(samples[int(peak)]) > shape_lld:
                         aligned_samples = align_pulse(samples, int(peak))
                         pulse_list.append(aligned_samples)
                         if len(pulse_list) >= 10:  # Use a small number for quick polarity determination
@@ -126,10 +126,12 @@ def shapecatcher():
         sample_length   = global_vars.sample_length
         peakshift       = global_vars.peakshift
         stereo          = global_vars.stereo
+        shape_lld       = global_vars.shape_lld
+        shape_uld       = global_vars.shape_uld
 
     peak            = int(((int(sample_length) - 1) / 2) + int(peakshift))
-    threshold       = 1000  # Hard coded for shapecatcher only
-    logger.info(f'Shapecatcher threshold fixed at {threshold}\n')
+
+    logger.info(f'Shapecatcher shape_lld fixed at {shape_lld}\n')
 
     logger.info(f'Shapecatcher says Stereo is {stereo}\n')
 
@@ -183,10 +185,8 @@ def shapecatcher():
         while True:
             # Read audio data
             data = stream.read(chunk_size, exception_on_overflow=False)
-
             # Unpack audio data
             values = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))
-
             # Separate channels
             left_channel = values[::2] if stereo else values
             right_channel = values[1::2] if stereo else []
@@ -201,7 +201,8 @@ def shapecatcher():
                 for i in range(len(channel) - sample_length):
                     samples = channel[i:i + sample_length]
 
-                    if abs(samples[peak]) > threshold and samples[peak] == max(samples):
+                    if shape_lld < abs(samples[peak]) < shape_uld and samples[peak] == max(samples):
+
                         aligned_samples = align_pulse(samples, peak)
 
                         # Flip the data if necessary
@@ -209,6 +210,8 @@ def shapecatcher():
                             aligned_samples = [-s for s in aligned_samples]
 
                         pulse_list.append(aligned_samples)
+
+                        sc_info.append(f'Looking for pulses between {shape_lld} and {shape_uld}: {i}')
 
                         # Break if enough pulses are collected
                         if len(pulse_list) >= shapecatches:

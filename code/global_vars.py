@@ -54,6 +54,8 @@ shapecatches    = 10
 chunk_size      = 1024
 stereo          = False
 peakshift       = 0
+shape_lld       = 500
+shape_uld       = 3000
 
 # Tab2 Settings
 max_counts      = 1000000

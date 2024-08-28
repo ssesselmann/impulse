@@ -58,21 +58,21 @@ def show_tab6():
         html.Div(id='tab6_text_div', children=[
             html.Hr(),
             html.Div(id='manual', children=[
-                html.H1('Impulse V2.0 Manual'),
-                html.P('Thank you for downloading and installing Impulse gamma spectrometry, this open source software is written in Python with the intention that users may modify and adapt it to their own experiments.'),
+                html.H1('Impulse V2.1.5 Manual'),
+                html.P('Thank you for downloading and installing Impulse MCA, this open source software is written in Python with the intention that users may modify and adapt it to their own experiments.'),
                 html.P('In the following text I shall describe how the software works and what each setting parameter does.'),
                 
                 html.H4('Using a Sound Card as an ADC'),
-                html.P('Gamma radiation detectors with photomultipler tubes PMTs, output pulses in the form of an analogue voltage. Typically the pulses are on the order of 4 µs. which is too fast for sampling by commercial sound cards, but by amplifying and passing the signal through a low pass filter the pulse can be stretched to 100 µs. and then it can be sampled by an audio codec. '),
+                html.P('Gamma radiation detectors with photomultiplier tubes PMTs, output pulses in the form of an analogue voltage. Typically the pulses are on the order of 4 µs. which is too fast for sampling by common sound cards, but by amplifying and passing the signal through a low pass filter the pulse can be stretched to 100 µs. and then it can be sampled by an audio codec. '),
                 html.P('Computer sound cards operate on an AC voltage of around +- 1V and are not compatible with old school NIM equipment unless the signal is attenuated down to the correct range.'),
                 
-                html.H2('My Details tab'),
-                html.P('This tab gives you control over your personal details and your published spectra. Your details are saved in json format in the \'~/impulse_files\' folder on your PC or Mac, and when you apply for an API an account is created for you on the gammaspectacular.com web server which mirrors the data on the client.'),
+                html.H2('MY DETAILS TAB'),
+                html.P('This tab gives you control over your personal details and your published spectra. Your details are saved in json format in the \'~/impulse_data_2.0\' folder on your PC or Mac, and when you apply for an API an account is created for you on the gammaspectacular.com web server which mirrors the data on the client.'),
                 html.P('Once you click the \'Request API\' button the server will respond by sending you an email with your personal API key, copy and paste the key into the api_key field.'),
                 html.P('Any spectra you publish will appear on the right-hand panel. By clicking the x in the last column you can delete a previously uploaded spectrum. This could be handy if you want to replace an old spectrum with a better one.'), 
 
 
-                html.H2('Device and Control Tab'),
+                html.H2('IMPULSE MAIN TAB'),
 
                 html.H4('Device Specific Rendering'),
                 html.P('After selecting a spectrometer device from the pulldown menu, refresh the page, fields specific to your device will show.'),
@@ -88,7 +88,7 @@ def show_tab6():
                 html.P('Audio streaming is continuous, but computers need to process information in batches, we refer to the batch as a buffer. The default setting is 1024 samples which is the number of samples the computer reads into memory before looking for pulses. This setting may not be required in the future.'),
                 
                 html.H4('Pulses to Sample'),
-                html.P('Audio sampling uses the shape method for filtering out PPU, this method involves comparing each pulse to the mean average pulse, so this setting determines how many pulses to sample for the mean. The more samples you collect the closer to the mean you get, but remember more samples take more time to process. Start with a low number and experiment to find the optimum compromise between time and quality. Note that pulses with a peak value below 3000, which translates to approximately 0.1 Volts or 10%.'),
+                html.P('Audio sampling uses the shape method for filtering out pulse pile up (PPU), this method involves comparing each pulse to the mean average pulse, so this setting determines how many pulses to sample for the mean. The more samples you collect the closer to the mean you get, but remember more samples take more time to process. Start with a low number and experiment to find the optimum compromise between time and quality. In order that we sample a good average we discriminate the very small and very large pulses, this default can be found in _settings.json with variable names  `shape_lld` and `shape_uld`. You can manually edit this setting if required.'),
                 
                 html.H4('Sample Length'),
                 html.P('This setting sets the length of the sample in sample points. Sample length in combination with the sample rate determines how much time it takes to sample a pulse and consequently affects the dead time. Dead time is the amount of time the computer can not process pulses, simply put you can’t measure more than one pulse within (1 second/ sample rate) * (number of samples), let’s take the example (1s/384,000 Hz)*51 samples = 132 µs, now as our pulses are randomly spaced we have to allow more time between pulses, typically three times as much time. We can calculate the maximum count rate as follows: 1s / 132µs / 3 = 2525 cps '),
@@ -96,16 +96,16 @@ def show_tab6():
 
                 html.H4('Pulse Shape'),
                 html.P('What you see in the pulse shape graph is the left and right channel normalized positive pulse shape. The program runs a quick function to check if the pulses are negative or positive and automatically flips the pulses if necessary, therefore we have no setting for negative pulses. '),
-                html.P('Note: Pulse energy must be within a minimum and maximum range for this function to work, so if nothing happens when you click the button, your gain might be too low or too high.'),
+                html.P('Note: Pulse energy must be within a minimum and maximum range for this function to work, so if nothing happens when you click the button, your gain might be too low or too high. This function looks for pulses within a given pulse height window, only pulses bigger than `shape_lld` and smaller than `shape_uld` are used, these settings can be manually updated in settings.json if required.'),
 
                 html.H4('Distortion Curve'),
                 html.P('The distortion curve plot has no other function than to help you to visualize where the distortion in your sampling is occurring. When you click the [Get Distortion Curve] button the computer collects n unfiltered samples, compares each one with the mean and assigns a distortion factor to each pulse. The distortion factors are then ordered by size and plotted on a graph. The shape of this graph will help you determine how tight to set your distortion tolerance when recording your spectrum on tab2. Shape distortion may be caused by pulse overlap or large pulses that exceed the capacity of the electronic circuit.'),
 
-                html.H2('2D Histogram Tab'),
+                html.H2('2D HISTOGRAM TAB'),
                 html.H4('Spectrum File Name'),
-                html.P('This is exactly what it says, you can name your spectrum anything you like, it will automatically save in the user home directory ~/impulse_files/myspectrum.json , the JSON file format is NPESv2 and is backwards compatible with NPESv1. NOTE! It is not possible to rename a file via this input, changing the filename will start a new spectrum. To rename a file go to the impulse_files directory in your home folder. '),
+                html.P('This is exactly what it says, you can name your spectrum anything you like, it will automatically save in the user home directory ~/impulse_data_2.0/myspectrum.json , the JSON file format is NPESv2 and is backwards compatible with NPESv1. NOTE! It is not possible to rename a file via this input, changing the filename will start a new spectrum. To rename a file go to the impulse_files directory in your home folder. '),
                 html.Div(html.A('https://github.com/OpenGammaProject/NPES-JSON', href='https://github.com/OpenGammaProject/NPES-JSON', target='_blank')),
-                
+                html.P(' '),
                 html.H4('Number of Bins & Bin Size'),
                 html.P('These two settings determine the number of bins you want in your histogram and the size of each bin. The default settings are 1000 bins and 30 arbitrary units per bin. These numbers have been chosen because it gives you a spectrum range of 3000 which is convenient for most gamma spectra as we are investigating 0 to 3000 keV.'),
                 
@@ -119,7 +119,7 @@ def show_tab6():
                 html.P('This setting is related to the mean shape sample and distortion curve on tab1, so run the distortion check first and determine what level of distortion you are prepared to accept. Note, the tighter your tolerance for distortion, the more pulses will be dropped as a result and your count rate will not be accurate. Note!! Distortion typically increases with pulse height, setting distortion too low may result in loss of data at the high end of your spectrum.'),
                 
                 html.H4('Comparison spectrum'),
-                html.P('This is an automatically generated pulldown menu which gets the contents of your impulse_files folder and the subfolder [impulse_files/i] containing all the isotope spectra. Select any spectrum to compare'),
+                html.P('This is an automatically generated pulldown menu which gets the contents of your impulse_data_2 folder and the subfolder [impulse_files/i] containing all the isotope spectra. Select any spectrum to compare'),
                 
                 html.H4('Show Comparison spectrum'),
                 html.P('This switch simply hides and shows the comparison spectrum'),
@@ -139,17 +139,14 @@ def show_tab6():
                 html.H4('Play Sound Button'),
                 html.P('This button generates a wav file from the gaussian correlation (sigma) from the current spectrum and plays an arpeggio where the x axis represents the frequency of a piano keyboard and the y axis represents volume. Just a fun function.'),
 
-                html.H4('Update Calibration Button'),
-                html.P('During normal recording your calibration settings are automatically saved in the JSON file, however when you want to re-calibrate a previously recorded spectrum you can do so by clicking on this button. The function opens the JSON file and edits the polynomial coefficients'),
-
                 html.H4('Publish Spectrum Button'),
-                html.P('Once you have recorded and calibrated a beautiful spectrum, share it with the wider community of Impulse users.'),
+                html.P('Once you have recorded and calibrated a beautiful spectrum, share it with the wider community of Impulse users. You must obtain and save your API code on the My Details tab for permission to share files.'),
 
                 html.H4('Find Isotopes Button'),
-                html.P('This button switches isotope information on/off. It will only function when Calibration is switched on and Sigma is not zero. Isotope data comes from the isotopes.json file inside your impulse_files folder in your home directory. The isotopes.json file is not comprehensive, very low intensity and unlikely gamma have been removed to prevent the entire screen filling up with data. Users can add more isotopes to the json file manually if required.'),
+                html.P('This button switches isotope information on/off. It will only function when Calibration is switched on and Sigma is not zero. Isotope data comes from the isotopes.json file inside your impulse_data_2 folder in your home directory. The isotopes.json file is not comprehensive, very low intensity and unlikely gamma have been removed to prevent the entire screen filling up with data. Users can add more isotopes to the json file manually if required.'),
 
                 html.H4('Calibration'),
-                html.P('The calibration switch turns calibration on or off. Energy calibration is done by a second-order polynomial fit. There are six fields where the user may enter three bins with three corresponding energies. By choosing a linear relationship between bins and energies you can achieve a linear spectrum and by choosing non-linear relationships you can correct for detectors that are non-linear. The typical use case would be to enter the bins and known energies from three widely spread gamma peaks.  '),
+                html.P('All calibration settings are on the 2D histogram tab, in this version you can enter up to 5 calibration points (bin = energy), the program will accept any number of calibration points from 1 to 5. When there are less than 3 calibration points a linear function is applied, and above this it defaults to a polynomial function. These calibration settings are automatically used for the 3D spectrum on tab3. The calibration switch turns the calibration on or off.'),
                 html.P('Note !! Your standard calibration points are saved to your local settings.json, new spectra start recording with these settings. This is convenient if you are using the same detector setup all the time.'),
 
                 html.H4('Coincidence'),
@@ -167,11 +164,11 @@ def show_tab6():
                 html.H4('Spectrum Notes'),
                 html.P('This is an input where you can update the notes field on a spectrum after it has been recorded. Function may not work before the file exists, I suggest notating the file after it has been recorded'),
 
-                html.H2('3D Histogram Tab'),
+                html.H2('3D HISTOGRAM TAB'),
                 html.P('This page functions much the same way as the regular 2D histogram, with the added time axis. You can control the time interval between each update. NOTE: Because this spectrum writes a lot of data to the browser it is advisable to keep the number of channels and time intervals to a minimum'), 
 
-                html.H2('Count Rate Tab'),
-                html.P('This is a line chart showing the counts per second and is entirely driven by the settings on tab-2 and tab-3. The rolling average (green line) can be adjusted with the slider or for fine adjustment click on the slider and use your left-right arrow keys to move the slider in steps of one second.'),
+                html.H2('COUNT RATE TAB'),
+                html.P('This is a line chart showing the counts per second and is entirely driven by the settings on tab-2 and tab-3. The sum average (green line) can be adjusted with the slider or for fine adjustment click on the slider and use your left-right arrow keys to move the slider in steps of one second.'),
                 html.P('To avoid latency the cps chart will only display the last hour by default, however, the entire recording can be viewed with the Show Complete Dataset switch'),
                 
                 html.H2('Repository tab'),
@@ -181,14 +178,17 @@ def show_tab6():
                 html.Hr(),
                 html.H1('Hardware'),
 
-                html.Div('This program will work with any sound card spectrometer or ATOM-NANO serial device. Soundcard spectrometry was invented in Australia by professor Marek Dolleiser' ),
+                html.Div('This program will work with any sound card spectrometer, GS-MAX or ATOM-NANO serial device. Soundcard spectrometry was invented in Australia by professor Marek Dolleiser' ),
                 html.Div('and the first hardware ever made was the Gammaspectacular GS-1100A back in 2010.' ),
                 html.Div('Since then there have been many improvements to the hardware and today we have a highly developed product'), 
                 html.Div('working with a wide range of gamma scintillation detectors and geiger counters.'), 
-
+                html.Div(' '),
                 html.H4('GS-PRO-V5 Spectrometer (BYO detector)'),
                 html.A('Order the GS-PRO-V5 Spectrometer here', href='https://www.gammaspectacular.com/blue/gamma-spectroscopy/gamma-spectrometers/gs-pro-v5?tracking=641198710758a', target='_blank'),
                 
+                html.H4('GS-MAX-8000 Spectrometer (BYO detector)'),
+                html.A('Order the GS-MAX Spectrometer here', href='https://www.gammaspectacular.com/blue/gamma-spectroscopy/gamma-spectrometers/gs-max-8000?tracking=641198710758a', target='_blank'),
+
                 html.H4('GSB-1515-NAI Complete spectrometry kit with 1.5 x 1.5" NaI(Tl) detector'),
                 html.A('Order the GSB-1515-NAI Complete spectrometry kit', href='https://www.gammaspectacular.com/blue/gamma-spectroscopy/gamma-spectrometry-systems/GSB-1515-NAI?tracking=641198710758a', target='_blank'),
                 
