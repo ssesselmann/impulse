@@ -914,9 +914,13 @@ def save_settings_to_json():
             "calib_bin_1", 
             "calib_bin_2", 
             "calib_bin_3", 
+            "calib_bin_4",
+            "calib_bin_5",
             "calib_e_1", 
             "calib_e_2", 
-            "calib_e_3", 
+            "calib_e_3",
+            "calib_e_4",
+            "calib_e_5", 
             "chunk_size", 
             "coeff_1", 
             "coeff_2", 
@@ -951,7 +955,7 @@ def save_settings_to_json():
     try:
         with open(global_vars.settings_file, 'w') as f:
             json.dump(settings, f, indent=4)
-        logger.info('functions save_settings_to_json(done)\n')
+        logger.info('From functions save_settings_to_json(done)\n')
     except Exception as e:
         logger.error(f'Error saving settings to JSON: {e}')
 
@@ -1026,7 +1030,7 @@ def load_settings_from_json(path):
                 else:
                     setattr(global_vars, key, value)
 
-            logger.info(f'load settings completed \n')
+            logger.info(f'Load settings completed \n')
         except Exception as e:
             logger.error(f'Error loading settings from JSON: {e}')
     else:
@@ -1085,7 +1089,6 @@ def load_histogram_2(filename):
         logger.info(f"Error loading histogram_2 from {filename}: {e}\n")
         return False
 
-
 def load_histogram_3d(filename):
 
     logging.info('1.. load_histogram_3d\n')
@@ -1093,7 +1096,9 @@ def load_histogram_3d(filename):
     file_path = os.path.join(global_vars.data_directory, f'{filename}_3d.json')
     
     if not os.path.exists(file_path):
-        logger.error(f"load_histogram_3d File not found: {file_path}\n")
+        logger.error(f"Load_histogram_3d, file not found: {file_path}\n")
+        with global_vars.write_lock:
+            global_vars.histogram_3d = [[0] * 512] * 10  
         return
 
     try:
@@ -1117,7 +1122,7 @@ def load_histogram_3d(filename):
             global_vars.startTime3d     = data['resultData']['startTime']
             global_vars.endTime3d       = data['resultData']['startTime']
 
-        logger.info(f"4.. global_vars updated from {file_path}\n")
+        logger.info(f"4.. Global_vars updated from {file_path}\n")
 
     except KeyError as e:
 
