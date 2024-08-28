@@ -67,7 +67,6 @@ def show_tab2():
     options_sorted  = get_options()
 
     filtered_options = [option for option in options_sorted if not option['label'].startswith('•')]
-    
 
     # Load global variables
     with global_vars.write_lock:
@@ -85,9 +84,13 @@ def show_tab2():
         calib_bin_1     = global_vars.calib_bin_1
         calib_bin_2     = global_vars.calib_bin_2
         calib_bin_3     = global_vars.calib_bin_3
+        calib_bin_4     = global_vars.calib_bin_4
+        calib_bin_5     = global_vars.calib_bin_5
         calib_e_1       = global_vars.calib_e_1
         calib_e_2       = global_vars.calib_e_2
         calib_e_3       = global_vars.calib_e_3
+        calib_e_4       = global_vars.calib_e_4
+        calib_e_5       = global_vars.calib_e_5
         coeff_1         = global_vars.coeff_1
         coeff_2         = global_vars.coeff_2
         coeff_3         = global_vars.coeff_3
@@ -105,29 +108,24 @@ def show_tab2():
         coefficients_2  = global_vars.coefficients_2
 
     try:
-        load_histogram(filename)            # Load last histogram if it exists
+        load_histogram(filename)        # Load last histogram if it exists
     except:
         pass    
 
-    if device <= 100 and device:        # Sound card devices
+    if device < 100 and device:        # Sound card devices
+        serial = 'none'
+        audio = 'block'
         with global_vars.write_lock:
             global_vars.bins = bins
 
-    else:
+    if device >= 100 and device:
+        serial = 'block'
+        audio = 'none'
         with global_vars.write_lock:    # Atom nano devices
             global_vars.bins = int(8192/compression)    
 
-
-    millisec    = t_interval * 1000
-
-    if device >= 100:
-        serial = 'block'
-        audio = 'none'
-    else:
-        serial = 'none'
-        audio = 'block'
-
-    counts_warning = 'red' if max_counts == 0 else 'white'
+    millisec        = t_interval * 1000
+    counts_warning  = 'red' if max_counts == 0 else 'white'
     seconds_warning = 'red' if max_seconds == 0 else 'white'
 
     html_tab2 = html.Div(id='tab2', children=[
@@ -167,7 +165,7 @@ def show_tab2():
                         {'label': '2048 Bins', 'value': '4'},
                         {'label': '4096 Bins', 'value': '2'},
                         {'label': '8192 Bins', 'value': '1'},
-                    ], value=compression, className='dropdown')], style={'display': serial}),
+                    ], value=compression, clearable=False, className='dropdown')], style={'display': serial}),
 
                     html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, className='dropdown', optionHeight=40)]),
                     
@@ -207,9 +205,6 @@ def show_tab2():
 
                     html.Div(id='export_histogram_output_div', children=[html.P(id='export_histogram_output', children='')]),
 
-
-
-
             ], style={'width': '10%'}),
 
             html.Div(id='t2_setting_div5', children=[
@@ -229,8 +224,8 @@ def show_tab2():
             html.Div(id='t2_setting_div7', children=[
                 html.Button('Sound <)', id='soundbyte', className='action_button'),
                 html.Div(id='audio', children=''),
-                html.Button('Update calib.', id='update_calib_button', className='action_button'),
-                html.Div(id='update_calib_message', children=''),
+                #html.Button('Update calib.', id='update_calib_button', className='action_button'),
+                #html.Div(id='update_calib_message', children=''),
                 dbc.Button("Publish spectrum", id="publish-button", color="primary", className="action_button"),
                 dcc.Store(id='store-confirmation-output', data=''),
                 
@@ -259,6 +254,8 @@ def show_tab2():
                 html.Div(dcc.Input(id='calib_bin_1', type='number', value=calib_bin_1, className='input')),
                 html.Div(dcc.Input(id='calib_bin_2', type='number', value=calib_bin_2, className='input')),
                 html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3, className='input')),
+                html.Div(dcc.Input(id='calib_bin_4', type='number', value=calib_bin_4, className='input')),
+                html.Div(dcc.Input(id='calib_bin_5', type='number', value=calib_bin_5, className='input')),
                 html.Div('peakfinder'),
                 html.Div(dcc.Slider(id='peakfinder', min=0, max=5, step=0.1, value=peakfinder, marks={0: '0', 1: '1',2: '2', 3: '3' , 4: '4', 5: '5'})),
                 html.Div(id='publish-output', children=''),
@@ -269,9 +266,11 @@ def show_tab2():
                 html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1, className='input')),
                 html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2, className='input')),
                 html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3, className='input')),
+                html.Div(dcc.Input(id='calib_e_4', type='number', value=calib_e_4, className='input')),
+                html.Div(dcc.Input(id='calib_e_5', type='number', value=calib_e_5, className='input')),
                 html.Div(id='specNoteDiv', children=[
                     dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='spectrum notes', cols=20, rows=6)], style={'marginTop': '15px', 'fontSize': '12px'}),
-                html.Div(id='notes-warning', children=['Update notes after recording !']),
+                #html.Div(id='notes-warning', children=['Update notes after recording !']),
                 html.Div(id='spec-notes-output', children='', style={'visibility': 'hidden'}),
             ]),
         ], style={'width':'100%', 'float':'left'}),
@@ -283,6 +282,8 @@ def show_tab2():
 
     return html_tab2
 
+
+# User selection of existing file
 @app.callback(
     Output('filename'       , 'value'),
     [Input('filenamelist'   , 'value')],
@@ -294,7 +295,7 @@ def update_filename_from_dropdown(selected_file, current_filename):
         return selected_file
     return current_filename
 
-# Modal
+# Modal - pop up confirmation screen
 @app.callback(
     [Output('modal-overwrite'   , 'is_open'),
      Output('modal-body'        , 'children')],
@@ -327,7 +328,7 @@ def confirm_with_user_2d(start_clicks, confirm_clicks, cancel_clicks, filename, 
 
     return False, ''
 
-#start
+# Start button function
 @app.callback(
     Output('start-text'         , 'children'),
     [Input('confirm-overwrite'  , 'n_clicks'),
@@ -335,7 +336,7 @@ def confirm_with_user_2d(start_clicks, confirm_clicks, cancel_clicks, filename, 
     [State('filename'           , 'value'),
      State('compression'        , 'value'),
      State('t_interval'         , 'value'),
-     State('coi-switch'        , 'on'),
+     State('coi-switch'         , 'on'),
      State('store-device'       , 'data')]
 )
 def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t_interval, coi_switch, dn):
@@ -412,8 +413,7 @@ def stop_button(n_clicks, dn):
     return
 
 
-# UPDATE GRAPH ----------------------------------
-
+# Update histogram interval function
 @app.callback([
                Output('bar_chart'           , 'figure'), 
                Output('counts-output'       , 'children'),
@@ -570,7 +570,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
                 showarrow=True,
                 arrowhead=0,
                 ax=0,
-                ay=-40,
+                ay=-60,
             ))
 
             lines.append(dict(
@@ -677,8 +677,11 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
 
     return fig, f'{counts}', f'{elapsed}', f'cps {cps}', gaussian
 
-# SAVE SETTINGS ------------------------------------    
+import numpy as np
 
+import numpy as np
+
+# Save settings callback function  
 @app.callback(
     Output('polynomial'     , 'children'),
     [Input('bins'           , 'value'),
@@ -692,9 +695,13 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
      Input('calib_bin_1'    , 'value'),
      Input('calib_bin_2'    , 'value'),
      Input('calib_bin_3'    , 'value'),
+     Input('calib_bin_4'    , 'value'),
+     Input('calib_bin_5'    , 'value'),
      Input('calib_e_1'      , 'value'),
      Input('calib_e_2'      , 'value'),
      Input('calib_e_3'      , 'value'),
+     Input('calib_e_4'      , 'value'),
+     Input('calib_e_5'      , 'value'),
      Input('peakfinder'     , 'value'),
      Input('sigma'          , 'value'),
      Input('t_interval'     , 'value'),
@@ -710,72 +717,90 @@ def save_settings(*args):
     if n_clicks is None and not shproto.dispatcher.calibration_updated:
         raise PreventUpdate
 
-    x_bins      = []
-    x_energies  = []
+    x_bins = []
+    x_energies = []
 
     if shproto.dispatcher.calibration_updated:
         with shproto.dispatcher.calibration_lock:
             shproto.dispatcher.calibration_updated = 0
             x_bins_default = [512, 1024, 2048, 4096, 8192]
-            x_bins = [value / args[17] for value in x_bins_default]
+            x_bins = [int(value / args[22]) for value in x_bins_default]
             polynomial_fn = np.poly1d(shproto.dispatcher.calibration[::-1])
-            x_energies = [polynomial_fn(x_bins_default[0]), polynomial_fn(x_bins_default[1]), polynomial_fn(x_bins_default[2])]
+            x_energies = [polynomial_fn(x_bins_default[i]) for i in range(min(3, len(x_bins_default)))]
     else:
-        x_bins = [args[8], args[9], args[10]]
-        x_energies = [args[11], args[12], args[13]]
+        x_bins      = [args[8], args[9], args[10], args[11], args[12]]
+        x_energies  = [args[13], args[14], args[15], args[16], args[17]]
+        # Filter out zero or None values
+        x_bins      = [x for x in x_bins if x > 0]
+        x_energies  = [y for y in x_energies if y > 0]
 
-    coefficients = np.polyfit(x_bins, x_energies, 2)
+    coefficients = []
+
+    # Handle different cases based on the number of valid calibration points
+    if len(x_bins) == 1 and len(x_energies) == 1:
+        # With one point, assume a direct linear relationship (y = mx)
+        m               = x_energies[0] / x_bins[0]
+        coefficients    = [0, m, 0]  # Assume linear (y = mx, with c = 0)
+        message         = "Linear one point calibration"
+
+    elif len(x_bins) == 2 and len(x_energies) == 2:
+        # With two points, calculate a linear fit (y = mx + c)
+        coefficients    = np.polyfit(x_bins, x_energies, 1).tolist()
+        coefficients    = [0] + coefficients  # Convert to [0, b, c]
+        message         = "Linear two point calibration"
+
+    elif len(x_bins) >= 3 and len(x_energies) >= 3:
+        # If at least three points are available, fit a second-degree polynomial
+        coefficients    = np.polyfit(x_bins, x_energies, 2).tolist()
+        message         = "Second-order polynomial fit"
+
+    else:
+        message         = "Warning: Insufficient calibration points"
+        return  # Exit the function gracefully
 
     polynomial_fn = np.poly1d(coefficients)
 
     with global_vars.write_lock:
-        global_vars.bins            = int(args[0])
-        global_vars.bin_size        = int(args[1])
-        global_vars.max_counts      = int(args[2])
-        global_vars.max_seconds     = int(args[3])
-        global_vars.filename        = args[4]
-        global_vars.filename_2      = args[5]
-        global_vars.threshold       = int(args[6])
-        global_vars.tolerance       = int(args[7])
-        global_vars.calib_bin_1     = int(args[8])
-        global_vars.calib_bin_2     = int(args[9])
-        global_vars.calib_bin_3     = int(args[10])
-        global_vars.calib_e_1       = int(args[11])
-        global_vars.calib_e_2       = int(args[12])
-        global_vars.calib_e_3       = int(args[13])
-        global_vars.peakfinder      = float(args[14])
-        global_vars.sigma           = float(args[15])
-        global_vars.t_interval      = int(args[16])
-        global_vars.coeff_1         = round(coefficients[0], 6)
-        global_vars.coeff_2         = round(coefficients[1], 6)
-        global_vars.coeff_3         = round(coefficients[2], 6)
-        global_vars.compression     = int(args[17])
-        global_vars.log_switch      = args[18]
-        global_vars.epb_switch      = args[19]
-        global_vars.cal_switch      = args[20]
-        global_vars.coi_switch      = args[21]
+        global_vars.bins        = int(args[0])
+        global_vars.bin_size    = int(args[1])
+        global_vars.max_counts  = int(args[2])
+        global_vars.max_seconds = int(args[3])
+        global_vars.filename    = args[4]
+        global_vars.filename_2  = args[5]
+        global_vars.threshold   = int(args[6])
+        global_vars.tolerance   = int(args[7])
+        global_vars.calib_bin_1 = int(args[8])
+        global_vars.calib_bin_2 = int(args[9])
+        global_vars.calib_bin_3 = int(args[10])
+        global_vars.calib_bin_4 = int(args[11])
+        global_vars.calib_bin_5 = int(args[12])
+        global_vars.calib_e_1   = int(args[13])
+        global_vars.calib_e_2   = int(args[14])
+        global_vars.calib_e_3   = int(args[15])
+        global_vars.calib_e_4   = int(args[16])
+        global_vars.calib_e_5   = int(args[17])
+        global_vars.peakfinder  = float(args[18])
+        global_vars.sigma       = float(args[19])
+        global_vars.t_interval  = int(args[20])
+        global_vars.coeff_1     = round(coefficients[0], 6)
+        global_vars.coeff_2     = round(coefficients[1], 6)
+        global_vars.coeff_3     = round(coefficients[2], 6)
+        global_vars.compression = int(args[21])
+        global_vars.log_switch  = args[22]
+        global_vars.epb_switch  = args[23]
+        global_vars.cal_switch  = args[24]
+        global_vars.coi_switch  = args[25]
+        global_vars.coefficients_1 = coefficients
 
-        global_vars.coefficients_1  = list(coefficients)
-        global_vars.coeff_1         = round(coefficients[0], 6)
-        global_vars.coeff_2         = round(coefficients[1], 6)
-        global_vars.coeff_3         = round(coefficients[2], 6)
-
+        if global_vars.device > 100:
+            global_vars.bins = int(8192 / int(args[17]))
 
     save_settings_to_json()
-        
 
-    device = get_device_number()
-
-    if device >= 100:
-        global_vars.bins    = int(8192/int(args[17]))
-    else:
-        global_vars.bins    = args[0]
-    
     logger.info(f'Settings updated from tab2\n')
-    return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
+    return f'Function (ax^2 + bx + c) = ({polynomial_fn}) - {message}'
 
-
-# Callback for playing sound
+# Callback function for playing sound
 @app.callback(Output('audio'     , 'children'),
               [Input('soundbyte' , 'n_clicks')],
               [State('filename'  , 'value'),
@@ -798,43 +823,7 @@ def play_sound(n_clicks, filename, sigma):
     logger.info(f'Playing soundfile {filename}.wav\n')
     return
 
-@app.callback(
-    Output('update_calib_message', 'children'),
-    [Input('update_calib_button', 'n_clicks'),
-     Input('filename', 'value')]
-)
-def update_json_calibration(n_clicks, filename):
-    if n_clicks is None:
-        raise PreventUpdate
-
-    update_coeff(filename)
-
-    logger.info(f'tab2 Calibration updated')
-    return f"Update {n_clicks}"
-
-@app.callback(
-    Output('cmd_text'       , 'children'),
-    [Input('selected_cmd'   , 'value')],
-    [State('tabs'           , 'value')]
-)
-def update_output(selected_cmd, active_tab):
-
-    if active_tab != 'tab_2':
-        raise PreventUpdate
-
-    logger.info(f'tab2 command sent: {selected_cmd}\n')
-
-    try:
-        shproto.dispatcher.process_03(selected_cmd)
-
-        return f'Cmd: {selected_cmd}'
-
-    except Exception as e:
-
-        logging.error(f"Error in update_output tab2: {e}")
-
-        return "An error occurred."
-
+# callback function for publish button
 @app.callback(
     Output("confirmation-modal" , "is_open"),
     [Input("publish-button"     , "n_clicks"),
@@ -858,7 +847,7 @@ def toggle_modal(open_button_clicks, confirm_button_clicks, cancel_publish_click
 
     return is_open
 
-
+# Publish spectrum function
 @app.callback(
     Output("publish-output"             , "children"),
     [Input("confirm-publish"            , "n_clicks"),
@@ -888,6 +877,7 @@ def display_confirmation_result(confirm_publish_clicks, cancel_publish_clicks, f
 
     return ""
 
+#update spectrum notes
 @app.callback(
     Output('spec-notes-output'  , 'children'),
     [Input('spec-notes-input'   , 'value'),
@@ -906,8 +896,7 @@ def update_spectrum_notes(spec_notes, filename):
 
     return spec_notes
 
-app.layout = show_tab2()
-
+# Switch annotations on or off
 @app.callback(
     Output('store-annotations'          , 'data'),
     Output('toggle-annotations-button'  , 'children'),
@@ -935,7 +924,6 @@ def toggle_annotations(n_clicks, flags, gaussian, sigma, cal_switch):
             isotopes_data   = get_isotopes(path_isotopes)
             matches         = matching_isotopes(gc_calibrated, peaks, isotopes_data, sigma)
             annotations     = []
-
 
             for idx, (x, y, isotopes) in matches.items():
                 isotope_names = ', '.join([isotope['isotope'] for isotope in isotopes])
