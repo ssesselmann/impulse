@@ -345,7 +345,10 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
     if not ctx.triggered:
         raise PreventUpdate
 
-    mode = 4 if coi_switch else 2
+    if coi_switch:
+        mode = 4
+    else:
+        mode = 2    
 
     trigger_id      = ctx.triggered[0]['prop_id'].split('.')[0]
     trigger_value   = ctx.triggered[0]['value']

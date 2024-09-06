@@ -469,12 +469,12 @@ def start_recording(mode):
         global_vars.run_flag.set()  # Set the run flag
         logger.info(f"Recording started in mode {mode}.\n")
 
-    if mode == 2:
+    if mode == 2 or mode == 4:
         # Start 2D spectrum recording logic
         logger.info("Starting 2D spectrum recording...\n")
         try:
             if callable(pulsecatcher):
-                thread = threading.Thread(target=pulsecatcher, args=(2, global_vars.run_flag, global_vars.run_flag_lock))
+                thread = threading.Thread(target=pulsecatcher, args=(mode, global_vars.run_flag, global_vars.run_flag_lock))
                 thread.start()
                 logger.info("2D spectrum recording thread started.\n")
             else:
@@ -926,7 +926,8 @@ def save_settings_to_json():
             "coeff_2", 
             "coeff_3", 
             "coefficients_1",
-            "coi_switch",  
+            "coi_switch",
+            "coi_window",  
             "compression",
             "device", 
             "epb_switch", 
@@ -995,6 +996,7 @@ def load_settings_from_json(path):
                     "coeff_3":              float, 
                     "coefficients_1":       list, 
                     "coi_switch":           bool, 
+                    "coi_window":           int,
                     "compression":          int, 
                     "device":               int, 
                     "epb_switch":           bool, 

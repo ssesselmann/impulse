@@ -48,6 +48,7 @@ def capture_pulse_polarity(peak, timeout=30):
         device          = int(global_vars.device) 
         sample_length   = int(global_vars.sample_length)
         shape_lld       = int(global_vars.shape_lld) 
+        
 
     p           = pyaudio.PyAudio()
     channels    = 2 if stereo else 1
@@ -128,6 +129,7 @@ def shapecatcher():
         stereo          = global_vars.stereo
         shape_lld       = global_vars.shape_lld
         shape_uld       = global_vars.shape_uld
+        pc              = 0
 
     peak            = int(((int(sample_length) - 1) / 2) + int(peakshift))
 
@@ -182,44 +184,65 @@ def shapecatcher():
     sc_info.append(f'Collecting pulses')
 
     try:
-        while True:
+        # Collect pulses from the left channel
+        while len(pulse_list_left) < shapecatches:
             # Read audio data
             data = stream.read(chunk_size, exception_on_overflow=False)
             # Unpack audio data
             values = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))
-            # Separate channels
+            
+            # Separate the left channel
             left_channel = values[::2] if stereo else values
-            right_channel = values[1::2] if stereo else []
 
-            # Process each channel to detect pulses
-            for channel, pulse_list, channel_name, pulse_sign in zip(
-                [left_channel, right_channel] if stereo else [left_channel],
-                [pulse_list_left, pulse_list_right] if stereo else [pulse_list_left],
-                ["left", "right"] if stereo else ["left"],
-                [pulse_sign_left, pulse_sign_right] if stereo else [pulse_sign_left]
-            ):
-                for i in range(len(channel) - sample_length):
-                    samples = channel[i:i + sample_length]
+            # Process the left channel to detect pulses
+            for i in range(len(left_channel) - sample_length):
+                samples = left_channel[i:i + sample_length]
+
+                if shape_lld < abs(samples[peak]) < shape_uld and samples[peak] == max(samples):
+                    aligned_samples = align_pulse(samples, peak)
+
+                    # Flip the data if necessary
+                    if not pulse_sign_left:
+                        aligned_samples = [-s for s in aligned_samples]
+
+                    pulse_list_left.append(aligned_samples)
+
+                    pcl = len(pulse_list_left)
+                    sc_info.append(f'Looking for pulses on left channel: {pcl}')
+
+                if len(pulse_list_left) >= shapecatches:
+                    break
+
+        # If stereo mode is enabled, collect pulses from the right channel
+        if stereo:
+            while len(pulse_list_right) < shapecatches:
+                # Read audio data
+                data = stream.read(chunk_size, exception_on_overflow=False)
+                # Unpack audio data
+                values = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))
+
+                # Separate the right channel
+                right_channel = values[1::2]
+
+                # Process the right channel to detect pulses
+                for i in range(len(right_channel) - sample_length):
+                    samples = right_channel[i:i + sample_length]
 
                     if shape_lld < abs(samples[peak]) < shape_uld and samples[peak] == max(samples):
-
                         aligned_samples = align_pulse(samples, peak)
 
                         # Flip the data if necessary
-                        if not pulse_sign:
+                        if not pulse_sign_right:
                             aligned_samples = [-s for s in aligned_samples]
 
-                        pulse_list.append(aligned_samples)
+                        pulse_list_right.append(aligned_samples)
 
-                        sc_info.append(f'Looking for pulses between {shape_lld} and {shape_uld}: {i}')
+                        pcr = len(pulse_list_right)
+                        sc_info.append(f'Looking for pulses on right channel: {pcr}')
 
-                        # Break if enough pulses are collected
-                        if len(pulse_list) >= shapecatches:
-                            break
+                    if len(pulse_list_right) >= shapecatches:
+                        break
 
-            # Check exit condition for loop
-            if (len(pulse_list_left) >= shapecatches and (not stereo or len(pulse_list_right) >= shapecatches)):
-                break
 
         sc_info.append(f'Calculating mean shape')
         time.sleep(0.1)

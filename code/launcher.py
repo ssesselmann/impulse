@@ -60,6 +60,7 @@ default_settings = {
     "coeff_3": 0,
     "coefficients_1": [],
     "coi_switch": False,
+    "coi_window": 2,
     "compression": 8,
     "device": 1,
     "epb_switch": False,
@@ -84,7 +85,7 @@ default_settings = {
     "threshold": 100,
     "tolerance": 50000,
     "shape_lld": 500,
-    "shape_uld": 3000
+    "shape_uld": 10000
 }
 
 default_user = {

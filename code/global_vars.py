@@ -55,7 +55,7 @@ chunk_size      = 1024
 stereo          = False
 peakshift       = 0
 shape_lld       = 500
-shape_uld       = 3000
+shape_uld       = 10000
 
 # Tab2 Settings
 max_counts      = 1000000
@@ -67,6 +67,7 @@ t_interval      = 1
 flip            = 1
 sigma           = 0
 peakfinder      = 0
+coi_window      = 2
 
 log_switch      = False
 epb_switch      = False

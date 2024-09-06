@@ -44,7 +44,6 @@ def save_data(save_queue):
 
 # Function reads audio stream and finds pulses then outputs time, pulse height, and distortion
 def pulsecatcher(mode, run_flag, run_flag_lock):
-    
     # Start timer
     t0                  = datetime.datetime.now()
     time_start          = time.time()
@@ -79,6 +78,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         peak            = int((sample_length - 1) / 2) + peakshift
         spec_notes      = global_vars.spec_notes
         stereo          = global_vars.stereo
+        coi_window      = global_vars.coi_window
         # Set global vars
         global_vars.elapsed         = 0
         global_vars.counts          = 0
@@ -141,13 +141,16 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         if flip == 22:
             left_channel    = [flip * x for x in left_channel]
             right_channel   = [flip * x for x in right_channel]
+
         if flip == 12:
             right_channel   = [flip * x for x in right_channel]
+
         if flip == 21:
             left_channel    = [flip * x for x in left_channel]
 
         # Extend detection to right channel if mode == 4
         if mode == 4:
+            right_pulses = []  # Reset right pulses for this chunk
             for i in range(len(right_channel) - sample_length):
                 samples = right_channel[i:i + sample_length]
                 height = fn.pulse_height(samples)
@@ -157,26 +160,28 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
         # Read through the list of left channel values and find pulse peaks
         for i in range(len(left_channel) - sample_length):
-            samples     = left_channel[i:i + sample_length]
-            height      = fn.pulse_height(samples)
+            samples = left_channel[i:i + sample_length]
+            height = fn.pulse_height(samples)
 
             if samples[peak] == max(samples) and abs(height) > threshold and samples[peak] < 32768:
 
                 if mode == 4:
                     coincident_pulse = None
                     for rp in right_pulses:
-                        if i + peak - 3 <= rp[0] <= i + peak + 3:
+                        # Allow a wider coincidence window if necessary
+                        if i + peak - coi_window <= rp[0] <= i + peak + coi_window:
                             coincident_pulse = rp
                             break
+
                     if not coincident_pulse:
                         continue  # Skip if no coincident pulse found
                     else:
-
                         logger.debug(f"Coincidence index {i}, height {height}, Right pulse at index {coincident_pulse[0]}, height {coincident_pulse[1]}\n")
 
+                # Process the pulse as normal
                 normalised = fn.normalise_pulse(samples)
                 distortion = fn.distortion(normalised, left_shape)
-                
+
                 if distortion < tolerance:
                     bin_index = int(height / bin_size)
 
@@ -198,18 +203,14 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 global_vars.elapsed     = local_elapsed
                 global_vars.spec_notes  = spec_notes
                 
-                if mode == 2:
+                if mode == 2 or mode == 4:
                     global_vars.histogram = local_histogram
                     global_vars.count_history.append(counts_per_sec)
 
                 if mode == 3:
-
                     interval_histogram = [local_histogram[i] - last_histogram[i] for i in range(bins)]
-
                     global_vars.histogram_3d.append(interval_histogram)
-
                     last_minute_histogram_3d.append(interval_histogram)
-
                     last_histogram = local_histogram.copy()
 
             local_count_history.append(counts_per_sec)
@@ -234,7 +235,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 'spec_notes': spec_notes,
                 'local_count_history': local_count_history
             }
-            if mode == 2:
+            if mode == 2 or mode == 4:
                 save_data_dict['filename']          = filename
                 save_data_dict['local_histogram']   = local_histogram
 
