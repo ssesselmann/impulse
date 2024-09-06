@@ -1,115 +1,141 @@
 import pyaudio
-import wave
-import os
-import pandas as pd
 import numpy as np
-import logging
+import pyaudio
+import wave
 import time
 import global_vars
-from functions import get_path, save_settings_to_json
+import pandas as pd
 
-# Setup logging
+from functions import save_settings_to_json
+
+# Setup logging (optional, if logging is desired)
+import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 sc_info = []
 
-# Define the directory where data files are stored
-data_directory = global_vars.data_directory
-
-#   Determine if the pulse is predominantly positive or negative.
-def determine_pulse_sign(pulse):
-    sc_info.append('Checking pulse polarity')
-    time.sleep(0.1)
-    return np.mean(pulse) > 0
-
-#   Encode pulse signs into a numeric value.
-def encode_pulse_sign(left_sign, right_sign):
-    left_digit = 1 if left_sign else 2
-    right_digit = 1 if right_sign else 2
-    sc_info.append(f'Saving pulse polarity')
-    time.sleep(0.1)
-
-    return left_digit * 10 + right_digit
-
-#   Align the pulse so that its peak is in the middle.
+# Align the pulse so that its peak is in the middle (no changes to this method)
 def align_pulse(pulse, peak_position):
     max_idx = np.argmax(np.abs(pulse))
     shift = peak_position - max_idx
     return np.pad(pulse, (max(shift, 0), max(-shift, 0)), 'constant', constant_values=(0,))[:len(pulse)]
 
+# Determine if a pulse is predominantly positive or negative
+def determine_pulse_sign(pulse):
+    max_val = np.max(pulse)
+    min_val = np.min(pulse)
+    return max_val > abs(min_val)
+
+def encode_pulse_sign(left_sign, right_sign):
+    left_digit = 1 if left_sign else 2
+    right_digit = 1 if right_sign else 2
+    sc_info.append(f'Saving pulse polarity')
+    time.sleep(0.1)
+    return left_digit * 10 + right_digit
+
+
+# Capture and test polarity for a single channel
+def capture_channel_polarity(channel_data, sample_length, shape_lld, peak):
+    pulse_list = []
+    consecutive_pulses_same_polarity = 0
+    previous_polarity = None
+
+    for i in range(len(channel_data) - sample_length):
+        samples = channel_data[i:i + sample_length]
+
+        if abs(max(samples)) > shape_lld:
+            aligned_samples = align_pulse(samples, int(peak))
+            current_polarity = determine_pulse_sign(aligned_samples)
+
+            if previous_polarity is None:
+                previous_polarity = current_polarity
+
+            if current_polarity == previous_polarity:
+                consecutive_pulses_same_polarity += 1
+            else:
+                consecutive_pulses_same_polarity = 1  # Reset counter for new polarity
+                previous_polarity = current_polarity
+
+            if consecutive_pulses_same_polarity >= 20:
+                return current_polarity
+
+    return None
+
 #   Capture initial pulses to determine polarity.
-def capture_pulse_polarity(peak, timeout=30):
-
+def capture_pulse_polarity(timeout=30):
     with global_vars.write_lock:
-        stereo          = bool(global_vars.stereo)
-        sample_rate     = int(global_vars.sample_rate)
-        chunk_size      = int(global_vars.chunk_size)
-        device          = int(global_vars.device) 
-        sample_length   = int(global_vars.sample_length)
-        shape_lld       = int(global_vars.shape_lld) 
-        
+        stereo = bool(global_vars.stereo)
+        sample_rate = int(global_vars.sample_rate)
+        chunk_size = int(global_vars.chunk_size)
+        device = int(global_vars.device) 
+        sample_length = int(global_vars.sample_length)
+        shape_lld = int(global_vars.shape_lld)
+        peak = int((sample_length - 1) / 2 + global_vars.peakshift)
 
-    p           = pyaudio.PyAudio()
-    channels    = 2 if stereo else 1
-    stream      = p.open(format=pyaudio.paInt16,
+    p = pyaudio.PyAudio()
+    channels = 2 if stereo else 1
+    stream = p.open(format=pyaudio.paInt16,
                     channels=channels,
                     rate=sample_rate,
                     input=True,
                     output=False,
                     frames_per_buffer=chunk_size * channels,
-                    input_device_index=device,
-                    )
+                    input_device_index=device)
 
-    pulse_sign_left     = None
-    pulse_sign_right    = True if not stereo else None  # Default to True if stereo is False
+    pulse_sign_left = None
+    pulse_sign_right = None
 
     start_time = time.time()
 
     try:
         while pulse_sign_left is None or (stereo and pulse_sign_right is None):
-            # Check for timeout
             if time.time() - start_time > timeout:
-                sc_info.append('No pulse on right channel.. Timeout')
+                sc_info.append('Polarity detection timeout.')
                 break
 
             # Read audio data
             data = stream.read(chunk_size, exception_on_overflow=False)
-
-            # Unpack audio data
             values = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))
 
             # Separate channels
-            left_channel = values[::2] if stereo else values
-            right_channel = values[1::2] if stereo else []
+            left_channel = values[::2] if stereo else values  # Left channel data
+            right_channel = values[1::2] if stereo else []    # Right channel data, empty if mono
 
-            # Process each channel to detect pulses
-            for channel, pulse_list, channel_name in zip(
-                [left_channel, right_channel] if stereo else [left_channel],
-                [[], []] if stereo else [[]],
-                ["left", "right"] if stereo else ["left"]
-            ):
-                for i in range(len(channel) - sample_length):
-                    samples = channel[i:i + sample_length]
+            # Determine polarity for left channel
+            if pulse_sign_left is None:
+                pulse_sign_left = capture_channel_polarity(left_channel, sample_length, shape_lld, peak)
 
-                    if abs(samples[int(peak)]) > shape_lld:
-                        aligned_samples = align_pulse(samples, int(peak))
-                        pulse_list.append(aligned_samples)
-                        if len(pulse_list) >= 10:  # Use a small number for quick polarity determination
-                            pulse_sign = determine_pulse_sign([sum(samples) for samples in pulse_list])
-                            if channel_name == "left":
-                                pulse_sign_left = pulse_sign
-                            elif channel_name == "right" and stereo:
-                                pulse_sign_right = pulse_sign
-                            pulse_list.clear()
-                            break
+            # Determine polarity for right channel (if stereo)
+            if stereo and pulse_sign_right is None:
+                pulse_sign_right = capture_channel_polarity(right_channel, sample_length, shape_lld, peak)
+
     finally:
-        # Clean up the stream
         stream.stop_stream()
         stream.close()
         p.terminate()
 
+    # Encode the pulse polarity into a two-digit number
+    if pulse_sign_left is not None:
+        left_digit = 1 if pulse_sign_left else 2
+    else:
+        left_digit = 0  # Use 0 to indicate no pulse detection
+
+    if stereo and pulse_sign_right is not None:
+        right_digit = 1 if pulse_sign_right else 2
+    else:
+        right_digit = 0  # Use 0 to indicate no pulse detection or mono
+
+    encoded_pulse_sign = left_digit * 10 + right_digit
+
+    # Save encoded result to global_vars
+    with global_vars.write_lock:
+        global_vars.flip = encoded_pulse_sign
+
+    # Return both pulse signs (left and right) for unpacking
     return pulse_sign_left, pulse_sign_right
+
+
 
 def shapecatcher():
 

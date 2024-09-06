@@ -1003,7 +1003,7 @@ def load_settings_from_json(path):
                     "filename":             str,
                     "filename_2":           str,
                     "filename_3d":          str,
-                    "flip":                 int, 
+                    "flip":                 str, 
                     "log_switch":           bool, 
                     "max_bins":             int, 
                     "max_counts":           int, 

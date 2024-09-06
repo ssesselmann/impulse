@@ -67,7 +67,7 @@ default_settings = {
     "filename": "my_spectrum",
     "filename_2": "background",
     "filename_3d": "my_spectrum",
-    "flip": 1,
+    "flip": 11,
     "log_switch": False,
     "max_counts": 1000000,
     "max_seconds": 3600,
