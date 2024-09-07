@@ -46,6 +46,7 @@ def show_tab1():
         peakshift       = global_vars.peakshift
         stereo          = global_vars.stereo
         
+
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
     shape_left, shape_right = fn.load_shape()
@@ -69,11 +70,11 @@ def show_tab1():
     options = [{k: str(v) for k, v in option.items()} for option in options]
     options = fn.cleanup_serial_options(options)
         
-    if device < 100 and device:        # Sound card devices
+    if device < 100:        # Sound card devices
         serial = 'none'
         audio = 'block'
 
-    if device >= 100 and device:
+    if device >= 100:
         serial = 'block'
         audio = 'none' 
 

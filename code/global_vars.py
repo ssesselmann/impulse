@@ -24,6 +24,8 @@ spec_notes      = ""
 cps             = 0
 counts          = 0
 count_history   = []
+suppress_last_bin = False
+compression     = 1
 
 # Spectrum 2 comparison
 filename_2      = ""
@@ -43,6 +45,7 @@ elapsed_3d      = 0
 coefficients_3d = []
 startTime3d     = ""
 endTime3d       = ""
+compression3d   = 16
 
 
 # Tab1 Settings
@@ -92,4 +95,4 @@ coeff_3         = 0
 
 # Nano settings
 rolling_interval= 60
-compression     = 8
+

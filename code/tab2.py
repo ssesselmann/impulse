@@ -106,6 +106,7 @@ def show_tab2():
         spec_notes      = global_vars.spec_notes
         coefficients    = global_vars.coefficients_1
         coefficients_2  = global_vars.coefficients_2
+        slb_switch      = global_vars.suppress_last_bin
 
     try:
         load_histogram(filename)        # Load last histogram if it exists
@@ -219,6 +220,7 @@ def show_tab2():
                 html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
                 html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
                 html.Div(['Coincidence', daq.BooleanSwitch(id='coi-switch', on=coi_switch, color='purple')], style={'display': audio}),
+                html.Div(['Supress Last Bin', daq.BooleanSwitch(id='slb-switch', on=slb_switch, color='purple')], style={'display': serial}),
             ]),
 
             html.Div(id='t2_setting_div7', children=[
@@ -687,32 +689,33 @@ import numpy as np
 # Save settings callback function  
 @app.callback(
     Output('polynomial'     , 'children'),
-    [Input('bins'           , 'value'),
-     Input('bin_size'       , 'value'),
-     Input('max_counts'     , 'value'),
-     Input('max_seconds'    , 'value'),
-     Input('filename'       , 'value'),
-     Input('filename_2'     , 'value'),
-     Input('threshold'      , 'value'),
-     Input('tolerance'      , 'value'),
-     Input('calib_bin_1'    , 'value'),
-     Input('calib_bin_2'    , 'value'),
-     Input('calib_bin_3'    , 'value'),
-     Input('calib_bin_4'    , 'value'),
-     Input('calib_bin_5'    , 'value'),
-     Input('calib_e_1'      , 'value'),
-     Input('calib_e_2'      , 'value'),
-     Input('calib_e_3'      , 'value'),
-     Input('calib_e_4'      , 'value'),
-     Input('calib_e_5'      , 'value'),
-     Input('peakfinder'     , 'value'),
-     Input('sigma'          , 'value'),
-     Input('t_interval'     , 'value'),
-     Input('compression'    , 'value'),
-     Input('log-switch'     , 'on'),
-     Input('epb-switch'     , 'on'),
-     Input('cal-switch'     , 'on'),
-     Input('coi-switch'     , 'on')]
+    [Input('bins'           , 'value'), #[0]
+     Input('bin_size'       , 'value'), #[1]
+     Input('max_counts'     , 'value'), #[2]
+     Input('max_seconds'    , 'value'), #[3]
+     Input('filename'       , 'value'), #[4]
+     Input('filename_2'     , 'value'), #[5]
+     Input('threshold'      , 'value'), #[6]
+     Input('tolerance'      , 'value'), #[7]
+     Input('calib_bin_1'    , 'value'), #[8]
+     Input('calib_bin_2'    , 'value'), #[9]
+     Input('calib_bin_3'    , 'value'), #[10]
+     Input('calib_bin_4'    , 'value'), #[11]
+     Input('calib_bin_5'    , 'value'), #[12]
+     Input('calib_e_1'      , 'value'), #[13]
+     Input('calib_e_2'      , 'value'), #[14]
+     Input('calib_e_3'      , 'value'), #[15]
+     Input('calib_e_4'      , 'value'), #[16]
+     Input('calib_e_5'      , 'value'), #[17]
+     Input('peakfinder'     , 'value'), #[18]
+     Input('sigma'          , 'value'), #[19]
+     Input('t_interval'     , 'value'), #[20]
+     Input('compression'    , 'value'), #[21]
+     Input('log-switch'     , 'on'),    #[22]
+     Input('epb-switch'     , 'on'),    #[23]
+     Input('cal-switch'     , 'on'),    #[24]
+     Input('coi-switch'     , 'on'),    #[25]
+     Input('slb-switch'     , 'on')]    #[26]
 )
 def save_settings(*args):
     n_clicks = args[0]
@@ -793,10 +796,11 @@ def save_settings(*args):
         global_vars.epb_switch  = args[23]
         global_vars.cal_switch  = args[24]
         global_vars.coi_switch  = args[25]
-        global_vars.coefficients_1 = coefficients
+        global_vars.suppress_last_bin = args[26]
+        global_vars.coefficients_1    = coefficients
 
         if global_vars.device > 100:
-            global_vars.bins = int(8192 / int(args[17]))
+            global_vars.bins = int(8192 / int(args[21]))
 
     save_settings_to_json()
 

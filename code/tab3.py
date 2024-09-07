@@ -57,7 +57,6 @@ def show_tab3():
     audio           = 'none'    if device >= 100 else 'block'
     refresh_rate    = t_interval * 1000
     options_3d      = get_options_3d()
-    compression     = 8
     bins_3d         = 512
 
     try:
@@ -236,8 +235,6 @@ def start_new_3d_spectrum(confirm_clicks, start_clicks, filename_3d, t_interval)
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
     trigger_value = ctx.triggered[0]['value']
 
-    compression = 8
-
     file_exists = os.path.exists(f'{data_directory}/{filename_3d}_3d.json')
 
     if file_exists:
@@ -262,8 +259,8 @@ def start_new_3d_spectrum(confirm_clicks, start_clicks, filename_3d, t_interval)
                 logger.info(f'tab3 sends start command -sta\n')
 
                 time.sleep(0.1)
-                shproto.dispatcher.process_02(filename_3d, compression, "MAX", t_interval)
-                logger.info(f'tab3 process_01(){filename_3d}, {compression}, MAX, {t_interval}\n')
+                shproto.dispatcher.process_02(filename_3d, 16, "MAX", t_interval)
+                logger.info(f'tab3 process_01(){filename_3d}, {16}, MAX, {t_interval}\n')
 
                 time.sleep(0.1)
             except Exception as e:
@@ -438,7 +435,6 @@ def save_settings(max_counts, max_seconds, t_interval, filename_3d, log_switch, 
         global_vars.log_switch      = bool(log_switch)
         global_vars.epb_switch      = bool(epb_switch)
         global_vars.cal_switch      = bool(cal_switch)
-        global_vars.compression     = 8 # Hard coded 
 
         save_settings_to_json()
 

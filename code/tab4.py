@@ -18,10 +18,9 @@ logger      = logging.getLogger(__name__)
 interval    = 1000  # 1 second interval
 
 with global_vars.write_lock:
-    filename        = global_vars.filename
-    t_interval      = global_vars.t_interval
-    rolling         = global_vars.rolling_interval
-    data_directory  = global_vars.data_directory
+        filename        = global_vars.filename
+        t_interval      = global_vars.t_interval
+        data_directory  = global_vars.data_directory
 
 try:
     load_cps_file(filename)
@@ -31,6 +30,10 @@ except:
 window_size = 300    
 
 def show_tab4():   
+
+    with global_vars.write_lock:
+        rolling         = global_vars.rolling_interval
+
 
     html_tab4 = html.Div(id='tab4', children=[
         html.Div(id='count_rate_div', children=[

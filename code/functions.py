@@ -920,7 +920,8 @@ def save_settings_to_json():
             "calib_e_2", 
             "calib_e_3",
             "calib_e_4",
-            "calib_e_5", 
+            "calib_e_5",
+            "suppress_last_bin", 
             "chunk_size", 
             "coeff_1", 
             "coeff_2", 
@@ -929,6 +930,7 @@ def save_settings_to_json():
             "coi_switch",
             "coi_window",  
             "compression",
+            "compression3d",
             "device", 
             "epb_switch", 
             "filename",
@@ -990,6 +992,7 @@ def load_settings_from_json(path):
                     "calib_e_1":            float, 
                     "calib_e_2":            float, 
                     "calib_e_3":            float, 
+                    "suppress_last_bin":    bool,
                     "chunk_size":           int, 
                     "coeff_1":              float, 
                     "coeff_2":              float, 
@@ -998,6 +1001,7 @@ def load_settings_from_json(path):
                     "coi_switch":           bool, 
                     "coi_window":           int,
                     "compression":          int, 
+                    "compression3d":        int,
                     "device":               int, 
                     "epb_switch":           bool, 
                     "filename":             str,
@@ -1124,7 +1128,7 @@ def load_histogram_3d(filename):
             global_vars.coeff_1         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][0]
             global_vars.coeff_2         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][1]
             global_vars.coeff_3         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
-            global_vars.compression     = int(8196/data['resultData']['energySpectrum']['numberOfChannels'])
+            global_vars.compression3d   = int(8196/data['resultData']['energySpectrum']['numberOfChannels'])
             global_vars.startTime3d     = data['resultData']['startTime']
             global_vars.endTime3d       = data['resultData']['startTime']
 
