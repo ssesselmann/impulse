@@ -26,6 +26,7 @@ counts          = 0
 count_history   = []
 suppress_last_bin = False
 compression     = 1
+polynomial_fn   = ''
 
 # Spectrum 2 comparison
 filename_2      = ""

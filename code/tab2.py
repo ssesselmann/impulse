@@ -475,6 +475,19 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         spec_notes      = global_vars.spec_notes
 
 
+    if bins >= 8000:
+        dtick = 400
+    elif bins < 8000 and bins >= 6000:
+        dtick = 400
+    elif bins < 6000 and bins >= 4000:
+        dtick = 200
+    elif bins < 4000 and bins >= 2000:
+        dtick = 100
+    elif bins < 2000 and bins >= 1000:
+        dtick = 50
+    elif bins < 1000:
+        dtick = 20
+
     layout = go.Layout(
         paper_bgcolor='white',
         plot_bgcolor='#f0f0f0',
@@ -483,7 +496,15 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         margin=dict(t=20, b=0, l=0, r=0),
         autosize=True,
         yaxis=dict(range=[0, 'auto']),
-        xaxis=dict(range=[0, 'auto']),
+        xaxis=dict(range=[0, 'auto'],
+            tickmode='linear',      
+            tick0=0,                
+            dtick=dtick,
+            ticks="outside", 
+            ticklen=10,
+            tickwidth=1,
+            tickcolor='black',
+            ),
         annotations=annotations,
         shapes=lines,
         uirevision="Don't change",
