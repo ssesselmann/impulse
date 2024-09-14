@@ -157,7 +157,10 @@ def show_tab1():
                     {'label': '516', 'value': '516'},
                     {'label': '1024', 'value': '1024'},
                     {'label': '2048', 'value': '2048'},
-                    {'label': '4096', 'value': '4096'}
+                    {'label': '4096', 'value': '4096'},
+                    {'label': '8192', 'value': '8192'},
+                    {'label': '16184', 'value': '16184'},
+
                 ],
                 value=chunk_size,
                 clearable=False,
