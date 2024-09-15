@@ -74,18 +74,6 @@ if os.path.exists(path):
             global_vars.threshold       = int(settings["threshold"])
             global_vars.tolerance       = int(settings["tolerance"])
 
-store_histogram             = dcc.Store(id='store-histogram'          , data=[])
-store_histogram_2           = dcc.Store(id='store-histogram-2'        , data=[])
-#store_histogram_3d          = dcc.Store(id='store-histogram-3d'       , data={'histogram_3d': []})
-store_count_history         = dcc.Store(id='store-count-history'      , data=[])
-store_gaussian              = dcc.Store(id='store-gc'                 , data=[])
-store_coefficients          = dcc.Store(id='store-coefficients'       , data=[1, 0, 0])
-store_sigma                 = dcc.Store(id='store-sigma'              , data='')
-store_annotations           = dcc.Store(id='store-annotations'        , data=[])
-store_confirmation_output   = dcc.Store(id="store-confirmation-output", data='')
-store_load_flag_tab3        = dcc.Store(id='store-load-flag-tab3'     , data=False)
-store_load_flag_tab4        = dcc.Store(id='store-load-flag_tab4'     , data=False)
-
 # External CSS stylesheets
 external_stylesheets = [dbc.themes.BOOTSTRAP, f'https://www.gammaspectacular.com/steven/impulse/styles_{global_vars.theme}.css']
 
