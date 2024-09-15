@@ -6,7 +6,9 @@
 a = Analysis(
     ['impulse.py'],
     pathex=[],
-    binaries=[],
+    binaries=[
+    ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pyaudio\\_portaudio.cp312-win_amd64.pyd', '.'),
+    ],
     datas=[
     ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\package-info.json', 'dash_daq'),
     ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\metadata.json', 'dash_daq'),
@@ -14,7 +16,7 @@ a = Analysis(
     ('i', 'i'), 
     ],
 
-    hiddenimports=['dash_daq'],
+    hiddenimports=['dash_daq', 'pyaudio', 'serial'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
