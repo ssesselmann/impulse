@@ -23,7 +23,6 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-
 exe = EXE(
     pyz,
     a.scripts,
@@ -49,9 +48,6 @@ exe = EXE(
         </compatibility>
     </assembly>'''
 )
-
-
-
 # exe = EXE(
 #     pyz,
 #     a.scripts,
