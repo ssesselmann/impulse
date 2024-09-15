@@ -22,18 +22,17 @@ with global_vars.write_lock:
         t_interval      = global_vars.t_interval
         data_directory  = global_vars.data_directory
 
-try:
-    load_cps_file(filename)
-except:
-    pass
-
 window_size = 300    
 
 def show_tab4():   
 
     with global_vars.write_lock:
         rolling         = global_vars.rolling_interval
-
+        filename        = global_vars.filename
+    try:
+        load_cps_file(filename)
+    except:
+        pass
 
     html_tab4 = html.Div(id='tab4', children=[
         html.Div(id='count_rate_div', children=[
@@ -64,12 +63,12 @@ def show_tab4():
     return html_tab4
 
 @app.callback(
-    Output('count_rate_chart', 'figure'),
-    [Input('interval_component', 'n_intervals'),
-     Input('t_interval', 'value'),
-     Input('full-monty', 'value')],
-    [State('tabs', 'value'),
-     State('rolling', 'value')]
+    Output('count_rate_chart'   , 'figure'),
+    [Input('interval_component' , 'n_intervals'),
+     Input('t_interval'         , 'value'),
+     Input('full-monty'         , 'value')],
+    [State('tabs'               , 'value'),
+     State('rolling'            , 'value')]
 )
 def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
     logger.debug(f"Updating chart with t_interval={t_interval}, full_monty={full_monty}, rolling={rolling}")
@@ -77,10 +76,11 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
     time_str = now.strftime('%d/%m/%Y')
 
     with global_vars.write_lock:
-        count_history = list(global_vars.count_history)  # Copy to avoid modification during reading
-        counts = global_vars.counts
-        cps = global_vars.cps
-        elapsed = global_vars.elapsed
+        count_history   = list(global_vars.count_history)  # Copy to avoid modification during reading
+        counts          = global_vars.counts
+        cps             = global_vars.cps
+        elapsed         = global_vars.elapsed
+        filename        = global_vars.filename
 
     if full_monty:
         x = [str(i * t_interval) for i in range(len(count_history))]
@@ -121,7 +121,7 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
 
     layout = go.Layout(
         title={
-            'text': f'{filename} Counts | {time_str}',
+            'text': f'Count Rate',
             'x': 0.5,
             'y': 0.9,
             'xanchor': 'center',
@@ -174,9 +174,9 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
 
 # --------UPDATE SETTINGS------------------------------------------------
 @app.callback(
-    [Output('rolling', 'value'),
-     Output('saved', 'children')],
-    [Input('rolling', 'value')]
+    [Output('rolling'   , 'value'),
+     Output('saved'     , 'children')],
+    [Input('rolling'    , 'value')]
 )
 def save_settings(rolling):
     with global_vars.write_lock:
