@@ -1,8 +1,8 @@
 import webbrowser
 import warnings
+import global_vars
 import launcher
 import time
-import global_vars
 
 from functions import open_browser, clear_global_vars
 from server import app
