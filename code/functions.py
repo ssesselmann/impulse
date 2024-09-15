@@ -1066,7 +1066,7 @@ def load_histogram(filename):
                 global_vars.histogram       = data["resultData"]["energySpectrum"]["spectrum"]
                 global_vars.bins            = data["resultData"]["energySpectrum"]["numberOfChannels"]
                 global_vars.elapsed         = data["resultData"]["energySpectrum"]["measurementTime"]
-                global_vars.coefficients_1  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+                global_vars.coefficients_1  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"][::-1]
                 global_vars.spec_notes      = data["sampleInfo"]["note"]
                 global_vars.counts          = sum(global_vars.histogram)
 
@@ -1089,7 +1089,7 @@ def load_histogram_2(filename):
             global_vars.histogram_2     = data["resultData"]["energySpectrum"]["spectrum"]
             global_vars.bins_2          = data["resultData"]["energySpectrum"]["numberOfChannels"]
             global_vars.elapsed_2       = data["resultData"]["energySpectrum"]["measurementTime"]
-            global_vars.coefficients_2  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+            global_vars.coefficients_2  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"][::-1]
             global_vars.counts_2        = sum(global_vars.histogram_2)
 
             return True
