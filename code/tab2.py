@@ -23,12 +23,7 @@ from server import app
 from dash.exceptions import PreventUpdate
 from datetime import datetime
 
-# Importing store variables from server
-from server import (
-    store_gaussian, 
-    store_annotations,
-    store_confirmation_output, 
-)
+
 # Functions imported
 from functions import (
     calibrate_gc, 
@@ -71,6 +66,13 @@ def show_tab2():
     # Load global variables
     with global_vars.write_lock:
         filename        = global_vars.filename
+
+    try:
+        load_histogram(filename)        # Load last histogram if it exists
+    except:
+        pass
+
+    with global_vars.write_lock:        
         filename_2      = global_vars.filename_2
         device          = global_vars.device
         sample_rate     = global_vars.sample_rate
@@ -108,10 +110,7 @@ def show_tab2():
         coefficients_2  = global_vars.coefficients_2
         slb_switch      = global_vars.suppress_last_bin
 
-    try:
-        load_histogram(filename)        # Load last histogram if it exists
-    except:
-        pass    
+        
 
     if device < 100 and device:        # Sound card devices
         serial = 'none'
@@ -131,8 +130,8 @@ def show_tab2():
 
     html_tab2 = html.Div(id='tab2', children=[
         html.Div(id='main-div', children= [
-            html.Div(id='polynomial', children=''),
-            html.Div(id='output-roi', children=''),
+            #html.Div(id='polynomial', children=''),
+            #html.Div(id='output-roi', children=''),
             html.Div(id='bar_chart_div', children=[
                 
                 dcc.Interval(id='interval-component', interval=millisec, n_intervals=0),  # Refresh rate 1s.
@@ -226,8 +225,6 @@ def show_tab2():
             html.Div(id='t2_setting_div7', children=[
                 html.Button('Sound <)', id='soundbyte', className='action_button'),
                 html.Div(id='audio', children=''),
-                #html.Button('Update calib.', id='update_calib_button', className='action_button'),
-                #html.Div(id='update_calib_message', children=''),
                 dbc.Button("Publish spectrum", id="publish-button", color="primary", className="action_button"),
                 dcc.Store(id='store-confirmation-output', data=''),
                 
@@ -248,7 +245,7 @@ def show_tab2():
                     {'label': 'gamma flags', 'value': 'i/tbl/gamma.json'},
                     {'label': 'x-ray flags', 'value': 'i/tbl/xray.json'},
                     {'label': 'n-capture flags', 'value': 'i/tbl/ncapture.json'},
-                ], style={'height': '15px', 'fontSize': '12px', 'borderwidth': '0px'}, value='i/tbl/gamma.json', className='dropdown', optionHeight=15),
+                ], style={'height': '15px', 'fontSize': '12px', 'borderwidth': '0px'}, value='i/tbl/gamma.json', className='dropdown', optionHeight=15, clearable=False),
             ]),
 
             html.Div(id='t2_setting_div8', children=[
@@ -277,7 +274,10 @@ def show_tab2():
             ]),
         ], style={'width':'100%', 'float':'left'}),
         html.Div(children=[html.Img(id='footer_tab2', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
-        html.Div(id='subfooter', children=[]),
+        html.Div(id='subfooter', children=[
+            html.Div(id='settings_output', children=''),
+            html.Div(id='calibration_output', children='')
+            ], style={'color':'yellow'}),
         
 
     ])  # End of tab 2 render
@@ -580,6 +580,11 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         if cal_switch:
             peak_value = np.polyval(np.poly1d(coefficients_1), peak_value)
             x_pos = peak_value
+            suffix = "keV"
+            prefix = " "
+        else:
+            suffix =" " 
+            prefix = "bin "     
 
         if log_switch:
             y_pos_ann = np.log10(y_pos * 1.05)
@@ -590,7 +595,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
                 y=y_pos_ann,
                 xref='x',
                 yref='y',
-                text=f'Y{bin_counts}<br>X{peak_value:.1f}<br>{resolution:.1f}%',
+                text=f'cts {bin_counts}<br>{prefix}{peak_value:.1f} {suffix}<br>{resolution:.1f}%',
                 font=dict(size=10),
                 align='center',
                 showarrow=True,
@@ -703,89 +708,29 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
 
     return fig, f'{counts}', f'{elapsed}', f'cps {cps}', gaussian
 
-import numpy as np
 
-import numpy as np
-
-# Save settings callback function  
+# Save settings callback function
 @app.callback(
-    Output('polynomial'     , 'children'),
-    [Input('bins'           , 'value'), #[0]
-     Input('bin_size'       , 'value'), #[1]
-     Input('max_counts'     , 'value'), #[2]
-     Input('max_seconds'    , 'value'), #[3]
-     Input('filename'       , 'value'), #[4]
-     Input('filename_2'     , 'value'), #[5]
-     Input('threshold'      , 'value'), #[6]
-     Input('tolerance'      , 'value'), #[7]
-     Input('calib_bin_1'    , 'value'), #[8]
-     Input('calib_bin_2'    , 'value'), #[9]
-     Input('calib_bin_3'    , 'value'), #[10]
-     Input('calib_bin_4'    , 'value'), #[11]
-     Input('calib_bin_5'    , 'value'), #[12]
-     Input('calib_e_1'      , 'value'), #[13]
-     Input('calib_e_2'      , 'value'), #[14]
-     Input('calib_e_3'      , 'value'), #[15]
-     Input('calib_e_4'      , 'value'), #[16]
-     Input('calib_e_5'      , 'value'), #[17]
-     Input('peakfinder'     , 'value'), #[18]
-     Input('sigma'          , 'value'), #[19]
-     Input('t_interval'     , 'value'), #[20]
-     Input('compression'    , 'value'), #[21]
-     Input('log-switch'     , 'on'),    #[22]
-     Input('epb-switch'     , 'on'),    #[23]
-     Input('cal-switch'     , 'on'),    #[24]
-     Input('coi-switch'     , 'on'),    #[25]
-     Input('slb-switch'     , 'on')]    #[26]
+    Output('settings_output'    , 'children'),
+    [Input('bins'               , 'value'),  # [0]
+     Input('bin_size'           , 'value'),  # [1]
+     Input('max_counts'         , 'value'),  # [2]
+     Input('max_seconds'        , 'value'),  # [3]
+     Input('filename'           , 'value'),  # [4]
+     Input('filename_2'         , 'value'),  # [5]
+     Input('threshold'          , 'value'),  # [6]
+     Input('tolerance'          , 'value'),  # [7]
+     Input('peakfinder'         , 'value'),  # [8]
+     Input('sigma'              , 'value'),  # [9]
+     Input('t_interval'         , 'value'),  # [10]
+     Input('compression'        , 'value'),  # [11]
+     Input('log-switch'         , 'on'),  # [12]
+     Input('epb-switch'         , 'on'),  # [13]
+     Input('cal-switch'         , 'on'),  # [14]
+     Input('coi-switch'         , 'on'),  # [15]
+     Input('slb-switch'         , 'on')]  # [16]
 )
 def save_settings(*args):
-    n_clicks = args[0]
-
-    if n_clicks is None and not shproto.dispatcher.calibration_updated:
-        raise PreventUpdate
-
-    x_bins = []
-    x_energies = []
-
-    if shproto.dispatcher.calibration_updated:
-        with shproto.dispatcher.calibration_lock:
-            shproto.dispatcher.calibration_updated = 0
-            x_bins_default = [512, 1024, 2048, 4096, 8192]
-            x_bins = [int(value / args[22]) for value in x_bins_default]
-            polynomial_fn = np.poly1d(shproto.dispatcher.calibration[::-1])
-            x_energies = [polynomial_fn(x_bins_default[i]) for i in range(min(3, len(x_bins_default)))]
-    else:
-        x_bins      = [args[8], args[9], args[10], args[11], args[12]]
-        x_energies  = [args[13], args[14], args[15], args[16], args[17]]
-        # Filter out zero or None values
-        x_bins      = [x for x in x_bins if x > 0]
-        x_energies  = [y for y in x_energies if y > 0]
-
-    coefficients = []
-
-    # Handle different cases based on the number of valid calibration points
-    if len(x_bins) == 1 and len(x_energies) == 1:
-        # With one point, assume a direct linear relationship (y = mx)
-        m               = x_energies[0] / x_bins[0]
-        coefficients    = [0, m, 0]  # Assume linear (y = mx, with c = 0)
-        message         = "Linear one point calibration"
-
-    elif len(x_bins) == 2 and len(x_energies) == 2:
-        # With two points, calculate a linear fit (y = mx + c)
-        coefficients    = np.polyfit(x_bins, x_energies, 1).tolist()
-        coefficients    = [0] + coefficients  # Convert to [0, b, c]
-        message         = "Linear two point calibration"
-
-    elif len(x_bins) >= 3 and len(x_energies) >= 3:
-        # If at least three points are available, fit a second-degree polynomial
-        coefficients    = np.polyfit(x_bins, x_energies, 2).tolist()
-        message         = "Second-order polynomial fit"
-
-    else:
-        message         = "Warning: Insufficient calibration points"
-        return  # Exit the function gracefully
-
-    polynomial_fn = np.poly1d(coefficients)
 
     with global_vars.write_lock:
         global_vars.bins        = int(args[0])
@@ -796,37 +741,87 @@ def save_settings(*args):
         global_vars.filename_2  = args[5]
         global_vars.threshold   = int(args[6])
         global_vars.tolerance   = int(args[7])
-        global_vars.calib_bin_1 = int(args[8])
-        global_vars.calib_bin_2 = int(args[9])
-        global_vars.calib_bin_3 = int(args[10])
-        global_vars.calib_bin_4 = int(args[11])
-        global_vars.calib_bin_5 = int(args[12])
-        global_vars.calib_e_1   = int(args[13])
-        global_vars.calib_e_2   = int(args[14])
-        global_vars.calib_e_3   = int(args[15])
-        global_vars.calib_e_4   = int(args[16])
-        global_vars.calib_e_5   = int(args[17])
-        global_vars.peakfinder  = float(args[18])
-        global_vars.sigma       = float(args[19])
-        global_vars.t_interval  = int(args[20])
+        global_vars.peakfinder  = float(args[8])
+        global_vars.sigma       = float(args[9])
+        global_vars.t_interval  = int(args[10])
+        global_vars.compression = int(args[11])
+        global_vars.log_switch  = args[12]
+        global_vars.epb_switch  = args[13]
+        global_vars.cal_switch  = args[14]
+        global_vars.coi_switch  = args[15]
+        global_vars.suppress_last_bin = args[16]
+
+        if global_vars.device > 100:
+            global_vars.bins = int(8192 / int(args[11]))
+
+    save_settings_to_json()
+    logger.info(f'Settings updated from tab2\n')
+    return ''
+
+
+# Save calibration callback function
+@app.callback(
+    Output('calibration_output', 'children'),
+    [Input('calib_bin_1', 'value'),  # [0]
+     Input('calib_bin_2', 'value'),  # [1]
+     Input('calib_bin_3', 'value'),  # [2]
+     Input('calib_bin_4', 'value'),  # [3]
+     Input('calib_bin_5', 'value'),  # [4]
+     Input('calib_e_1', 'value'),    # [5]
+     Input('calib_e_2', 'value'),    # [6]
+     Input('calib_e_3', 'value'),    # [7]
+     Input('calib_e_4', 'value'),    # [8]
+     Input('calib_e_5', 'value')]    # [9]
+)
+def save_calibrations(*args):
+    x_bins = [args[0], args[1], args[2], args[3], args[4]]
+    x_energies = [args[5], args[6], args[7], args[8], args[9]]
+
+    # Filter out zero or None values
+    x_bins = [x for x in x_bins if x > 0]
+    x_energies = [y for y in x_energies if y > 0]
+
+    coefficients = []
+
+    # Handle different cases based on the number of valid calibration points
+    if len(x_bins) == 1 and len(x_energies) == 1:
+        m = x_energies[0] / x_bins[0]
+        coefficients = [0, m, 0]  # Assume linear (y = mx, with c = 0)
+        message = "Linear one point calibration"
+
+    elif len(x_bins) == 2 and len(x_energies) == 2:
+        coefficients = np.polyfit(x_bins, x_energies, 1).tolist()
+        coefficients = [0] + coefficients  # Convert to [0, b, c]
+        message = "Linear two point calibration"
+
+    elif len(x_bins) >= 3 and len(x_energies) >= 3:
+        coefficients = np.polyfit(x_bins, x_energies, 2).tolist()
+        message = "Second-order polynomial fit"
+
+    else:
+        message = "Warning: Insufficient calibration points"
+        return message  # Exit the function gracefully
+
+    polynomial_fn = np.poly1d(coefficients)
+
+    with global_vars.write_lock:
+        global_vars.calib_bin_1 = int(args[0])
+        global_vars.calib_bin_2 = int(args[1])
+        global_vars.calib_bin_3 = int(args[2])
+        global_vars.calib_bin_4 = int(args[3])
+        global_vars.calib_bin_5 = int(args[4])
+        global_vars.calib_e_1   = int(args[5])
+        global_vars.calib_e_2   = int(args[6])
+        global_vars.calib_e_3   = int(args[7])
+        global_vars.calib_e_4   = int(args[8])
+        global_vars.calib_e_5   = int(args[9])
         global_vars.coeff_1     = round(coefficients[0], 6)
         global_vars.coeff_2     = round(coefficients[1], 6)
         global_vars.coeff_3     = round(coefficients[2], 6)
-        global_vars.compression = int(args[21])
-        global_vars.log_switch  = args[22]
-        global_vars.epb_switch  = args[23]
-        global_vars.cal_switch  = args[24]
-        global_vars.coi_switch  = args[25]
-        global_vars.suppress_last_bin = args[26]
-        global_vars.coefficients_1    = coefficients
+        global_vars.coefficients_1 = coefficients
 
-        if global_vars.device > 100:
-            global_vars.bins = int(8192 / int(args[21]))
+    return f'{message} (ax^2 + bx + c) = {polynomial_fn}'
 
-    save_settings_to_json()
-
-    logger.info(f'Settings updated from tab2\n')
-    return f'Function (ax^2 + bx + c) = ({polynomial_fn}) - {message}'
 
 # Callback function for playing sound
 @app.callback(Output('audio'     , 'children'),
