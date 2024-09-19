@@ -57,8 +57,13 @@ def show_tab3():
     audio           = 'none'    if device >= 100 else 'block'
     refresh_rate    = t_interval * 1000
     options_3d      = get_options_3d()
-    compression     = 8
     bins_3d         = 512
+
+    try:
+        load_histogram_3d(filename_3d)
+    except:
+        logger.info('Opening 3D file failed - possibly old format')
+        pass
 
     return html.Div(id='tab3', children=[
         # vertical screen divider
@@ -93,20 +98,8 @@ def show_tab3():
                 ]),
 
                 html.Div(className='t3subdiv', children=[
-                    html.Div(['3D Bin size:', dcc.Input(id='bin_size_3d', type='number', value=bin_size_3d)], style={'display': audio}),
-                    html.Div(['Number of bins:', dcc.Input(id='bins', type='number', value=bins_3d)], style={'visibility': 'hidden'}),
-                    html.Div(['Resolution:', dcc.Dropdown(id='compression',
-                                                          options=[
-                                                              {'label': '512 Bins', 'value': '16'},
-                                                              {'label': '1024 Bins', 'value': '8'},
-                                                              {'label': '2048 Bins', 'value': '4'},
-                                                              {'label': '4096 Bins', 'value': '2'},
-                                                              {'label': '8192 Bins', 'value': '1'},
-                                                          ],
-                                                          value=compression,
-                                                          clearable=False,
-                                                          className='dropdown')],
-                             style={'visibility': 'hidden'}),
+                    html.Div('Nothing to see here')
+
                 ]),
 
                 html.Div(className='t3subdiv', children=[
@@ -120,24 +113,18 @@ def show_tab3():
                 ]),
 
                 html.Div(className='t3subdiv', children=[
-                    html.Div('Calibration Bins'),
-                    html.Div(dcc.Input(id='calib_bin_1', type='number', value=calib_bin_1)),
-                    html.Div(dcc.Input(id='calib_bin_2', type='number', value=calib_bin_2)),
-                    html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3)),
+                    html.Div('This 3D spectrum uses calibration data from 2D settings and converts it to 512 channels, so if your spectrum looks good on tab2 it should look the same here.', style={'textAlign':'justifyContent'}),
                     
                 ]),
 
                 html.Div(className='t3subdiv', children=[
-                    html.Div('Energies'),
-                    html.Div(dcc.Input(id='calib_e_1', type='number', value=calib_e_1)),
-                    html.Div(dcc.Input(id='calib_e_2', type='number', value=calib_e_2)),
-                    html.Div(dcc.Input(id='calib_e_3', type='number', value=calib_e_3)),
+                    html.Div('2D spectrum and 3D spectrum can not run at the same time, record each one separately.'),
                 ]),
 
                 html.Div(className='t3subdiv', children=[
-                    html.P('Calibration setting are shared with 2D histogram.'),
-                    html.P('Large arrays take time..', style={'color':'red'}),
-                    html.P('Patience is a virtue 🙄', style={'color':'red'}),
+                    html.P('Large arrays take time to load,', style={'textAlign':'center'}),
+                    html.P('patience is a virtue', style={'textAlign':'center'}),
+                    html.P('🙄', style={'textAlign':'center'}),
                     ]),
 
             ]),
@@ -163,7 +150,7 @@ def show_tab3():
                 html.P('Longer intervals will further reduce file size.')
             ], style={'color': 'red', 'align': 'center', 'fontWeight': 'bold', 'textAlign': 'center'}),
             dbc.ModalFooter([
-                dbc.Button(f"Extend {filename_3d}", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
+                dbc.Button(f"Overwrite {filename_3d}", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
                 dbc.Button("Cancel", id="cancel-overwrite-tab3", className="ml-auto", n_clicks=0),
             ]),
         ],
@@ -248,9 +235,10 @@ def start_new_3d_spectrum(confirm_clicks, start_clicks, filename_3d, t_interval)
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
     trigger_value = ctx.triggered[0]['value']
 
-    compression = 8
-
     file_exists = os.path.exists(f'{data_directory}/{filename_3d}_3d.json')
+
+    if file_exists:
+        load_histogram_3d(filename_3d)
 
     if trigger_value == 0:
         raise PreventUpdate
@@ -271,8 +259,8 @@ def start_new_3d_spectrum(confirm_clicks, start_clicks, filename_3d, t_interval)
                 logger.info(f'tab3 sends start command -sta\n')
 
                 time.sleep(0.1)
-                shproto.dispatcher.process_02(filename_3d, compression, "MAX", t_interval)
-                logger.info(f'tab3 process_01(){filename_3d}, {compression}, MAX, {t_interval}\n')
+                shproto.dispatcher.process_02(filename_3d, 16, "MAX", t_interval)
+                logger.info(f'tab3 process_01(){filename_3d}, {16}, MAX, {t_interval}\n')
 
                 time.sleep(0.1)
             except Exception as e:
@@ -328,12 +316,14 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
         counts          = global_vars.counts
         elapsed         = global_vars.elapsed
         cps             = global_vars.cps
+        bins            = global_vars.bins
         bins_3d         = global_vars.bins_3d
         histogram_3d    = global_vars.histogram_3d
         coefficients_1  = global_vars.coefficients_1
         filename_3d     = global_vars.filename_3d
         data_directory  = global_vars.data_directory
         cps             = int(cps/t_interval)
+        f               = 0
 
         try:
             start_time  = global_vars.startTime3d
@@ -369,6 +359,8 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
             z = [[num * index for index, num in enumerate(inner_list)] for inner_list in z]
 
         if cal_switch:
+            f = bins/bins_3d
+            x = [int(num * f) for num in x]
             x = np.polyval(np.poly1d(coefficients_1), x)
             layout.scene.xaxis.range = [0, max(x)]
             layout.scene.xaxis.title = "energy (x)"
@@ -402,7 +394,7 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
         return fig, f'{counts}', f'{elapsed}', f'cps {cps}'
 
     except Exception as e:
-        logger.error(f"tab3 error updating 3D chart: {e}\n")
+        logger.error(f"Tab3 error updating 3D chart: {e}\n")
 
         data = [go.Scatter3d(
             x=[0],
@@ -412,6 +404,8 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
             marker=dict(size=5, color='blue')
         )]
 
+        layout.scene.yaxis.range = [0, 0]
+
         fig = go.Figure(data=data, layout=layout)
 
         return fig, "0", "0", f'cps {cps}'
@@ -419,58 +413,31 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
 # Function to save settings when one of the inputs change
 @app.callback(
     Output('polynomial-3d'  , 'children'),
-    [Input('bins'           , 'value'),
-     Input('bin_size_3d'       , 'value'),
-     Input('max_counts'     , 'value'),
+    [Input('max_counts'     , 'value'),
      Input('max_seconds'    , 'value'),
      Input('t_interval'     , 'value'),
      Input('filename_3d'    , 'value'),
-     Input('calib_bin_1'    , 'value'),
-     Input('calib_bin_2'    , 'value'),
-     Input('calib_bin_3'    , 'value'),
-     Input('calib_e_1'      , 'value'),
-     Input('calib_e_2'      , 'value'),
-     Input('calib_e_3'      , 'value'),
      Input('log-switch'     , 'on'),
      Input('epb-switch'     , 'on'),
      Input('cal-switch'     , 'on'),
 ]
 )
-def save_settings(*args):
-    if not args:
-        raise PreventUpdate
+def save_settings(max_counts, max_seconds, t_interval, filename_3d, log_switch, epb_switch, cal_switch):
 
     logger.info("save_settings callback triggered\n")
 
-    x_bins = [args[6], args[7], args[8]]
-    x_energies = [args[9], args[10], args[11]]
-    coefficients = np.polyfit(x_bins, x_energies, 2)
-    polynomial_fn = np.poly1d(coefficients)
-
     with global_vars.write_lock:
         global_vars.bins_3d         = 512 # hard coded
-        global_vars.bin_size_3d        = int(args[1])
-        global_vars.max_counts      = int(args[2])
-        global_vars.max_seconds     = int(args[3])
-        global_vars.t_interval      = int(args[4])
-        global_vars.filename_3d     = args[5]
-        global_vars.calib_bin_1     = int(args[6])
-        global_vars.calib_bin_2     = int(args[7])
-        global_vars.calib_bin_3     = int(args[8])
-        global_vars.calib_e_1       = int(args[9])
-        global_vars.calib_e_2       = int(args[10])
-        global_vars.calib_e_3       = int(args[11])
-        global_vars.log_switch      = bool(args[12])
-        global_vars.epb_switch      = bool(args[13])
-        global_vars.cal_switch      = bool(args[14])
-        global_vars.compression     = 8 # Hard coded 
-        global_vars.coefficients_1  = list(coefficients)
-        global_vars.coeff_1         = round(coefficients[0], 6)
-        global_vars.coeff_2         = round(coefficients[1], 6)
-        global_vars.coeff_3         = round(coefficients[2], 6)
+        global_vars.max_counts      = int(max_counts)
+        global_vars.max_seconds     = int(max_seconds)
+        global_vars.t_interval      = int(t_interval)
+        global_vars.filename_3d     = filename_3d
+        global_vars.log_switch      = bool(log_switch)
+        global_vars.epb_switch      = bool(epb_switch)
+        global_vars.cal_switch      = bool(cal_switch)
 
         save_settings_to_json()
 
-    return f'Polynomial (ax^2 + bx + c) = ({polynomial_fn})'
+    return 
 
 

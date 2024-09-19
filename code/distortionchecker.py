@@ -20,6 +20,7 @@ def distortion_finder(stereo):
         sample_length   = global_vars.sample_length
         peakshift       = global_vars.peakshift
         shapecatches    = global_vars.shapecatches
+        stereo          = global_vars.stereo
     
     peak            = int((sample_length - 1) / 2) + peakshift
     audio_format    = pyaudio.paInt16
@@ -49,16 +50,15 @@ def distortion_finder(stereo):
         flip_left   = -1
         flip_right  = -1        
 
-    # Open the selected audio input device
-    stream = p.open(
-                format=audio_format, 
-                channels=channels, 
-                rate=sample_rate,
-                input=True, 
-                output=False, 
-                input_device_index=device,
-                frames_per_buffer=chunk_size
-                )
+    channels    = 2 if stereo else 1
+    stream      = p.open(format=pyaudio.paInt16,
+                    channels=channels,
+                    rate=sample_rate,
+                    input=True,
+                    output=False,
+                    frames_per_buffer=chunk_size * channels,
+                    input_device_index=device,
+                    )
 
     try:
         while count_left < shapecatches or (stereo and count_right < shapecatches):

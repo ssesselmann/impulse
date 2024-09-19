@@ -46,6 +46,7 @@ def show_tab1():
         peakshift       = global_vars.peakshift
         stereo          = global_vars.stereo
         
+
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
     shape_left, shape_right = fn.load_shape()
@@ -69,12 +70,13 @@ def show_tab1():
     options = [{k: str(v) for k, v in option.items()} for option in options]
     options = fn.cleanup_serial_options(options)
         
-    if device >= 100:
-        serial = 'block'
-        audio = 'none'
-    else:
+    if device < 100:        # Sound card devices
         serial = 'none'
         audio = 'block'
+
+    if device >= 100:
+        serial = 'block'
+        audio = 'none' 
 
     tab1 = html.Div(id='tab1', children=[
         dcc.Interval(id='interval-component', interval=500, n_intervals=0),
@@ -155,7 +157,10 @@ def show_tab1():
                     {'label': '516', 'value': '516'},
                     {'label': '1024', 'value': '1024'},
                     {'label': '2048', 'value': '2048'},
-                    {'label': '4096', 'value': '4096'}
+                    {'label': '4096', 'value': '4096'},
+                    {'label': '8192', 'value': '8192'},
+                    {'label': '16184', 'value': '16184'},
+
                 ],
                 value=chunk_size,
                 clearable=False,
@@ -333,11 +338,11 @@ def capture_pulse_shape(n_clicks, stereo):
     }
 
     if n_clicks == 0:
-        return {'data': [{}], 'layout': layout}, {'data': [{}], 'layout': layout}
+        # Load existing shape data on initial page load
+        shape_left, shape_right = fn.load_shape()
     else:
-        
+        # Capture a new pulse shape when the button is clicked
         result = sc.shapecatcher()
-
 
         if result is None or len(result) < 2:
             shape_left = []
@@ -345,26 +350,30 @@ def capture_pulse_shape(n_clicks, stereo):
         else:
             shape_left, shape_right = result
 
-        dots = list(range(len(shape_left)))
+    dots = list(range(len(shape_left)))
 
-        trace_left = go.Scatter(
-            x=dots,
-            y=shape_left,
-            mode='lines+markers',
-            marker={'color': 'blue', 'size': 4},
-            line={'color': 'blue', 'width': 2},
-            name='Left Channel')
+    trace_left = go.Scatter(
+        x=dots,
+        y=shape_left,
+        mode='lines+markers',
+        marker={'color': 'blue', 'size': 4},
+        line={'color': 'blue', 'width': 2},
+        name='Left Channel'
+    )
 
-        trace_right = go.Scatter(
-            x=dots,
-            y=shape_right,
-            mode='lines+markers',
-            marker={'color': 'red', 'size': 4},
-            line={'color': 'red', 'width': 2},
-            name='Right Channel')
+    trace_right = go.Scatter(
+        x=dots,
+        y=shape_right,
+        mode='lines+markers',
+        marker={'color': 'red', 'size': 4},
+        line={'color': 'red', 'width': 2},
+        name='Right Channel'
+    )
 
-        fig = go.Figure(data=[trace_left, trace_right] if stereo else [trace_left], layout=layout)
-        return fig, fig
+    fig = go.Figure(data=[trace_left, trace_right] if stereo else [trace_left], layout=layout)
+    
+    return fig, fig
+
 
 # Callback for plotting distortion curve ------------------------
 

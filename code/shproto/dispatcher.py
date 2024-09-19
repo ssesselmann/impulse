@@ -195,12 +195,13 @@ def process_01(filename, compression, device, t_interval):
     with global_vars.write_lock:
         global_vars.bins    = int(max_bins / compression)
         # Load settings from global_vars
-        max_counts  = global_vars.max_counts
-        coeff_1     = global_vars.coeff_1
-        coeff_2     = global_vars.coeff_2
-        coeff_3     = global_vars.coeff_3
-        max_seconds = global_vars.max_seconds
-        t_interval  = global_vars.t_interval
+        max_counts          = global_vars.max_counts
+        coeff_1             = global_vars.coeff_1
+        coeff_2             = global_vars.coeff_2
+        coeff_3             = global_vars.coeff_3
+        max_seconds         = global_vars.max_seconds
+        t_interval          = global_vars.t_interval
+        suppress_last_bin   = global_vars.suppress_last_bin
 
     # Define the histogram list
     hst = [0] * max_bins  # Initialize the original histogram list
@@ -232,7 +233,8 @@ def process_01(filename, compression, device, t_interval):
         elapsed     = tt 
 
         # Clear counts in the last bin
-        hst[-1] = 0
+        if suppress_last_bin:
+            hst[-1] = 0
 
         # Combine every 8 elements into one for compression
         compressed_hst = [sum(hst[i:i + compression]) for i in range(0, max_bins, compression)]
@@ -340,17 +342,17 @@ def process_02(filename_3d, compression, device, t_interval):  # Compression red
     counts              = 0
     last_counts         = 0
     total_counts        = 0
-    compression         = int(compression)
+    compression3d         = int(compression)
     max_bins            = 8192
     t0                  = time.time()
     elapsed             = 0
     hst3d               = []
-    compressed_bins     = int(max_bins / compression)
+    compressed_bins     = int(max_bins / compression3d)
     last_hst            = [0] * compressed_bins
 
     with global_vars.write_lock:
         data_directory      = global_vars.data_directory
-        global_vars.bins    = int(max_bins / compression)
+        global_vars.bins3d    = int(max_bins / compression3d)
         # Set local variables
         max_counts          = global_vars.max_counts
         coeff_1             = global_vars.coeff_1

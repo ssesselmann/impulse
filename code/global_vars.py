@@ -24,6 +24,9 @@ spec_notes      = ""
 cps             = 0
 counts          = 0
 count_history   = []
+suppress_last_bin = False
+compression     = 1
+polynomial_fn   = ''
 
 # Spectrum 2 comparison
 filename_2      = ""
@@ -42,10 +45,12 @@ bin_size_3d     = 60
 elapsed_3d      = 0
 coefficients_3d = []
 startTime3d     = ""
+endTime3d       = ""
+compression3d   = 16
 
 
 # Tab1 Settings
-theme           = ""
+theme           = "plasma"
 device          = 1
 sample_rate     = 48000
 sample_length   = 16
@@ -53,6 +58,8 @@ shapecatches    = 10
 chunk_size      = 1024
 stereo          = False
 peakshift       = 0
+shape_lld       = 500
+shape_uld       = 10000
 
 # Tab2 Settings
 max_counts      = 1000000
@@ -64,6 +71,7 @@ t_interval      = 1
 flip            = 1
 sigma           = 0
 peakfinder      = 0
+coi_window      = 2
 
 log_switch      = False
 epb_switch      = False
@@ -71,12 +79,16 @@ cal_switch      = False
 coi_switch      = False
 
 calib_bin_1     = 0
-calib_bin_2     = 500
-calib_bin_3     = 1000
+calib_bin_2     = 250
+calib_bin_3     = 500
+calib_bin_4     = 750
+calib_bin_5     = 1000
 
 calib_e_1       = 0
-calib_e_2       = 1500
-calib_e_3       = 3000
+calib_e_2       = 750
+calib_e_3       = 1500
+calib_e_4       = 2250
+calib_e_5       = 3000
 
 coeff_1         = 1
 coeff_2         = 1
@@ -84,4 +96,4 @@ coeff_3         = 0
 
 # Nano settings
 rolling_interval= 60
-compression     = 8
+

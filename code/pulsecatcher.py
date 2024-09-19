@@ -22,8 +22,6 @@ def save_data(save_queue):
         bins                = data['bins']
         local_counts        = data['local_counts']
         local_elapsed       = data['local_elapsed']
-        filename            = data['filename']
-        local_histogram     = data['local_histogram']
         coeff_1             = data['coeff_1']
         coeff_2             = data['coeff_2']
         coeff_3             = data['coeff_3']
@@ -32,17 +30,20 @@ def save_data(save_queue):
         spec_notes          = data['spec_notes']
         local_count_history = data['local_count_history']
 
-        if 'filename_3d' in data:
-            filename_3d = data['filename_3d']
-            last_minute      = data['last_minute']
-            fn.update_json_3d_file(t0, t1, bins, local_counts, local_elapsed, filename_3d, last_minute, coeff_1, coeff_2, coeff_3, device)
-        else:
+        if 'filename' in data and 'local_histogram' in data:
+            filename        = data['filename']
+            local_histogram = data['local_histogram']
             fn.write_histogram_npesv2(t0, t1, bins, local_counts, local_elapsed, filename, local_histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes)
             fn.write_cps_json(filename, local_count_history, local_elapsed)
 
+        if 'filename_3d' in data and 'last_minute' in data:
+            filename_3d = data['filename_3d']
+            last_minute = data['last_minute']
+            fn.update_json_3d_file(t0, t1, bins, local_counts, local_elapsed, filename_3d, last_minute, coeff_1, coeff_2, coeff_3, device)
+
+
 # Function reads audio stream and finds pulses then outputs time, pulse height, and distortion
 def pulsecatcher(mode, run_flag, run_flag_lock):
-    
     # Start timer
     t0                  = datetime.datetime.now()
     time_start          = time.time()
@@ -76,6 +77,8 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         peakshift       = global_vars.peakshift
         peak            = int((sample_length - 1) / 2) + peakshift
         spec_notes      = global_vars.spec_notes
+        stereo          = global_vars.stereo
+        coi_window      = global_vars.coi_window
         # Set global vars
         global_vars.elapsed         = 0
         global_vars.counts          = 0
@@ -83,7 +86,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         global_vars.count_history   = []
 
     if mode == 3:
-        bin_size    = bin_size_3d
+        bin_size    = bin_size * int(bins/bins_3d)
         bins        = bins_3d
 
     # Fixed variables
@@ -108,15 +111,17 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     last_minute_histogram_3d = []
     
     # Open the selected audio input device
-    stream = p.open(
-        format=audio_format,
-        channels=2,
-        rate=sample_rate,
-        input=True,
-        output=False,
-        input_device_index=device,
-        frames_per_buffer=chunk_size * 2
-    )
+    channels = 2 if stereo else 1
+
+    channels    = 2 if stereo else 1
+    stream      = p.open(format=pyaudio.paInt16,
+                    channels=channels,
+                    rate=sample_rate,
+                    input=True,
+                    output=False,
+                    frames_per_buffer=chunk_size * channels,
+                    input_device_index=device,
+                    )
 
     save_queue  = queue.Queue()
     save_thread = threading.Thread(target=save_data, args=(save_queue,))
@@ -127,7 +132,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         # Read one chunk of audio data from stream into memory.
         data    = stream.read(chunk_size, exception_on_overflow=False)
         # Convert hex values into a list of decimal values
-        values  = list(wave.struct.unpack("%dh" % (chunk_size * 2), data))
+        values  = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))
         # Extract every other element (left channel)
         left_channel    = values[::2]
         right_channel   = values[1::2]
@@ -136,13 +141,16 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         if flip == 22:
             left_channel    = [flip * x for x in left_channel]
             right_channel   = [flip * x for x in right_channel]
+
         if flip == 12:
             right_channel   = [flip * x for x in right_channel]
+
         if flip == 21:
             left_channel    = [flip * x for x in left_channel]
 
         # Extend detection to right channel if mode == 4
         if mode == 4:
+            right_pulses = []  # Reset right pulses for this chunk
             for i in range(len(right_channel) - sample_length):
                 samples = right_channel[i:i + sample_length]
                 height = fn.pulse_height(samples)
@@ -152,26 +160,28 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
         # Read through the list of left channel values and find pulse peaks
         for i in range(len(left_channel) - sample_length):
-            samples     = left_channel[i:i + sample_length]
-            height      = fn.pulse_height(samples)
+            samples = left_channel[i:i + sample_length]
+            height = fn.pulse_height(samples)
 
             if samples[peak] == max(samples) and abs(height) > threshold and samples[peak] < 32768:
 
                 if mode == 4:
                     coincident_pulse = None
                     for rp in right_pulses:
-                        if i + peak - 3 <= rp[0] <= i + peak + 3:
+                        # Allow a wider coincidence window if necessary
+                        if i + peak - coi_window <= rp[0] <= i + peak + coi_window:
                             coincident_pulse = rp
                             break
+
                     if not coincident_pulse:
                         continue  # Skip if no coincident pulse found
                     else:
-
                         logger.debug(f"Coincidence index {i}, height {height}, Right pulse at index {coincident_pulse[0]}, height {coincident_pulse[1]}\n")
 
+                # Process the pulse as normal
                 normalised = fn.normalise_pulse(samples)
                 distortion = fn.distortion(normalised, left_shape)
-                
+
                 if distortion < tolerance:
                     bin_index = int(height / bin_size)
 
@@ -193,18 +203,14 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 global_vars.elapsed     = local_elapsed
                 global_vars.spec_notes  = spec_notes
                 
-                if mode == 2:
+                if mode == 2 or mode == 4:
                     global_vars.histogram = local_histogram
                     global_vars.count_history.append(counts_per_sec)
 
                 if mode == 3:
-
                     interval_histogram = [local_histogram[i] - last_histogram[i] for i in range(bins)]
-
                     global_vars.histogram_3d.append(interval_histogram)
-
                     last_minute_histogram_3d.append(interval_histogram)
-
                     last_histogram = local_histogram.copy()
 
             local_count_history.append(counts_per_sec)
@@ -214,14 +220,13 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
         # Save data to global_variables once per minute
         if time_this_save - time_last_save_time >= 10 * t_interval or not global_vars.run_flag.is_set():
+            
             save_data_dict = {
                 't0': t0, 
                 't1': t1, 
                 'bins': bins, 
                 'local_counts': local_counts, 
                 'local_elapsed': local_elapsed,
-                'filename': filename, 
-                'local_histogram': local_histogram, 
                 'coeff_1': coeff_1, 
                 'coeff_2': coeff_2,
                 'coeff_3': coeff_3, 
@@ -230,12 +235,17 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 'spec_notes': spec_notes,
                 'local_count_history': local_count_history
             }
-            
+            if mode == 2 or mode == 4:
+                save_data_dict['filename']          = filename
+                save_data_dict['local_histogram']   = local_histogram
+
             if mode == 3:
-                save_data_dict['filename_3d'] = filename_3d
-                save_data_dict['last_minute'] = last_minute_histogram_3d
+                save_data_dict['filename_3d']   = filename_3d
+                save_data_dict['last_minute']   = last_minute_histogram_3d
+                last_minute_histogram_3d        = []
+
             save_queue.put(save_data_dict)
-            last_minute_histogram_3d = []
+            
             time_last_save_time = time.time()
 
     # Signal the save thread to exit

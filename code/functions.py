@@ -21,6 +21,7 @@ import requests as req
 import shproto.dispatcher
 import serial.tools.list_ports
 import global_vars
+import numpy as np
 
 from pulsecatcher import pulsecatcher
 from dash import dash_table
@@ -32,7 +33,8 @@ from shproto.dispatcher import process_03
 
 logger          = logging.getLogger(__name__)
 cps_list        = []
-data_directory  = global_vars.data_directory
+with global_vars.write_lock:
+    data_directory  = global_vars.data_directory
 
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
@@ -386,9 +388,6 @@ def shutdown():
     logger.info('Shutting down server...\n')
     os._exit(0)
 
-import numpy as np
-from scipy.signal import find_peaks, peak_widths
-
 def rolling_average(data, window_size):
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
 
@@ -396,20 +395,22 @@ def peak_finder(y_values, prominence, min_width, smoothing_window=11):
     # Apply rolling average for smoothing
     smoothed_y_values = rolling_average(y_values, smoothing_window)
     
-    # Adjust the indices after smoothing
-    y_bin = [y * (i + (smoothing_window - 1) / 2) for i, y in enumerate(smoothed_y_values)]
-    
     # Find peaks in the smoothed data
-    peaks, _ = find_peaks(y_bin, prominence=prominence, distance=40)
+    peaks, _ = find_peaks(smoothed_y_values, prominence=prominence, distance=40)
+    
+    # Calculate widths at relative height 0.3
     widths, _, _, _ = peak_widths(smoothed_y_values, peaks, rel_height=0.3)
     
     # Filter peaks based on minimum width
-    filtered_peaks = [p for i, p in enumerate(peaks) if widths[i] >= min_width * i]
+    filtered_peaks = [p for i, p in enumerate(peaks) if widths[i] >= min_width]
     
     # Calculate full width at half maximum (FWHM) for filtered peaks
     fwhm = [round(peak_widths(smoothed_y_values, [p], rel_height=0.5)[0][0], 1) for p in filtered_peaks]
     
-    return filtered_peaks, fwhm
+    # Adjust filtered peaks indices to match original data indices
+    adjusted_peaks = [p + (smoothing_window - 1) // 2 for p in filtered_peaks]
+    
+    return adjusted_peaks, fwhm
 
 
 def gaussian_correl(data, sigma):
@@ -468,12 +469,12 @@ def start_recording(mode):
         global_vars.run_flag.set()  # Set the run flag
         logger.info(f"Recording started in mode {mode}.\n")
 
-    if mode == 2:
+    if mode == 2 or mode == 4:
         # Start 2D spectrum recording logic
         logger.info("Starting 2D spectrum recording...\n")
         try:
             if callable(pulsecatcher):
-                thread = threading.Thread(target=pulsecatcher, args=(2, global_vars.run_flag, global_vars.run_flag_lock))
+                thread = threading.Thread(target=pulsecatcher, args=(mode, global_vars.run_flag, global_vars.run_flag_lock))
                 thread.start()
                 logger.info("2D spectrum recording thread started.\n")
             else:
@@ -630,13 +631,13 @@ import json
 import os
 
 def get_api_key():
+    with global_vars.write_lock:
+        data_directory = global_vars.data_directory
     try:
         user_file_path = get_path(f'{data_directory}/_user.json')
 
         if not os.path.exists(user_file_path):
-
             logger.error(f"User file not found: {user_file_path}\n")
-            
             return None
 
         with open(user_file_path, 'r') as file:
@@ -653,6 +654,10 @@ def get_api_key():
         return None
 
 def publish_spectrum(filename):
+
+    with global_vars.write_lock:
+        data_directory = global_vars.data_directory
+        
     logger.info(f'functions.publish_spectrum {filename}\n')
     url = "https://gammaspectacular.com/spectra/publish_spectrum"
     api_key = get_api_key()
@@ -909,16 +914,23 @@ def save_settings_to_json():
             "calib_bin_1", 
             "calib_bin_2", 
             "calib_bin_3", 
+            "calib_bin_4",
+            "calib_bin_5",
             "calib_e_1", 
             "calib_e_2", 
-            "calib_e_3", 
+            "calib_e_3",
+            "calib_e_4",
+            "calib_e_5",
+            "suppress_last_bin", 
             "chunk_size", 
             "coeff_1", 
             "coeff_2", 
             "coeff_3", 
             "coefficients_1",
-            "coi_switch",  
+            "coi_switch",
+            "coi_window",  
             "compression",
+            "compression3d",
             "device", 
             "epb_switch", 
             "filename",
@@ -940,13 +952,15 @@ def save_settings_to_json():
             "t_interval", 
             "theme", 
             "threshold", 
-            "tolerance"
+            "tolerance",
+            "shape_lld",
+            "shape_uld"
             ]}
     
     try:
         with open(global_vars.settings_file, 'w') as f:
             json.dump(settings, f, indent=4)
-        logger.info('functions save_settings_to_json(done)\n')
+        logger.info('From functions save_settings_to_json(done)\n')
     except Exception as e:
         logger.error(f'Error saving settings to JSON: {e}')
 
@@ -978,19 +992,22 @@ def load_settings_from_json(path):
                     "calib_e_1":            float, 
                     "calib_e_2":            float, 
                     "calib_e_3":            float, 
+                    "suppress_last_bin":    bool,
                     "chunk_size":           int, 
                     "coeff_1":              float, 
                     "coeff_2":              float, 
                     "coeff_3":              float, 
                     "coefficients_1":       list, 
                     "coi_switch":           bool, 
+                    "coi_window":           int,
                     "compression":          int, 
+                    "compression3d":        int,
                     "device":               int, 
                     "epb_switch":           bool, 
                     "filename":             str,
                     "filename_2":           str,
                     "filename_3d":          str,
-                    "flip":                 int, 
+                    "flip":                 str, 
                     "log_switch":           bool, 
                     "max_bins":             int, 
                     "max_counts":           int, 
@@ -1002,10 +1019,13 @@ def load_settings_from_json(path):
                     "sample_rate":          int, 
                     "shapecatches":         int, 
                     "sigma":                float, 
-                    "stereo":               bool, 
+                    "stereo":               bool,
                     "t_interval":           int, 
+                    "theme":                str,
                     "threshold":            int, 
-                    "tolerance":            int
+                    "tolerance":            int,
+                    "shape_lld":            int,
+                    "shape_uld":            int
                     }   
 
             for key, value in settings.items():
@@ -1021,7 +1041,7 @@ def load_settings_from_json(path):
                 else:
                     setattr(global_vars, key, value)
 
-            logger.info(f'load settings completed \n')
+            logger.info(f'Load settings completed \n')
         except Exception as e:
             logger.error(f'Error loading settings from JSON: {e}')
     else:
@@ -1047,7 +1067,7 @@ def load_histogram(filename):
                 global_vars.histogram       = data["resultData"]["energySpectrum"]["spectrum"]
                 global_vars.bins            = data["resultData"]["energySpectrum"]["numberOfChannels"]
                 global_vars.elapsed         = data["resultData"]["energySpectrum"]["measurementTime"]
-                global_vars.coefficients_1  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+                global_vars.coefficients_1  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"][::-1]
                 global_vars.spec_notes      = data["sampleInfo"]["note"]
                 global_vars.counts          = sum(global_vars.histogram)
 
@@ -1070,7 +1090,7 @@ def load_histogram_2(filename):
             global_vars.histogram_2     = data["resultData"]["energySpectrum"]["spectrum"]
             global_vars.bins_2          = data["resultData"]["energySpectrum"]["numberOfChannels"]
             global_vars.elapsed_2       = data["resultData"]["energySpectrum"]["measurementTime"]
-            global_vars.coefficients_2  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+            global_vars.coefficients_2  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"][::-1]
             global_vars.counts_2        = sum(global_vars.histogram_2)
 
             return True
@@ -1080,7 +1100,6 @@ def load_histogram_2(filename):
         logger.info(f"Error loading histogram_2 from {filename}: {e}\n")
         return False
 
-
 def load_histogram_3d(filename):
 
     logging.info('1.. load_histogram_3d\n')
@@ -1088,7 +1107,9 @@ def load_histogram_3d(filename):
     file_path = os.path.join(global_vars.data_directory, f'{filename}_3d.json')
     
     if not os.path.exists(file_path):
-        logger.error(f"load_histogram_3d File not found: {file_path}\n")
+        logger.error(f"Load_histogram_3d, file not found: {file_path}\n")
+        with global_vars.write_lock:
+            global_vars.histogram_3d = [[0] * 512] * 10  
         return
 
     try:
@@ -1100,7 +1121,6 @@ def load_histogram_3d(filename):
         if data["schemaVersion"] == "NPESv2":
             data = data["data"][0]
 
-
         with global_vars.write_lock:
             global_vars.histogram_3d    = data['resultData']['energySpectrum']['spectrum']
             global_vars.counts          = data['resultData']['energySpectrum']['validPulseCount']
@@ -1109,12 +1129,14 @@ def load_histogram_3d(filename):
             global_vars.coeff_1         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][0]
             global_vars.coeff_2         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][1]
             global_vars.coeff_3         = data['resultData']['energySpectrum']['energyCalibration']['coefficients'][2]
-            global_vars.compression     = int(8196/data['resultData']['energySpectrum']['numberOfChannels'])
+            global_vars.compression3d   = int(8196/data['resultData']['energySpectrum']['numberOfChannels'])
             global_vars.startTime3d     = data['resultData']['startTime']
+            global_vars.endTime3d       = data['resultData']['startTime']
 
-        logger.info(f"4.. global_vars updated from {file_path}\n")
+        logger.info(f"4.. Global_vars updated from {file_path}\n")
 
     except KeyError as e:
+
         logger.error(f"Missing expected data key in {file_path}: {e}\not")
 
 

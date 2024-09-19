@@ -6,7 +6,9 @@
 a = Analysis(
     ['impulse.py'],
     pathex=[],
-    binaries=[],
+    binaries=[
+    ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pyaudio\\_portaudio.cp312-win_amd64.pyd', '.'),
+    ],
     datas=[
     ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\package-info.json', 'dash_daq'),
     ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\metadata.json', 'dash_daq'),
@@ -14,7 +16,7 @@ a = Analysis(
     ('i', 'i'), 
     ],
 
-    hiddenimports=['dash_daq'],
+    hiddenimports=['dash_daq', 'pyaudio', 'serial'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -26,15 +28,40 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,  # Include binaries in the EXE for onefile mode
+    a.binaries,
     a.datas,
-    exclude_binaries=False,  # Change this to False for onefile mode
+    exclude_binaries=False,
     name='impulse',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=True,
-    icon='favicon.ico',  
-    # Additional parameters like disable_windowed_traceback, argv_emulation, etc., can be added if needed
+    disable_windowed_traceback=True,
+    icon='favicon.ico',
+    manifest='''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+        <compatibility>
+            <application>
+                <!-- Ensure compatibility with Windows 7 and above -->
+                <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>
+                <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>
+            </application>
+        </compatibility>
+    </assembly>'''
 )
+# exe = EXE(
+#     pyz,
+#     a.scripts,
+#     a.binaries,  # Include binaries in the EXE for onefile mode
+#     a.datas,
+#     exclude_binaries=False,  # Change this to False for onefile mode
+#     name='impulse',
+#     debug=False,
+#     bootloader_ignore_signals=False,
+#     strip=False,
+#     upx=True,
+#     console=True,
+#     icon='favicon.ico',  
+#     # Additional parameters like disable_windowed_traceback, argv_emulation, etc., can be added if needed
+# )
