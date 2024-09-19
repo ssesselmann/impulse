@@ -13,5 +13,4 @@ pyaudio
 requests
 scipy
 dash_bootstrap_components
-paramiko
 chardet

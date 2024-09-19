@@ -16,7 +16,6 @@ import pandas as pd
 import pulsecatcher as pc
 import logging
 import glob
-import paramiko
 import requests as req
 import shproto.dispatcher
 import serial.tools.list_ports
