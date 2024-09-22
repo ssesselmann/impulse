@@ -774,12 +774,9 @@ def save_settings(*args):
      Input('calib_e_5', 'value')]    # [9]
 )
 def save_calibrations(*args):
-    x_bins = [args[0], args[1], args[2], args[3], args[4]]
-    x_energies = [args[5], args[6], args[7], args[8], args[9]]
-
-    # Filter out zero or None values
-    x_bins = [x for x in x_bins if x > 0]
-    x_energies = [y for y in x_energies if y > 0]
+    # Ensure that only valid numerical inputs (not None and greater than 0) are included
+    x_bins = [x for x in [args[0], args[1], args[2], args[3], args[4]] if x is not None and x > 0]
+    x_energies = [y for y in [args[5], args[6], args[7], args[8], args[9]] if y is not None and y > 0]
 
     coefficients = []
 
@@ -804,23 +801,25 @@ def save_calibrations(*args):
 
     polynomial_fn = np.poly1d(coefficients)
 
+    # Safely write to global variables
     with global_vars.write_lock:
-        global_vars.calib_bin_1 = int(args[0])
-        global_vars.calib_bin_2 = int(args[1])
-        global_vars.calib_bin_3 = int(args[2])
-        global_vars.calib_bin_4 = int(args[3])
-        global_vars.calib_bin_5 = int(args[4])
-        global_vars.calib_e_1   = int(args[5])
-        global_vars.calib_e_2   = int(args[6])
-        global_vars.calib_e_3   = int(args[7])
-        global_vars.calib_e_4   = int(args[8])
-        global_vars.calib_e_5   = int(args[9])
+        global_vars.calib_bin_1 = int(args[0]) if args[0] is not None else 0
+        global_vars.calib_bin_2 = int(args[1]) if args[1] is not None else 0
+        global_vars.calib_bin_3 = int(args[2]) if args[2] is not None else 0
+        global_vars.calib_bin_4 = int(args[3]) if args[3] is not None else 0
+        global_vars.calib_bin_5 = int(args[4]) if args[4] is not None else 0
+        global_vars.calib_e_1   = int(args[5]) if args[5] is not None else 0
+        global_vars.calib_e_2   = int(args[6]) if args[6] is not None else 0
+        global_vars.calib_e_3   = int(args[7]) if args[7] is not None else 0
+        global_vars.calib_e_4   = int(args[8]) if args[8] is not None else 0
+        global_vars.calib_e_5   = int(args[9]) if args[9] is not None else 0
         global_vars.coeff_1     = round(coefficients[0], 6)
         global_vars.coeff_2     = round(coefficients[1], 6)
         global_vars.coeff_3     = round(coefficients[2], 6)
         global_vars.coefficients_1 = coefficients
 
     return f'{message} (ax^2 + bx + c) = {polynomial_fn}'
+
 
 
 # Callback function for playing sound
