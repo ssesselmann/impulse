@@ -28,40 +28,26 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
+    a.binaries,  # Include binaries in the EXE for onefile mode
     a.datas,
-    exclude_binaries=False,
+    exclude_binaries=False,  # Change this to False for onefile mode
     name='impulse',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False,
+    upx=True,
     console=True,
-    disable_windowed_traceback=True,
-    icon='favicon.ico',
-    manifest='''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-    <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-        <compatibility>
-            <application>
-                <!-- Ensure compatibility with Windows 7 and above -->
-                <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>
-                <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>
-            </application>
-        </compatibility>
-    </assembly>'''
+    icon='favicon.ico', 
+
 )
-# exe = EXE(
-#     pyz,
-#     a.scripts,
-#     a.binaries,  # Include binaries in the EXE for onefile mode
-#     a.datas,
-#     exclude_binaries=False,  # Change this to False for onefile mode
-#     name='impulse',
-#     debug=False,
-#     bootloader_ignore_signals=False,
-#     strip=False,
-#     upx=True,
-#     console=True,
-#     icon='favicon.ico',  
-#     # Additional parameters like disable_windowed_traceback, argv_emulation, etc., can be added if needed
-# )
+
+    # manifest='''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    #     <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+    #         <compatibility>
+    #             <application>
+    #                 <!-- Ensure compatibility with Windows 7 and above -->
+    #                 <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>
+    #                 <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>
+    #             </application>
+    #         </compatibility>
+    #     </assembly>'''
