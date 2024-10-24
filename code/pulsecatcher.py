@@ -62,6 +62,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         chunk_size      = global_vars.chunk_size
         threshold       = global_vars.threshold
         tolerance       = global_vars.tolerance
+        dropped_counts  = global_vars.dropped_counts
         bins            = global_vars.bins
         bins_3d         = global_vars.bins_3d
         bin_size        = global_vars.bin_size
@@ -182,6 +183,9 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 normalised = fn.normalise_pulse(samples)
                 distortion = fn.distortion(normalised, left_shape)
 
+                if distortion > tolerance:
+                    dropped_counts += 1
+
                 if distortion < tolerance:
                     bin_index = int(height / bin_size)
 
@@ -225,7 +229,8 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 't0': t0, 
                 't1': t1, 
                 'bins': bins, 
-                'local_counts': local_counts, 
+                'local_counts': local_counts,
+                'dropped_counts':dropped_counts, 
                 'local_elapsed': local_elapsed,
                 'coeff_1': coeff_1, 
                 'coeff_2': coeff_2,

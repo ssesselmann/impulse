@@ -23,6 +23,7 @@ coefficients_1  = []
 spec_notes      = ""
 cps             = 0
 counts          = 0
+dropped_counts  = 0
 count_history   = []
 suppress_last_bin = False
 compression     = 1
