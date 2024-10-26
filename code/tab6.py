@@ -86,7 +86,6 @@ def show_tab6():
                 html.P('Once you click the \'Request API\' button the server will respond by sending you an email with your personal API key, copy and paste the key into the api_key field.'),
                 html.P('Only spectra you choose to publish will appear on the right-hand panel. By clicking the x in the last column you can delete a previously uploaded spectrum. This could be handy if you want to replace an old spectrum with a better one.'), 
 
-
                 html.H2('IMPULSE tab'),
 
                 html.H4('Select Device'),
@@ -127,14 +126,12 @@ def show_tab6():
                 html.H4('Resolution', style={'display': serial}),
                 html.P('Select the number of channels from the dropdown list, this function compresses the full 8192 channel spectrum by 2, 4, 8 or 16 times', style={'display': serial}),
 
-                html.H4('Max Counts'),
-                html.P('Stop condition, the spectrum will stop when this conditoion has been met. Note: If this field has zero your spectrum will not run'),
-                
+                html.H4('Stop Condition - Max Counts, Max Seconds'),
+                html.P('Max Counts and Max seconds need to be set before clicking START, as these two arguments are inputs to a while loop, changing these settings during a recording will have no effect. The spectrum will automatically stop when either condition has been met.'),
+                html.P('Note: If either field has been set to zero the spectrum will not run'),
+
                 html.H4('Lost Counts'),
                 html.P('These are the number of counts outside the set threshold'),
-
-                html.H4('Max Seconds'),
-                html.P('Stop condition, the spectrum recording will stop if this condition has been met. Note if this field has zero your spectrum will not run'),
 
                 html.H4('cps'),
                 html.P('Calculated counts per second (total counts/total seconds)'),

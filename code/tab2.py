@@ -109,6 +109,7 @@ def show_tab2():
         coefficients    = global_vars.coefficients_1
         coefficients_2  = global_vars.coefficients_2
         slb_switch      = global_vars.suppress_last_bin
+        dropped_counts  = global_vars.dropped_counts
 
         
 

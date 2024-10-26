@@ -8,7 +8,6 @@ from setuptools import setup, find_packages
 setup(
     name='impulse',
     version='1.0',
-
     packages=find_packages(),
     install_requires=['pyaudio'],
     app=['impulse.py'],
@@ -26,7 +25,7 @@ setup(
                 'dash_daq',
                 'datetime',
                 'flask',
-                'jason',
+                'json',  # Changed 'jason' to 'json'
                 'numpy',
                 'pandas',
                 'pathlib',
@@ -38,7 +37,7 @@ setup(
                 'threading',
                 'platform'
             ],
-            'resources': "i",
+            'resources': ["i", "assets"], 
         }
     },
     setup_requires=['py2app'],

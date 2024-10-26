@@ -14,6 +14,8 @@ a = Analysis(
     ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\metadata.json', 'dash_daq'),
     ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\dash_daq.min.js', 'dash_daq'),
     ('i', 'i'), 
+    ('assets', 'assets'),  # Add this line to include the css folder
+
     ],
 
     hiddenimports=['dash_daq', 'pyaudio', 'serial'],

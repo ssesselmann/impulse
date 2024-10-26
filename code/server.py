@@ -25,6 +25,10 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+# Suppress only the werkzeug request logs to WARNING to avoid repeated entries
+logging.getLogger('werkzeug').setLevel(logging.WARNING)
+
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 logger.addHandler(console_handler)
@@ -38,24 +42,22 @@ with global_vars.write_lock:
 
 logger.info(f"Selected theme: {theme}")
 
-# Flask route to serve CSS files from the `css` directory
-@server.route('/css/<filename>')
+# Flask route to serve CSS files from the `assets` directory
+@server.route('/assets/<filename>')
 def serve_css(filename):
-    #logger.info(f"Serving CSS file: {filename}")
-    return send_from_directory('css', filename)
-
-# URL to the theme-specific CSS file
-theme_css_url = f"/css/styles_{theme}.css"
-external_stylesheets = [dbc.themes.BOOTSTRAP, theme_css_url]
+    return send_from_directory('assets', filename)
 
 # Initialize the Dash app with the external stylesheet path
-app = dash.Dash(__name__, server=server, external_stylesheets=external_stylesheets)
-app.layout = html.Div(id="page-content")  # Main layout placeholder
+app = dash.Dash(
+    __name__,
+    external_stylesheets=[dbc.themes.BOOTSTRAP, f"/assets/styles_{theme}.css"],
+    assets_ignore="^(?!styles_{theme}).*\\.css"
+)
 
+app.layout = html.Div(id="page-content")  # Main layout placeholder
 app.scripts.config.serve_locally = True
 app.config['suppress_callback_exceptions'] = True
 
-logger.info(f"CSS URL: {theme_css_url}")
 logger.info("Scripts in server.py completed\n")
 
 # -- End of server.py code
