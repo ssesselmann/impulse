@@ -5,7 +5,6 @@ __pycache__/
 /code/build/*
 /code/dist/*
 /code/impulse/*
-/code/assets/
 /code/data/*
 /code/myenv/*
 /code/.*
