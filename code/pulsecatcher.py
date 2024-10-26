@@ -21,6 +21,7 @@ def save_data(save_queue):
         t1                  = data['t1']
         bins                = data['bins']
         local_counts        = data['local_counts']
+        dropped_counts      = data['dropped_counts']
         local_elapsed       = data['local_elapsed']
         coeff_1             = data['coeff_1']
         coeff_2             = data['coeff_2']
@@ -33,8 +34,8 @@ def save_data(save_queue):
         if 'filename' in data and 'local_histogram' in data:
             filename        = data['filename']
             local_histogram = data['local_histogram']
-            fn.write_histogram_npesv2(t0, t1, bins, local_counts, local_elapsed, filename, local_histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes)
-            fn.write_cps_json(filename, local_count_history, local_elapsed)
+            fn.write_histogram_npesv2(t0, t1, bins, local_counts, dropped_counts, local_elapsed, filename, local_histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes)
+            fn.write_cps_json(filename, local_count_history, local_elapsed, local_counts, dropped_counts)
 
         if 'filename_3d' in data and 'last_minute' in data:
             filename_3d = data['filename_3d']
@@ -159,24 +160,20 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                     right_pulses.append((i + peak, height))
                     logger.debug(f"Right channel pulse detected at index {i}: height {height} sample = {samples}\n")
 
-        # Read through the list of left channel values and find pulse peaks
+        # Sliding window approach to avoid re-slicing the array each time
+        samples = left_channel[:sample_length]
         for i in range(len(left_channel) - sample_length):
-            samples = left_channel[i:i + sample_length]
             height = fn.pulse_height(samples)
 
             if samples[peak] == max(samples) and abs(height) > threshold and samples[peak] < 32768:
-
                 if mode == 4:
-                    coincident_pulse = None
-                    for rp in right_pulses:
-                        # Allow a wider coincidence window if necessary
-                        if i + peak - coi_window <= rp[0] <= i + peak + coi_window:
-                            coincident_pulse = rp
-                            break
+                    # Optimize coincident pulse check by using binary search or range filter
+                    coincident_pulse = next((rp for rp in right_pulses if i + peak - coi_window <= rp[0] <= i + peak + coi_window), None)
 
                     if not coincident_pulse:
                         continue  # Skip if no coincident pulse found
                     else:
+                        # Optionally defer logging outside loop or only if necessary
                         logger.debug(f"Coincidence index {i}, height {height}, Right pulse at index {coincident_pulse[0]}, height {coincident_pulse[1]}\n")
 
                 # Process the pulse as normal
@@ -185,13 +182,16 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
                 if distortion > tolerance:
                     dropped_counts += 1
-
-                if distortion < tolerance:
+                elif distortion < tolerance:
                     bin_index = int(height / bin_size)
-
                     if bin_index < bins:
                         local_histogram[bin_index] += 1
                         local_counts += 1
+
+            # Update sliding window instead of re-slicing
+            samples.pop(0)
+            samples.append(left_channel[i + sample_length])
+
         # Time capture
         t1 = datetime.datetime.now()  
         time_this_save = time.time()
@@ -206,6 +206,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
                 global_vars.counts      = local_counts
                 global_vars.elapsed     = local_elapsed
                 global_vars.spec_notes  = spec_notes
+                global_vars.dropped_counts = dropped_counts
                 
                 if mode == 2 or mode == 4:
                     global_vars.histogram = local_histogram

@@ -24,7 +24,7 @@ device = global_vars.device
 app.layout = html.Div([
     dcc.Tabs(id='tabs', value='tab_1', children=[
         dcc.Tab(label='My Details'      , value='tab_0'),
-        dcc.Tab(label='impulse (v2.1.7)', value='tab_1'),
+        dcc.Tab(label='impulse (v2.1.8)', value='tab_1'),
         dcc.Tab(label='2D Histogram'    , value='tab_2'), 
         dcc.Tab(label='3D Histogram'    , value='tab_3'), 
         dcc.Tab(label='Count Rate'      , value='tab_4'), 

@@ -34,12 +34,13 @@ def distortion_finder(stereo):
     distortion_list_right   = []
     count_left              = 0
     count_right             = 0
+    flip_left   = 1
+    flip_right  = 1
 
     logger.info(f'Distortionchecker says Stereo == {stereo}\n')
 
     if flip     == 11:
-        flip_left   = 1
-        flip_right  = 1
+        pass
     elif flip   == 12:
         flip_left   = 1
         flip_right  = -1  

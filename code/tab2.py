@@ -128,6 +128,7 @@ def show_tab2():
     counts_warning  = 'red' if max_counts == 0 else 'white'
     seconds_warning = 'red' if max_seconds == 0 else 'white'
 
+
     html_tab2 = html.Div(id='tab2', children=[
         html.Div(id='main-div', children= [
             #html.Div(id='polynomial', children=''),
@@ -146,6 +147,7 @@ def show_tab2():
                 html.Div(id='counts-output', children=''),
                 html.Div(''),
                 html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1, readOnly=False, value=max_counts, className='input', style={'background-color': counts_warning})]),
+                html.Div(id='dropped_counts', children=''),
             ]),
 
             html.Div(id='t2_setting_div2', children=[
@@ -420,27 +422,28 @@ def stop_button(n_clicks, dn):
 
 # Update histogram interval function
 @app.callback([
-               Output('bar_chart'           , 'figure'), 
-               Output('counts-output'       , 'children'),
-               Output('elapsed'             , 'children'),
-               Output('cps'                 , 'children'),
-               Output('store-gaussian'      , 'data')],
-              [Input('interval-component'   , 'n_intervals'),
-               Input('bar_chart'            , 'relayoutData'),
-               Input('store-annotations'    , 'data')], 
-              [State('filename'             , 'value'),
-               State('epb-switch'           , 'on'),
-               State('log-switch'           , 'on'),
-               State('cal-switch'           , 'on'),
-               State('filename_2'            , 'value'),
-               State('compare_switch'       , 'on'),
-               State('difference_switch'    , 'on'),
-               State('peakfinder'           , 'value'),
-               State('sigma'                , 'value'),
-               State('max_seconds'          , 'value'),
-               State('max_counts'           , 'value'),
-               State('coi-switch'          , 'on')]
-               )
+    Output('bar_chart'           , 'figure'), 
+    Output('counts-output'       , 'children'),
+    Output('elapsed'             , 'children'),
+    Output('cps'                 , 'children'),
+    Output('dropped_counts'      , 'children'),
+    Output('store-gaussian'      , 'data')],
+    [Input('interval-component'  , 'n_intervals'),
+    Input('bar_chart'            , 'relayoutData'),
+    Input('store-annotations'    , 'data')], 
+    [State('filename'            , 'value'),
+    State('epb-switch'           , 'on'),
+    State('log-switch'           , 'on'),
+    State('cal-switch'           , 'on'),
+    State('filename_2'           , 'value'),
+    State('compare_switch'       , 'on'),
+    State('difference_switch'    , 'on'),
+    State('peakfinder'           , 'value'),
+    State('sigma'                , 'value'),
+    State('max_seconds'          , 'value'),
+    State('max_counts'           , 'value'),
+    State('coi-switch'           , 'on')]
+    )
 def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, cal_switch, filename_2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts, coi_switch):
         
     ctx = callback_context
@@ -461,6 +464,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     gaussian        = []
     now             = datetime.now()
     date            = now.strftime('%d-%m-%Y')
+    max_log_value   = 0
 
     with global_vars.write_lock:
         counts          = global_vars.counts
@@ -473,6 +477,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         histogram_2     = global_vars.histogram_2
         coefficients_1  = global_vars.coefficients_1
         spec_notes      = global_vars.spec_notes
+        dropped_counts  = global_vars.dropped_counts
 
 
     if bins >= 8000:
@@ -619,7 +624,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     fig.update_layout(
         annotations=annotations,
         title={
-            'text': f'{filename}<br>{date}<br>{counts} counts<br>{elapsed} seconds<br>{coincidence}',
+            'text': f'{filename}<br>{date}<br>{counts} valid counts<br>{dropped_counts} lost counts<br>{elapsed} seconds<br>{coincidence}',
             'x': 0.85,
             'y': 0.9,
             'xanchor': 'center',
@@ -706,7 +711,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             borderwidth=1
         )
 
-    return fig, f'{counts}', f'{elapsed}', f'cps {cps}', gaussian
+    return fig, f'{counts}', f'{elapsed}', f'cps {cps}', f'{dropped_counts} lost counts ', gaussian
 
 
 # Save settings callback function

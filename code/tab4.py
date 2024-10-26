@@ -81,6 +81,7 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
         cps             = global_vars.cps
         elapsed         = global_vars.elapsed
         filename        = global_vars.filename
+        dropped_counts  = global_vars.dropped_counts
 
     if full_monty:
         x = [str(i * t_interval) for i in range(len(count_history))]
@@ -121,7 +122,7 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
 
     layout = go.Layout(
         title={
-            'text': f'Count Rate',
+            'text': f'Count Rate - {filename}',
             'x': 0.5,
             'y': 0.9,
             'xanchor': 'center',
@@ -150,7 +151,7 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
         ),
         annotations=[
             dict(
-                text=f"{filename}<br>{rolling} Second average<br>{counts} Total counts<br>{elapsed} Seconds total",
+                text=f"{counts} Valid counts<br>{dropped_counts} Lost counts<br>{elapsed} Seconds total<br>{rolling} Second average",
                 x=0.95,
                 y=0.95,
                 xref='paper',

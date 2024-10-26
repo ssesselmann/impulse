@@ -107,7 +107,7 @@ def update_bin(n, bins, bin_counts):
 
 
 # This function writes a 2D histogram to JSON file according to NPESv2 schema.
-def write_histogram_npesv2(t0, t1, bins, counts, elapsed, filename, histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes):
+def write_histogram_npesv2(t0, t1, bins, counts, dropped_counts, elapsed, filename, histogram, coeff_1, coeff_2, coeff_3, device, location, spec_notes):
     jsonfile = get_path(os.path.join(global_vars.data_directory, f'{filename}.json'))
     data = {
         "schemaVersion": "NPESv2",
@@ -132,6 +132,7 @@ def write_histogram_npesv2(t0, t1, bins, counts, elapsed, filename, histogram, c
                             "coefficients": [coeff_3, coeff_2, coeff_1],
                         },
                         "validPulseCount": counts,
+                        "droppedPulseCounts": dropped_counts,
                         "measurementTime": elapsed,
                         "spectrum": histogram,
                     }
@@ -169,6 +170,7 @@ def write_blank_json_schema(filename, device):
                             "coefficients": []
                         },
                         "validPulseCount": 0,
+                        "droppedPulseCounts": 0,
                         "measurementTime": 0,
                         "spectrum": []
                     }
@@ -258,7 +260,7 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename_3d, last_histogr
 
 
 # This function writes counts per second to JSON
-def write_cps_json(filename, count_history, elapsed):
+def write_cps_json(filename, count_history, elapsed, valid_counts, dropped_counts):
 
     data_directory = global_vars.data_directory
     cps_file_path = os.path.join(data_directory, f"{filename}_cps.json")
@@ -266,7 +268,9 @@ def write_cps_json(filename, count_history, elapsed):
     valid_count_history = [int(item) for sublist in count_history for item in (sublist if isinstance(sublist, list) else [sublist]) if isinstance(item, int) and item >= 0]
     cps_data = {
         "count_history": valid_count_history,
-        "elapsed": elapsed
+        "elapsed": elapsed,
+        "validPulseCount": valid_counts,
+        "droppedPulseCount": dropped_counts
     }
     try:
         with open(cps_file_path, 'w') as file:
@@ -462,7 +466,7 @@ def start_recording(mode):
 
     clear_global_vars(mode)
     write_blank_json_schema(filename, device)
-    write_cps_json(filename, [[0]], 0)
+    write_cps_json(filename, [[0]], 0, 0, 0)
 
     with global_vars.run_flag_lock:
         global_vars.run_flag.set()  # Set the run flag
@@ -509,6 +513,7 @@ def clear_global_vars(mode):
             global_vars.counts          = 0
             global_vars.cps             = 0
             global_vars.elapsed         = 0
+            global_vars.dropped_counts  = 0
             global_vars.histogram       = [0] * global_vars.bins
 
     if mode == 3:
@@ -1152,6 +1157,8 @@ def load_cps_file(filename):
 
             count_history = cps_data.get('count_history', [])
             elapsed = cps_data.get('elapsed', 0)
+            counts = cps_data.get('validPulseCount', 0)
+            dropped_counts = cps_data.get('droppedPulseCount', 0)
 
             # Flatten the nested list and ensure all values are integers
             if isinstance(count_history, list):
@@ -1160,8 +1167,10 @@ def load_cps_file(filename):
                 raise ValueError("Invalid format for 'cps' in JSON file. Expected a list of integers.")
 
             # Update global variables
-            global_vars.count_history = valid_count_history
-            global_vars.elapsed = int(elapsed)
+            global_vars.count_history   = valid_count_history
+            global_vars.elapsed         = int(elapsed)
+            global_vars.counts          = int(counts)
+            global_vars.dropped_counts  = int(dropped_counts)
 
             return cps_data
 

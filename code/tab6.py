@@ -67,8 +67,8 @@ def show_tab6():
         html.Div(id='tab6_text_div', children=[
             html.Hr(),
             html.Div(id='manual', children=[
-                html.H1('Impulse V2.1.7 Manual (Serial Devices)', style={'display': serial}),
-                html.H1('Impulse V2.1.7 Manual (Audio Devices)', style={'display': audio}),
+                html.H1('Impulse V2.1.8 Manual (Serial Devices)', style={'display': serial}),
+                html.H1('Impulse V2.1.8 Manual (Audio Devices)', style={'display': audio}),
 
                 html.P('Thank you for downloading and installing Impulse MCA, this open source software is written in Python with the intention that users may modify and adapt it to their own experiments.'),
                 html.P('In the following text I shall describe how the software works and what each setting parameter does.'),
@@ -96,7 +96,7 @@ def show_tab6():
                 html.P('Analogue to digital audio sampling involves taking a voltage reading of the analogue signal multiple times a second, the faster the sampling rate the more accurately we can reconstruct the signal. Most modern computers can handle audio sampling rates up to 384 kHz. Faster sampling will generally produce a better spectrum, but it also requires a longer pulse which limits the pulse acquisition rate. If your objective is to measure a high count rate you may want a shorter pulse and a lower sample rate. ', style={'display': audio}),
                 
                 html.H4('Buffer Size', style={'display': audio}),
-                html.P('Audio streaming is continuous, but computers need to process information in batches, we refer to the batch as a buffer. The default setting is 1024 samples which is the number of samples the computer reads into memory before looking for pulses. This setting may not be required in the future.', style={'display': audio}),
+                html.P('Audio streaming is continuous, but computers need to process information in batches, we refer to the batch as a buffer. Select a buffer size proportional to your sample rate, i.e. higher sample rate larger buffer size.', style={'display': audio}),
                 
                 html.H4('Pulses to Sample', style={'display': audio}),
                 html.P('Audio sampling uses the shape method for filtering out pulse pile up (PPU), this method involves comparing each pulse to the mean average pulse, so this setting determines how many pulses to sample for the mean. The more samples you collect the closer to the mean you get, but remember more samples take more time to process. Start with a low number and experiment to find the optimum compromise between time and quality. In order that we sample a good average we discriminate the very small and very large pulses, this default can be found in _settings.json with variable names  `shape_lld` and `shape_uld`. You can manually edit this setting if required.', style={'display': audio}),
@@ -130,8 +130,14 @@ def show_tab6():
                 html.H4('Max Counts'),
                 html.P('Stop condition, the spectrum will stop when this conditoion has been met. Note: If this field has zero your spectrum will not run'),
                 
+                html.H4('Lost Counts'),
+                html.P('These are the number of counts outside the set threshold'),
+
                 html.H4('Max Seconds'),
                 html.P('Stop condition, the spectrum recording will stop if this condition has been met. Note if this field has zero your spectrum will not run'),
+
+                html.H4('cps'),
+                html.P('Calculated counts per second (total counts/total seconds)'),
 
                 html.H4('LLD Threshold', style={'display': audio}),
                 html.P('This setting sets the Lower Limit Discriminator. As we do not want to count the tiny electronic ripple on the baseline it is important that we set a sensible limit below which to ignore any pulses. If this limit has been set too low, it will appear as a tall peak in the first couple of bins on the left-hand side of your spectrum', style={'display': audio}),
@@ -246,15 +252,15 @@ def shutdown_server(n_clicks):
 
 @app.callback(Output('theme_output' , 'children'),
               [Input('theme'        , 'value')])
-def theme_change(value):
-    if value is None:
+def theme_change(theme):
+    if theme is None:
         raise PreventUpdate
 
     with global_vars.write_lock:
-        global_vars.theme = value
+        global_vars.theme = theme
         fn.save_settings_to_json()
-        logger.info('Settings saved from tab6\n')
+    
+    logger.info(f'Theme changed to {theme}')
 
-    logger.info('User clicked Exit\n')
     return 'Restart to see new theme'
 
