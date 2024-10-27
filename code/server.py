@@ -1,5 +1,6 @@
 import dash
 import os
+import sys
 import logging
 import dash_bootstrap_components as dbc
 import global_vars
@@ -42,16 +43,29 @@ with global_vars.write_lock:
 
 logger.info(f"Selected theme: {theme}")
 
-# Flask route to serve CSS files from the `assets` directory
+# Set assets_folder based on platform and bundled environment
+if getattr(sys, 'frozen', False):  # Check if running as a bundled app
+    if sys.platform == 'darwin':  # macOS
+        assets_folder = os.path.join(os.path.dirname(sys.executable), '..', 'Resources', 'assets')
+    elif sys.platform == 'win32':  # Windows
+        assets_folder = os.path.join(sys._MEIPASS, 'assets')
+else:
+    assets_folder = 'assets'  # Default to local `assets` for development
+
+logger.info(f"Assets folder set to: {assets_folder}")
+
+# Flask route to serve CSS files from the correct assets path
 @server.route('/assets/<filename>')
 def serve_css(filename):
-    return send_from_directory('assets', filename)
+    return send_from_directory(assets_folder, filename)
 
-# Initialize the Dash app with the external stylesheet path
+# Initialize the Dash app with the external stylesheet and custom assets folder
 app = dash.Dash(
     __name__,
+    server=server,
+    assets_folder=assets_folder,  # Serve assets from our adjusted path
     external_stylesheets=[dbc.themes.BOOTSTRAP, f"/assets/styles_{theme}.css"],
-    assets_ignore="^(?!styles_{theme}).*\\.css"
+    assets_ignore=f"^(?!styles_{theme}).*\\.css",  # Load only the selected theme CSS
 )
 
 app.layout = html.Div(id="page-content")  # Main layout placeholder
