@@ -283,8 +283,9 @@ def write_cps_json(filename, count_history, elapsed, valid_counts, dropped_count
 # Clears global counts per second list
 def clear_global_cps_list():
     with global_vars.write_lock:
-        global_vars.counts = 0
-        global_vars.count_history = []
+        global_vars.counts          = 0
+        global_vars.count_history   = []
+        global_vars.dropped_counts  = 0
 
 
 # This function opens the CSV and loads the pulse shape
@@ -533,14 +534,16 @@ def clear_global_vars(mode):
         global_vars.counts          = 0
         global_vars.cps             = 0
         global_vars.elapsed         = 0
+        global_vars.dropped_counts  = 0
         global_vars.histogram_3d    = []
 
     return
 
 def clear_global_cps_list():
     with global_vars.write_lock:
-        global_vars.global_cps = 0
-        global_vars.count_history = []
+        global_vars.global_cps      = 0
+        global_vars.dropped_counts  = 0
+        global_vars.count_history   = []
 
 def stop_recording():
     with global_vars.write_lock:
@@ -1074,6 +1077,7 @@ def load_histogram(filename):
                 global_vars.coefficients_1  = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"][::-1]
                 global_vars.spec_notes      = data["sampleInfo"]["note"]
                 global_vars.counts          = sum(global_vars.histogram)
+                global_vars.dropped_counts  = data["resultData"]["energySpectrum"]["droppedPulseCounts"]
 
             return True
 

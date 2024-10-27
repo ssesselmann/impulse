@@ -52,6 +52,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     time_last_save_time = time_start  # corrected variable initialization
     array_3d            = []
     spec_notes          = ""
+    dropped_counts      = 0
 
     # Load settings from global variables
     with global_vars.write_lock:
@@ -63,7 +64,6 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         chunk_size      = global_vars.chunk_size
         threshold       = global_vars.threshold
         tolerance       = global_vars.tolerance
-        dropped_counts  = global_vars.dropped_counts
         bins            = global_vars.bins
         bins_3d         = global_vars.bins_3d
         bin_size        = global_vars.bin_size
@@ -84,6 +84,7 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         # Set global vars
         global_vars.elapsed         = 0
         global_vars.counts          = 0
+        global_vars.dropped_counts  = 0
         global_vars.histogram       = [0] * bins
         global_vars.count_history   = []
 
@@ -202,11 +203,11 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
             counts_per_sec = local_counts - last_count
 
             with global_vars.write_lock:
-                global_vars.cps         = counts_per_sec
-                global_vars.counts      = local_counts
-                global_vars.elapsed     = local_elapsed
-                global_vars.spec_notes  = spec_notes
-                global_vars.dropped_counts = dropped_counts
+                global_vars.cps             = counts_per_sec
+                global_vars.counts          = local_counts
+                global_vars.elapsed         = local_elapsed
+                global_vars.spec_notes      = spec_notes
+                global_vars.dropped_counts  = dropped_counts
                 
                 if mode == 2 or mode == 4:
                     global_vars.histogram = local_histogram
