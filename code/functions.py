@@ -403,7 +403,7 @@ def peak_finder(y_values, prominence, min_width, smoothing_window=11):
     peaks, _ = find_peaks(smoothed_y_values, prominence=prominence, distance=40)
     
     # Calculate widths at relative height 0.3
-    widths, _, _, _ = peak_widths(smoothed_y_values, peaks, rel_height=0.3)
+    widths, _, _, _ = peak_widths(smoothed_y_values, peaks, rel_height=0.5)
     
     # Filter peaks based on minimum width
     filtered_peaks = [p for i, p in enumerate(peaks) if widths[i] >= min_width]

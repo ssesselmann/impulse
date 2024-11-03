@@ -132,11 +132,11 @@ def show_tab2():
 
     html_tab2 = html.Div(id='tab2', children=[
         html.Div(id='main-div', children= [
-            #html.Div(id='polynomial', children=''),
-            #html.Div(id='output-roi', children=''),
+
             html.Div(id='bar_chart_div', children=[
-                
-                dcc.Interval(id='interval-component', interval=millisec, n_intervals=0),  # Refresh rate 1s.
+                html.A("Learn", id="tooltip-link", href="#", style={"fontSize": "small", "textDecoration": "underline", "color": "blue", "margin-left":"30px"}),
+                dbc.Tooltip("Click and drag to zoom • use box select to select peak • double click on chart to reset • use camera icon to save chart as png" ,target="tooltip-link",placement="right"),
+                dcc.Interval(id='interval-component', interval=millisec, n_intervals=0), 
                 dcc.Graph(id='bar_chart'),
             ]),
 
@@ -259,7 +259,7 @@ def show_tab2():
                 html.Div(dcc.Input(id='calib_bin_4', type='number', value=calib_bin_4, className='input')),
                 html.Div(dcc.Input(id='calib_bin_5', type='number', value=calib_bin_5, className='input')),
                 html.Div('peakfinder'),
-                html.Div(dcc.Slider(id='peakfinder', min=0, max=5, step=0.1, value=peakfinder, marks={0: '0', 1: '1',2: '2', 3: '3' , 4: '4', 5: '5'})),
+                html.Div(dcc.Slider(id='peakfinder', min=0, max=10, step=1, value=peakfinder, marks={0:'0',2:'2',4:'4',6:'6',8:'8',10:'10'})),
                 html.Div(id='publish-output', children=''),
             ]),
 
@@ -466,6 +466,9 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     now             = datetime.now()
     date            = now.strftime('%d-%m-%Y')
     max_log_value   = 0
+    prefixx         = 'bin'
+    prefixy         = 'cts'
+    min_width       = 0
 
     with global_vars.write_lock:
         counts          = global_vars.counts
@@ -499,7 +502,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         plot_bgcolor='#f0f0f0',
         showlegend=False,
         height=460,
-        margin=dict(t=20, b=0, l=0, r=0),
+        margin=dict(t=50, b=0, l=0, r=0),
         autosize=True,
         yaxis=dict(range=[0, 'auto']),
         xaxis=dict(range=[0, 'auto'],
@@ -527,7 +530,8 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
 
     if counts > 0:
 
-        prominence = 0.5
+        prominence = peakfinder * 1.5
+        min_width  = peakfinder * 1
 
         if sigma == 0:
             gaussian = []
@@ -550,6 +554,7 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         if epb_switch:
             y = [i * count for i, count in enumerate(histogram)]
             gaussian = [i * count for i, count in enumerate(gaussian)]
+            prefixy = 'E'
 
         trace1 = go.Bar(
             x=x, 
@@ -570,14 +575,14 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         )
         fig.add_trace(trace1)
 
-    peaks, fwhm = peak_finder(y, prominence, peakfinder)
+    peaks, fwhm = peak_finder(y, prominence, min_width)
 
     for i in range(len(peaks)):
         peak_value  = peaks[i]
         bin_counts  = y[peaks[i]]
         x_pos       = peaks[i]
         y_pos       = y[peaks[i]]
-        y_pos_ann   = int(y_pos * 1.05)
+        y_pos_ann   = int(y_pos * 1.1)
         resolution  = (fwhm[i] / peaks[i]) * 100
 
         if y_pos_ann > (max_value * 0.9):
@@ -587,10 +592,10 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
             peak_value = np.polyval(np.poly1d(coefficients_1), peak_value)
             x_pos = peak_value
             suffix = "keV"
-            prefix = " "
+            prefixx = ""
         else:
             suffix =" " 
-            prefix = "bin "     
+            prefixx = "bin "     
 
         if log_switch:
             y_pos_ann = np.log10(y_pos * 1.05)
@@ -601,10 +606,12 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
                 y=y_pos_ann,
                 xref='x',
                 yref='y',
-                text=f'cts {bin_counts}<br>{prefix}{peak_value:.1f} {suffix}<br>{resolution:.1f}%',
+                text=f'{prefixy} {bin_counts}<br>{prefixx}{peak_value:.1f} {suffix}<br>{resolution:.1f}%',
                 font=dict(size=10),
-                align='center',
+                align='left',
+                xanchor='left',
                 showarrow=True,
+                arrowcolor='red',
                 arrowhead=0,
                 ax=0,
                 ay=-60,
@@ -625,9 +632,9 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     fig.update_layout(
         annotations=annotations,
         title={
-            'text': f'{filename}<br>{date}<br>{counts} valid counts<br>{dropped_counts} lost counts<br>{elapsed} seconds<br>{coincidence}',
-            'x': 0.85,
-            'y': 0.9,
+            'text': f'{filename}<br>{counts} valid counts<br>{dropped_counts} lost counts<br>{elapsed} seconds<br>{coincidence}<br>{date}',
+            'x': 0.9,
+            'y': 0.85,
             'xanchor': 'center',
             'yanchor': 'top',
             'font': {'family': 'Arial', 'size': 14, 'color': 'black'},
