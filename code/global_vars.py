@@ -73,6 +73,7 @@ flip            = 1
 sigma           = 0
 peakfinder      = 0
 coi_window      = 2
+val_flag        = False
 
 log_switch      = False
 epb_switch      = False

@@ -42,11 +42,11 @@ def distortion_finder(stereo):
     if flip     == 11:
         pass
     elif flip   == 12:
-        flip_left   = 1
+        flip_left   =  1
         flip_right  = -1  
     elif flip   == 21:
         flip_left   = -1
-        flip_right  = 1
+        flip_right  =  1
     elif flip   == 22:
         flip_left   = -1
         flip_right  = -1        
@@ -65,20 +65,19 @@ def distortion_finder(stereo):
         while count_left < shapecatches or (stereo and count_right < shapecatches):
             # Read the audio data from the stream
             data    = stream.read(chunk_size, exception_on_overflow=False)
+            # Convert hex values into a list of decimal values
             values  = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))
-
-            # Extract both left and right channels
-            left_channel    = values[::2] if stereo else values
-            right_channel   = values[1::2] if stereo else []
+            # Extract every other element (left channel)
+            left_channel    = values[::2]
+            right_channel   = values[1::2]
 
             for i in range(len(left_channel) - sample_length):
                 if count_left < shapecatches:
                     left_samples = left_channel[i:i + sample_length]
                     left_samples = [flip_left * x for x in left_samples]
-                    if left_samples[peak] == max(left_samples) and (max(left_samples) - min(left_samples)) > threshold:
-                        left_normalised     = fn.normalise_pulse(left_samples)
-                        left_normalised_int = [int(round(x)) for x in left_normalised]
-                        left_distortion     = fn.distortion(left_normalised_int, left_shape)
+                    if left_samples[peak] == max(left_samples) and (max(left_samples) - min(left_samples)) > threshold:  
+                        left_normalised     = fn.normalise_pulse(left_samples)                       
+                        left_distortion     = fn.distortion(left_normalised, left_shape)                       
                         distortion_list_left.append(left_distortion)
                         count_left += 1
 

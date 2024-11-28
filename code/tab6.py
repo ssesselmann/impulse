@@ -67,8 +67,8 @@ def show_tab6():
         html.Div(id='tab6_text_div', children=[
             html.Hr(),
             html.Div(id='manual', children=[
-                html.H1('Impulse V2.1.9 Manual (Serial Devices)', style={'display': serial}),
-                html.H1('Impulse V2.1.9 Manual (Audio Devices)', style={'display': audio}),
+                html.H1('Impulse V2.2.0 Manual (Serial Devices)', style={'display': serial}),
+                html.H1('Impulse V2.2.0 Manual (Audio Devices)', style={'display': audio}),
 
                 html.P('Thank you for downloading and installing Impulse MCA, this open source software is written in Python with the intention that users may modify and adapt it to their own experiments.'),
                 html.P('In the following text I shall describe how the software works and what each setting parameter does.'),
@@ -166,9 +166,6 @@ def show_tab6():
                 html.H4('Publish Spectrum Button'),
                 html.P('Once you have recorded and calibrated a beautiful spectrum, share it with the wider community of Impulse users. You must obtain and save your API code on the My Details tab for permission to share files.'),
 
-                html.H4('Find Isotopes Button'),
-                html.P('This button switches isotope information on/off. It will only function when Calibration is switched on and Sigma is not zero. Isotope data comes from the isotopes.json file inside your impulse_data_2 folder in your home directory. The isotopes.json file is not comprehensive, very low intensity and unlikely gamma have been removed to prevent the entire screen filling up with data. Users can add more isotopes to the json file manually if required.'),
-
                 html.H4('Calibration'),
                 html.P('All calibration settings are on the 2D histogram tab, in this version you can enter up to 5 calibration points (bin = energy), the program will accept any number of calibration points from 1 to 5. When there are less than 3 calibration points a linear function is applied, and above this it defaults to a polynomial function. These calibration settings are automatically used for the 3D spectrum on tab3. The calibration switch turns the calibration on or off.'),
                 html.P('Note !! Your standard calibration points are saved to your local settings.json, new spectra start recording with these settings. This is convenient if you are using the same detector setup all the time.'),
@@ -181,10 +178,15 @@ def show_tab6():
                 html.P('When running a coincidence spectrum the default primary detector should always be the left channel, and the secondary or trigger detector connected to the right channel', style={'display': audio}),        
                 html.P('Pulses are considered coincident when the secondary peak occurs within +3 or -3 sample points, therefore a higher sample rate will achieve a tighter coincidence.', style={'display': audio}),        
 
+                html.H4('Peak width'),
+                html.P('Impulse has a built-in function which can find peaks and calculate the resolution. The slider adjusts the width of the peaks, allowing you to increase or reduce the number of peaks found. Setting the peak width to off turns of all flags.'),
 
-                html.H4('Peakfinder'),
-                html.P('Impulse has a built-in function which can find peaks and calculate the resolution. The slider adjusts the tolerance, allowing you to increase or reduce the number of peaks found. There is a limit to how close together it can identify two peaks, this is due to the width of the notation only. '),
-                
+                html.H4('Toggle flags'),
+                html.P('This switch allows you to lookup [bin number and counts], [energy and counts] or [isotope and energy]. Isotopes libraries are stored in the data folder and can be selected from the pulldown menu. Note: Spectrum must be accurately calibrated for isotope flags to show.'),
+
+                html.H4('Isotope Library'),
+                html.P('There are several isotope lists in your data folder, these are stored in json format and can be selected from the pulldown menu on tab2. Common and less common gamma emitting isotopes have been separated into two tables to prevent too many showing on the screeen'),
+
                 html.H4('Gaussian Correlation'),
                 html.P('This function identifies peaks which are hard to see with the naked eye, it takes the normalized spectrum and calculates the dot product of the gaussian shape with a standard deviation dependent bin number, the slider adjusts sigma, which determines how many bins to average the gaussian function.'),
 

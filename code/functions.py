@@ -395,25 +395,19 @@ def shutdown():
 def rolling_average(data, window_size):
     return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
 
-def peak_finder(y_values, prominence, min_width, smoothing_window=11):
+def peak_finder(y_values, prominence, min_width, smoothing_window=3):
     # Apply rolling average for smoothing
-    smoothed_y_values = rolling_average(y_values, smoothing_window)
-    
+    smoothed_y_values = rolling_average(y_values, smoothing_window)  
     # Find peaks in the smoothed data
-    peaks, _ = find_peaks(smoothed_y_values, prominence=prominence, distance=40)
-    
+    peaks, _ = find_peaks(smoothed_y_values, prominence=prominence, distance=30)
     # Calculate widths at relative height 0.3
     widths, _, _, _ = peak_widths(smoothed_y_values, peaks, rel_height=0.5)
-    
     # Filter peaks based on minimum width
     filtered_peaks = [p for i, p in enumerate(peaks) if widths[i] >= min_width]
-    
     # Calculate full width at half maximum (FWHM) for filtered peaks
     fwhm = [round(peak_widths(smoothed_y_values, [p], rel_height=0.5)[0][0], 1) for p in filtered_peaks]
-    
     # Adjust filtered peaks indices to match original data indices
     adjusted_peaks = [p + (smoothing_window - 1) // 2 for p in filtered_peaks]
-    
     return adjusted_peaks, fwhm
 
 
@@ -642,22 +636,16 @@ def get_api_key():
         data_directory = global_vars.data_directory
     try:
         user_file_path = get_path(f'{data_directory}/_user.json')
-
         if not os.path.exists(user_file_path):
             logger.error(f"User file not found: {user_file_path}\n")
             return None
 
         with open(user_file_path, 'r') as file:
             user_data = json.load(file)
-
         api_key = user_data.get('api_key', None)
-
         return api_key
-
     except Exception as e:
-
         logger.error(f"code/functions/get_api_key() failed: {e}\n")
-
         return None
 
 def publish_spectrum(filename):
@@ -886,20 +874,16 @@ def find_peaks_in_gc(gc, sigma):
     return peaks
 
 # Finds matching isotopes in the JSON data file
-def matching_isotopes(gc_calibrated, peaks, data, sigma):
+def matching_isotopes(x_calibrated, data, width):
     matches = {}
-    for idx, peak_idx in enumerate(peaks):
-        x, y = gc_calibrated[peak_idx]
-        if y > 4:
+    for idx, (x, y) in enumerate(x_calibrated):
+        if y > 4:  # Threshold for significant peaks
             matched_isotopes = [
-                isotope for isotope in data
-                if abs(isotope['energy'] - x) <= sigma * 2
+                isotope for isotope in data if abs(isotope['energy'] - x) <= width
             ]
             if matched_isotopes:
                 matches[idx] = (x, y, matched_isotopes)
     return matches
-
-# functions.py
 
 def reset_stores():
     return {
@@ -961,7 +945,8 @@ def save_settings_to_json():
             "threshold", 
             "tolerance",
             "shape_lld",
-            "shape_uld"
+            "shape_uld",
+            "val_flag"
             ]}
     
     try:
@@ -1032,7 +1017,8 @@ def load_settings_from_json(path):
                     "threshold":            int, 
                     "tolerance":            int,
                     "shape_lld":            int,
-                    "shape_uld":            int
+                    "shape_uld":            int,
+                    "val_flag":             bool
                     }   
 
             for key, value in settings.items():

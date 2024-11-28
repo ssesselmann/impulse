@@ -110,6 +110,7 @@ def show_tab2():
         coefficients_2  = global_vars.coefficients_2
         slb_switch      = global_vars.suppress_last_bin
         dropped_counts  = global_vars.dropped_counts
+        val_flag        = global_vars.val_flag
 
         
 
@@ -170,7 +171,7 @@ def show_tab2():
                         {'label': '8192 Bins', 'value': '1'},
                     ], value=compression, clearable=False, className='dropdown')], style={'display': serial}),
 
-                    html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, className='dropdown', optionHeight=40)]),
+                    html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, className='dropdown', optionHeight=20, style={'textAlign':'left', 'textWrap':None})]),
                     
                     html.Div(['Or create new file:', dcc.Input(id='filename', type='text', value=filename, className='input', placeholder='Enter new filename')]),
                     
@@ -239,16 +240,17 @@ def show_tab2():
                     ])], id="confirmation-modal", centered=True, size="md", className="custom-modal"),
 
                 dcc.Store(id="confirmation-output", data=''),
-                html.Button('isotope flags', id='toggle-annotations-button', n_clicks=0, className="action_button"),
+                #html.Button('isotope flags', id='toggle-annotations-button', n_clicks=0, className="action_button"),
                 dcc.Store(id='store-gaussian'),
                 dcc.Store(id='store-annotations', data=[]),
                 html.Div('Gaussian (sigma)'),
                 html.Div(dcc.Slider(id='sigma', min=0, max=3, step=0.25, value=sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
                 dcc.Dropdown(id='flags', options=[
-                    {'label': 'gamma flags', 'value': 'i/tbl/gamma.json'},
-                    {'label': 'x-ray flags', 'value': 'i/tbl/xray.json'},
-                    {'label': 'n-capture flags', 'value': 'i/tbl/ncapture.json'},
-                ], style={'height': '15px', 'fontSize': '12px', 'borderwidth': '0px'}, value='i/tbl/gamma.json', className='dropdown', optionHeight=15, clearable=False),
+                    {'label': 'Common peaks', 'value': 'i/tbl/gamma-a.json'},
+                    {'label': 'Special peaks', 'value': 'i/tbl/gamma-b.json'},
+                    {'label': 'x-ray peaks', 'value': 'i/tbl/xray.json'},
+                    {'label': 'n-capture peaks', 'value': 'i/tbl/ncapture.json'},
+                ], style={'height': '15px', 'fontSize': '10px', 'borderwidth': '0px', 'textAlign':'left'}, value='i/tbl/gamma-a.json', className='dropdown', optionHeight=15, clearable=False),
             ]),
 
             html.Div(id='t2_setting_div8', children=[
@@ -258,8 +260,10 @@ def show_tab2():
                 html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3, className='input')),
                 html.Div(dcc.Input(id='calib_bin_4', type='number', value=calib_bin_4, className='input')),
                 html.Div(dcc.Input(id='calib_bin_5', type='number', value=calib_bin_5, className='input')),
-                html.Div('peakfinder'),
-                html.Div(dcc.Slider(id='peakfinder', min=0, max=10, step=1, value=peakfinder, marks={0:'0',2:'2',4:'4',6:'6',8:'8',10:'10'})),
+                html.Div('Peak width (bins)'),
+                html.Div(dcc.Slider(id='peakfinder', min=0, max=15, step=None, value=peakfinder, marks={0:'off',1:'1',3:'3',5:'5',7:'7',9:'9',11:'11', 13:'13', 15:'15'})),
+                html.Div(['values <-> isotopes', daq.BooleanSwitch(id='val-flag', on=val_flag, color='purple')]),
+
                 html.Div(id='publish-output', children=''),
             ]),
 
@@ -307,7 +311,7 @@ def update_filename_from_dropdown(selected_file, current_filename):
     [Input('start'              , 'n_clicks'), 
      Input('confirm-overwrite'  , 'n_clicks'), 
      Input('cancel-overwrite'   , 'n_clicks')],
-    [State('filename', 'value') , 
+    [State('filename'           , 'value') , 
      State('modal-overwrite'    , 'is_open')]
 )
 def confirm_with_user_2d(start_clicks, confirm_clicks, cancel_clicks, filename, is_open):
@@ -431,9 +435,9 @@ def stop_button(n_clicks, dn):
     Output('store-gaussian'      , 'data')],
     [Input('interval-component'  , 'n_intervals'),
     Input('bar_chart'            , 'relayoutData'),
-    Input('store-annotations'    , 'data')], 
-    [State('filename'            , 'value'),
-    State('epb-switch'           , 'on'),
+    Input('store-annotations'    , 'data'), 
+    Input('filename'            , 'value')],
+    [State('epb-switch'           , 'on'),
     State('log-switch'           , 'on'),
     State('cal-switch'           , 'on'),
     State('filename_2'           , 'value'),
@@ -443,9 +447,13 @@ def stop_button(n_clicks, dn):
     State('sigma'                , 'value'),
     State('max_seconds'          , 'value'),
     State('max_counts'           , 'value'),
-    State('coi-switch'           , 'on')]
+    State('coi-switch'           , 'on'),
+    State('val-flag'             , 'on'),
+    State('flags'                , 'value')]
     )
-def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, cal_switch, filename_2, compare_switch, difference_switch, peakfinder, sigma, max_seconds, max_counts, coi_switch):
+def update_graph(
+    n, relayoutData, isotopes, filename, epb_switch, log_switch, cal_switch, filename_2, compare_switch, 
+    difference_switch, peakfinder, sigma, max_seconds, max_counts, coi_switch, val_flag, flags):
         
     ctx = callback_context
 
@@ -469,6 +477,8 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
     prefixx         = 'bin'
     prefixy         = 'cts'
     min_width       = 0
+    path_isotopes   = os.path.join(data_directory, flags)
+    isotopes_data   = get_isotopes(path_isotopes)
 
     with global_vars.write_lock:
         counts          = global_vars.counts
@@ -530,9 +540,6 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
 
     if counts > 0:
 
-        prominence = peakfinder * 1.5
-        min_width  = peakfinder * 1
-
         if sigma == 0:
             gaussian = []
         else:
@@ -575,48 +582,75 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
         )
         fig.add_trace(trace1)
 
-    peaks, fwhm = peak_finder(y, prominence, min_width)
+    # peakfinder is input from slider
+    prominence = peakfinder * 1.5
+    peaks, fwhm = peak_finder(y, prominence, peakfinder)
 
-    for i in range(len(peaks)):
-        peak_value  = peaks[i]
-        bin_counts  = y[peaks[i]]
-        x_pos       = peaks[i]
-        y_pos       = y[peaks[i]]
-        y_pos_ann   = int(y_pos * 1.1)
-        resolution  = (fwhm[i] / peaks[i]) * 100
+    # Calibrate peaks and find matching isotopes
+    if cal_switch:
+        calibrated_peaks = [(np.polyval(np.poly1d(coefficients_1), peak), y[peak]) for peak in peaks]
+        # Find isotopes matching all peaks
+        isotopes_match = matching_isotopes(calibrated_peaks, isotopes_data, peakfinder)
 
-        if y_pos_ann > (max_value * 0.9):
-            y_pos_ann -= int(max_value * 0.1)
+    y = histogram
 
-        if cal_switch:
-            peak_value = np.polyval(np.poly1d(coefficients_1), peak_value)
-            x_pos = peak_value
-            suffix = "keV"
-            prefixx = ""
-        else:
-            suffix =" " 
-            prefixx = "bin "     
+    if not peakfinder == 0:
+        # Process peaks
+        for i in range(len(peaks)):
+            peak_value = peaks[i]
+            bin_counts = y[peaks[i]]  # Access counts at the peak index
+            x_pos = peaks[i]
+            y_pos = y[peaks[i]]
+            y_pos_ann = y_pos * 1.1
+            resolution = (fwhm[i] / peaks[i]) * 100
 
-        if log_switch:
-            y_pos_ann = np.log10(y_pos * 1.05)
+            if y_pos_ann > (max_value * 0.9):
+                y_pos_ann -= int(max_value * 0.1)
 
-        if peakfinder > 0:
+            if epb_switch:
+                y_pos_ann = y_pos * x_pos    
+
+            if cal_switch:
+                peak_value = round(np.polyval(np.poly1d(coefficients_1), peak_value),2)
+                x_pos = peak_value
+                suffix = " keV"
+                prefixx = " "
+            else:
+                suffix = " "
+                prefixx = " bin:"
+
+            # Adjust annotation position for log scale
+            if log_switch:
+                y_pos_ann = np.log10(y_pos * 1.05)
+
+            # Set annotation text based on val_flag
+            if val_flag and cal_switch:
+                annotation_text = ", ".join(
+                    [f"{iso['isotope']} ({iso['energy']} keV)" for iso in isotopes_match.get(i, (None, None, []))[2]]
+                )
+            else:
+                annotation_text = f"{prefixx}{peak_value}{suffix}|cts:{bin_counts} ({resolution:.1f}%)"
+
+            # Add annotations
             annotations.append(dict(
                 x=x_pos,
                 y=y_pos_ann,
                 xref='x',
                 yref='y',
-                text=f'{prefixy} {bin_counts}<br>{prefixx}{peak_value:.1f} {suffix}<br>{resolution:.1f}%',
-                font=dict(size=10),
-                align='left',
-                xanchor='left',
+                text=annotation_text,
                 showarrow=True,
                 arrowcolor='red',
                 arrowhead=0,
                 ax=0,
-                ay=-60,
+                ay=-40,
+                xanchor='left',
+                font=dict(size=10, color='blue' if val_flag else 'black'),
+                bgcolor='yellow' if val_flag else 'lightgreen',
+                align='left',  # Ensure left alignment
+
             ))
 
+            # Add vertical lines for peaks
             lines.append(dict(
                 type='line',
                 x0=x_pos,
@@ -626,8 +660,19 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
                 line=dict(color='red', width=1, dash='dot')
             ))
 
-    if isotopes:
-        annotations.extend(isotopes)
+    # After processing peaks, ensure y is valid
+    y = histogram
+    if epb_switch:
+        y = [i * count for i, count in enumerate(histogram)]  # Scale histogram counts
+        gaussian = [i * count for i, count in enumerate(gaussian)]
+        prefixy = 'E'
+
+    # Update y-axis range
+    if log_switch:
+        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0.1, max_log_value + 0.3]))
+    else:
+        fig.update_layout(yaxis=dict(autorange=True, type='linear', range=[0, max(y)]))
+
 
     fig.update_layout(
         annotations=annotations,
@@ -741,7 +786,8 @@ def update_graph(n, relayoutData, isotopes, filename, epb_switch, log_switch, ca
      Input('epb-switch'         , 'on'),  # [13]
      Input('cal-switch'         , 'on'),  # [14]
      Input('coi-switch'         , 'on'),  # [15]
-     Input('slb-switch'         , 'on')]  # [16]
+     Input('slb-switch'         , 'on'),  # [16]
+     Input('val-flag'           , 'on')]  # [17]
 )
 def save_settings(*args):
 
@@ -763,9 +809,9 @@ def save_settings(*args):
         global_vars.cal_switch  = args[14]
         global_vars.coi_switch  = args[15]
         global_vars.suppress_last_bin = args[16]
-
         if global_vars.device > 100:
             global_vars.bins = int(8192 / int(args[11]))
+        global_vars.val_flag    = args[17]    
 
     save_settings_to_json()
     logger.info(f'Settings updated from tab2\n')
@@ -931,66 +977,6 @@ def update_spectrum_notes(spec_notes, filename):
 
     return spec_notes
 
-# Switch annotations on or off
-@app.callback(
-    Output('store-annotations'          , 'data'),
-    Output('toggle-annotations-button'  , 'children'),
-    Output('flags'                      , 'value'),
-    Input('toggle-annotations-button'   , 'n_clicks'),
-    Input('flags'                       , 'value'),
-    State('store-gaussian'              , 'data'),
-    State('sigma'                       , 'value'),
-    State('cal-switch'                  , 'on')
-)
-def toggle_annotations(n_clicks, flags, gaussian, sigma, cal_switch):
-    if n_clicks is None:
-        raise PreventUpdate
-
-    n_clicks += 1
-    with global_vars.write_lock:
-        coefficients = global_vars.coefficients_1
-
-    if n_clicks % 2 == 0:
-        if gaussian is not None and coefficients is not None:
-
-            path_isotopes   = os.path.join(data_directory, flags)
-            gc_calibrated   = calibrate_gc(gaussian, coefficients)
-            peaks           = find_peaks_in_gc(gaussian, sigma=sigma)
-            isotopes_data   = get_isotopes(path_isotopes)
-            matches         = matching_isotopes(gc_calibrated, peaks, isotopes_data, sigma)
-            annotations     = []
-
-            for idx, (x, y, isotopes) in matches.items():
-                isotope_names = ', '.join([isotope['isotope'] for isotope in isotopes])
-                y_pos = 0.85 - ((idx % 16) * 0.03)
-
-                annotations.append(
-                    dict(
-                        x=x,
-                        y=y_pos,
-                        xref='x',
-                        yref='paper',
-                        text=isotope_names,
-                        showarrow=True,
-                        arrowhead=None,
-                        ax=0,
-                        ay=-40,
-                        font=dict(size=10, color='blue'),
-                        xanchor='left',
-                        yanchor='bottom',
-                        align='right',
-                        bgcolor='white'
-                    )
-                )
-
-            if not cal_switch or sigma == 0:
-                return [], '! Turn on calib first', flags
-
-            return annotations, 'Isotope Flags On', flags
-
-        return [], '', flags
-
-    return [], 'Isotopes Flags off', flags
 
 # callback for exporting to csv
 @app.callback(Output('export_histogram_output'  , 'children'),

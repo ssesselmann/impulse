@@ -53,6 +53,8 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
     array_3d            = []
     spec_notes          = ""
     dropped_counts      = 0
+    flip_left           = 1
+    flip_right          = 1
 
     # Load settings from global variables
     with global_vars.write_lock:
@@ -140,22 +142,24 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
         left_channel    = values[::2]
         right_channel   = values[1::2]
 
-        # Flip the samples if inputs are positive
-        if flip == 22:
-            left_channel    = [flip * x for x in left_channel]
-            right_channel   = [flip * x for x in right_channel]
+        if flip     == 11:
+            pass
+        elif flip   == 12:
+            flip_left   = 1
+            flip_right  = -1  
+        elif flip   == 21:
+            flip_left   = -1
+            flip_right  = 1 
+        elif flip   == 22:
+            flip_left   = -1
+            flip_right  = -1       
 
-        if flip == 12:
-            right_channel   = [flip * x for x in right_channel]
-
-        if flip == 21:
-            left_channel    = [flip * x for x in left_channel]
-
-        # Extend detection to right channel if mode == 4
+        # Include right channel if mode == 4:
         if mode == 4:
-            right_pulses = []  # Reset right pulses for this chunk
+            right_pulses = []  # Reset right pulse array
             for i in range(len(right_channel) - sample_length):
                 samples = right_channel[i:i + sample_length]
+                samples = [flip_right * x for x in samples]
                 height = fn.pulse_height(samples)
                 if samples[peak] == max(samples) and abs(height) > right_threshold and samples[peak] < 32768:
                     right_pulses.append((i + peak, height))
@@ -163,14 +167,13 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
         # Sliding window approach to avoid re-slicing the array each time
         samples = left_channel[:sample_length]
+        samples = [flip_left * x for x in samples]
         for i in range(len(left_channel) - sample_length):
             height = fn.pulse_height(samples)
-
             if samples[peak] == max(samples) and abs(height) > threshold and samples[peak] < 32768:
                 if mode == 4:
                     # Optimize coincident pulse check by using binary search or range filter
                     coincident_pulse = next((rp for rp in right_pulses if i + peak - coi_window <= rp[0] <= i + peak + coi_window), None)
-
                     if not coincident_pulse:
                         continue  # Skip if no coincident pulse found
                     else:
@@ -179,12 +182,15 @@ def pulsecatcher(mode, run_flag, run_flag_lock):
 
                 # Process the pulse as normal
                 normalised = fn.normalise_pulse(samples)
+
                 distortion = fn.distortion(normalised, left_shape)
 
                 if distortion > tolerance:
                     dropped_counts += 1
+
                 elif distortion < tolerance:
                     bin_index = int(height / bin_size)
+
                     if bin_index < bins:
                         local_histogram[bin_index] += 1
                         local_counts += 1

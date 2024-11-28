@@ -215,27 +215,20 @@ def shapecatcher():
             # Read audio data
             data = stream.read(chunk_size, exception_on_overflow=False)
             # Unpack audio data
-            values = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))
-            
+            values = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))    
             # Separate the left channel
             left_channel = values[::2] if stereo else values
-
             # Process the left channel to detect pulses
             for i in range(len(left_channel) - sample_length):
                 samples = left_channel[i:i + sample_length]
-
                 if shape_lld < abs(samples[peak]) < shape_uld and samples[peak] == max(samples):
                     aligned_samples = align_pulse(samples, peak)
-
                     # Flip the data if necessary
                     if not pulse_sign_left:
                         aligned_samples = [-s for s in aligned_samples]
-
                     pulse_list_left.append(aligned_samples)
-
                     pcl = len(pulse_list_left)
                     sc_info.append(f'Looking for pulses on left channel: {pcl}')
-
                 if len(pulse_list_left) >= shapecatches:
                     break
 
@@ -246,26 +239,19 @@ def shapecatcher():
                 data = stream.read(chunk_size, exception_on_overflow=False)
                 # Unpack audio data
                 values = list(wave.struct.unpack("%dh" % (chunk_size * channels), data))
-
                 # Separate the right channel
                 right_channel = values[1::2]
-
                 # Process the right channel to detect pulses
                 for i in range(len(right_channel) - sample_length):
                     samples = right_channel[i:i + sample_length]
-
                     if shape_lld < abs(samples[peak]) < shape_uld and samples[peak] == max(samples):
                         aligned_samples = align_pulse(samples, peak)
-
                         # Flip the data if necessary
                         if not pulse_sign_right:
                             aligned_samples = [-s for s in aligned_samples]
-
                         pulse_list_right.append(aligned_samples)
-
                         pcr = len(pulse_list_right)
                         sc_info.append(f'Looking for pulses on right channel: {pcr}')
-
                     if len(pulse_list_right) >= shapecatches:
                         break
 

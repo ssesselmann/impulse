@@ -27,6 +27,8 @@ user_file = os.path.join(data_directory, "_user.json")
 shapecsv = os.path.join(data_directory, "_shape.csv")
 i_directory = os.path.join(data_directory, "i")
 tbl_directory = os.path.join(i_directory, "tbl")
+shortlist = os.path.join(data_directory, i_directory, tbl_directory, "gamma-a.json")
+longlist = os.path.join(data_directory, i_directory, tbl_directory, "gamma-b.json")
 
 # Set global variables
 with global_vars.write_lock:
@@ -137,13 +139,32 @@ if not os.path.exists(i_directory):
     if os.path.exists(isotope_folder_path):
         shutil.copytree(isotope_folder_path, i_directory)
         logger.info(f'Copied i directory to {i_directory}\n')
-
 # 5. Check if there is a "tbl" directory in the "i" directory, if not copy it from resources
 if not os.path.exists(tbl_directory):
     tbl_folder_path = resource_path(os.path.join("i", "tbl"))
     if os.path.exists(tbl_folder_path):
         shutil.copytree(tbl_folder_path, tbl_directory)
         logger.info(f'Copied tbl directory to {tbl_directory}\n')
+
+# 6. Check if "gamma-a.json" exists in the i_directory, if not copy it from resources
+if not os.path.exists(shortlist):  # Check if gamma-a.json exists
+    source_a = os.path.join(resource_path("i"), "tbl", "gamma-a.json")  # Path to the source gamma-a.json
+    print(source_a)
+    if os.path.exists(source_a):  # Ensure the source files exists
+        shutil.copy(source_a, shortlist)  # Copy the file to the destination
+        logger.info(f'Copied gamma-a.json to i/tbl\n')
+    else:
+        logger.warning(f'Source file gamma-a.json does not exist at {source_a}\n')
+
+# 7. Check if "gamma-a.json" exists in the i_directory, if not copy it from resources
+if not os.path.exists(longlist):  # Check if gamma-a.json exists
+    source_b = os.path.join(resource_path("i"), "tbl", "gamma-b.json")  # Path to the source gamma-a.json
+    print(source_b)
+    if os.path.exists(source_b):  # Ensure the source files exists
+        shutil.copy(source_b, longlist)  # Copy the file to the destination
+        logger.info(f'Copied gamma-b.json to i/tbl\n')
+    else:
+        logger.warning(f'Source file gamma-b.json does not exist at {source_a}\n')        
 
 with global_vars.write_lock:
     filename    = global_vars.filename
