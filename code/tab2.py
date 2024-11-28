@@ -216,13 +216,14 @@ def show_tab2():
                 html.Div(dcc.Dropdown(id='filename_2', options=options_sorted, placeholder='Select comparison', value=filename_2, className='dropdown', optionHeight=40)),
                 html.Div(['Show Comparison', daq.BooleanSwitch(id='compare_switch', on=False, color='purple')]),
                 html.Div(['Subtract Comparison', daq.BooleanSwitch(id='difference_switch', on=False, color='purple')]),
+                html.Div(['Coincidence', daq.BooleanSwitch(id='coi-switch', on=coi_switch, color='purple')], style={'display': audio}),
+
             ]),
 
             html.Div(id='t2_setting_div6', children=[
                 html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='purple')]),
                 html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
                 html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
-                html.Div(['Coincidence', daq.BooleanSwitch(id='coi-switch', on=coi_switch, color='purple')], style={'display': audio}),
                 html.Div(['Supress Last Bin', daq.BooleanSwitch(id='slb-switch', on=slb_switch, color='purple')], style={'display': serial}),
             ]),
 
@@ -261,7 +262,7 @@ def show_tab2():
                 html.Div(dcc.Input(id='calib_bin_4', type='number', value=calib_bin_4, className='input')),
                 html.Div(dcc.Input(id='calib_bin_5', type='number', value=calib_bin_5, className='input')),
                 html.Div('Peak width (bins)'),
-                html.Div(dcc.Slider(id='peakfinder', min=0, max=15, step=None, value=peakfinder, marks={0:'off',1:'1',3:'3',5:'5',7:'7',9:'9',11:'11', 13:'13', 15:'15'})),
+                html.Div(dcc.Slider(id='peakfinder', min=0, max=15, step=None, value=peakfinder, marks={0:'-',1:'1',3:'3',5:'5',7:'7',9:'9',11:'11', 13:'13', 15:'15'})),
                 html.Div(['values <-> isotopes', daq.BooleanSwitch(id='val-flag', on=val_flag, color='purple')]),
 
                 html.Div(id='publish-output', children=''),
@@ -834,8 +835,8 @@ def save_settings(*args):
 )
 def save_calibrations(*args):
     # Ensure that only valid numerical inputs (not None and greater than 0) are included
-    x_bins = [x for x in [args[0], args[1], args[2], args[3], args[4]] if x is not None and x > 0]
-    x_energies = [y for y in [args[5], args[6], args[7], args[8], args[9]] if y is not None and y > 0]
+    x_bins      = [x for x in [args[0], args[1], args[2], args[3], args[4]] if x is not None and x > 0]
+    x_energies  = [y for y in [args[5], args[6], args[7], args[8], args[9]] if y is not None and y > 0]
 
     coefficients = []
 
@@ -878,7 +879,6 @@ def save_calibrations(*args):
         global_vars.coefficients_1 = coefficients
 
     return f'{message} (ax^2 + bx + c) = {polynomial_fn}'
-
 
 
 # Callback function for playing sound
