@@ -11,8 +11,9 @@ from dash import dcc
 from dash import html
 from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
-from server import app
+from server import app, version
 from flask import request
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +68,8 @@ def show_tab6():
         html.Div(id='tab6_text_div', children=[
             html.Hr(),
             html.Div(id='manual', children=[
-                html.H1('Impulse V2.2.1 Manual (Serial Devices)', style={'display': serial}),
-                html.H1('Impulse V2.2.1 Manual (Audio Devices)', style={'display': audio}),
+                html.H1(f'Impulse {version} Manual (Serial Devices)', style={'display': serial}),
+                html.H1(f'Impulse {version} Manual (Audio Devices)', style={'display': audio}),
 
                 html.P('Thank you for downloading and installing Impulse MCA, this open source software is written in Python with the intention that users may modify and adapt it to their own experiments.'),
                 html.P('In the following text I shall describe how the software works and what each setting parameter does.'),

@@ -8,11 +8,11 @@ from functions import load_settings_from_json
 from dash import html
 from flask import Flask, send_from_directory
 
-# Set up the Flask server before initializing Dash
-server = Flask(__name__)
-
-# Define your data directory
-data_directory = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
+#----VERSION NUMBER -----------
+version         = "v2.1.1"
+server          = Flask(__name__)
+data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
+#------------------------------
 
 # Set up logging configuration
 if not os.path.exists(data_directory):
