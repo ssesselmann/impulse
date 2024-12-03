@@ -93,7 +93,7 @@ def start(sn=None):
                     if re.search('^VERSION', resp_decoded):
                         shproto.dispatcher.inf_str = resp_decoded
                         shproto.dispatcher.inf_str = re.sub(r'\[[^]]*\]', '...', shproto.dispatcher.inf_str, count=2)
-                        logger.info(f"Got nano-pro settings:\n {shproto.dispatcher.inf_str} \n")
+                        logger.info(f"Got nano-pro settings:{shproto.dispatcher.inf_str} \n")
                 except UnicodeDecodeError:
                     logger.info("Unknown non-text response in dispatcher line 100\n")
 
@@ -114,7 +114,7 @@ def start(sn=None):
                             shproto.dispatcher.calibration_updated = 1
                         logger.info("Got calibration: {}\n".format(shproto.dispatcher.calibration))
                     else:
-                        logger.info("Dispatcher Wrong crc for calibration values got: {:08x} expected: {:08x}".format(int(resp_lines[10], 16), crc))
+                        logger.info("dispatcher Wrong crc for calibration values got: {:08x} expected: {:08x} \n".format(int(resp_lines[10], 16), crc))
 
                 response.clear()
             elif response.cmd == shproto.MODE_HISTOGRAM:
@@ -180,7 +180,7 @@ def start(sn=None):
 
 # This process records the 2D histogram (spectrum)
 def process_01(filename, compression, device, t_interval):
-    logger.info(f'dispatcher.process_01({filename})')
+    logger.info(f'shproto.dispatcher.process_01({filename})\n')
 
     global counts, last_counts
 
@@ -268,7 +268,7 @@ def process_01(filename, compression, device, t_interval):
         # Save JSON files once every 60 seconds
         if t1 - last_save_time >= 60 or shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag:
 
-            logger.info(f'shproto process_01 attempting to save {filename}.json\n')
+            logger.info(f'shproto process_01 saving {filename}.json\n')
 
             data = {
                 "schemaVersion": "NPESv2",
@@ -306,7 +306,7 @@ def process_01(filename, compression, device, t_interval):
             # Construct the full path to the file
             file_path = os.path.join(data_directory, f'{filename}.json')
 
-            logger.info(f'file path = {file_path}\n')
+            logger.info(f'file saved to: {file_path}\n')
 
             # Open the JSON file in "write" mode for each iteration
             with open(file_path, "w") as wjf:
@@ -321,7 +321,7 @@ def process_01(filename, compression, device, t_interval):
 
             cps_file_path = os.path.join(data_directory, f'{filename}_cps.json')
 
-            logger.info(f'CPS file path = {cps_file_path}\n')
+            logger.info(f'CPS file saved to: {cps_file_path}\n')
 
             # Open the CPS JSON file in "write" mode for each iteration
             with open(cps_file_path, "w") as cps_wjf:
@@ -424,7 +424,7 @@ def process_02(filename_3d, compression, device, t_interval):  # Compression red
         # Save JSON files once every 60 seconds or when global_vars.run_flag.clear()
         if t1 - last_save_time >= 60 or shproto.dispatcher.spec_stopflag or shproto.dispatcher.stopflag:
 
-            logger.info(f'shproto process_02 attempting to save {filename_3d}_3d.json\n')
+            logger.info(f'shproto process_02 saving {filename_3d}_3d.json\n')
 
             data = {
                 "schemaVersion": "NPESv2",
@@ -518,25 +518,26 @@ def load_json_data(file_path):
 def process_03(_command):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = _command
-        logger.info(f'dispatcher.process_03({_command})\n')
+        time.sleep(0.1)
+        logger.info(f'Completed process_03({_command})\n')
         return
 
 def stop():
-    logger.info('shproto.stop triggered\n')
+    logger.info('Command shproto.stop \n')
     with shproto.dispatcher.stopflag_lock:
-        process_03('-sto')
-        logger.info('process_03(-sto)\n')
-        time.sleep(0.1)
-        shproto.dispatcher.stopflag = 1
-        logger.info('Stop flag set(dispatcher)\n')
-        time.sleep(0.1)
-        return
+        try:
+            logger.info('Request process_03(-sto)\n')
+            process_03('-sto')
+            shproto.dispatcher.spec_stopflag = 1
+        except Exception as e:
+            logger.error(f"Error in stop: {e}")
+        finally:
+            logger.info('shproto.stop_flag is set\n')
 
 def spec_stop():
     with shproto.dispatcher.spec_stopflag_lock:
         shproto.dispatcher.spec_stopflag = 1
-
-        logger.info('Stop flag set(dispatcher)\n')
+        logger.info('dispatcher - Stop flag set\n')
         return
 
 def clear():
