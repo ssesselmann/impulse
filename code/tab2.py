@@ -400,29 +400,29 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
 
 # Stop Button function--------------
 @app.callback(
-    Output('stop-text', 'children'),
-    [Input('stop', 'n_clicks')],
-    [State('store-device', 'data')]
+    Output('stop-text'      , 'children'),
+    [Input('stop'           , 'n_clicks')],
+    [State('store-device'   , 'data')]
 )
 def stop_button(n_clicks, dn):
+
     if n_clicks is None:
         raise PreventUpdate
-
-    logger.info('tab2 stop button. clicked\n')
-
+    
+    logger.info(f'tab2-stop button clicked {n_clicks} times \n')
 
     if dn is None:
-        logger.error('Device number is None\n')
+        logger.error('tab2-stop button but no device Number\n')
         raise PreventUpdate
 
     if dn >= 100:
-        logger.info('tab2 stop_button shproto.dispatcher\n')
+        logger.info('tab2-stop_button device is MAX\n')
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
         time.sleep(0.1)
     else:
         stop_recording()
-        logger.info('tab2 stop_recording() for audio device\n')
+        logger.info('tab2-stop button device is PRO\n')
     return
 
 
@@ -632,6 +632,7 @@ def update_graph(
             else:
                 annotation_text = f"{prefixx}{peak_value}{suffix}|cts:{bin_counts} ({resolution:.1f}%)"
 
+
             # Add annotations
             annotations.append(dict(
                 x=x_pos,
@@ -647,8 +648,7 @@ def update_graph(
                 xanchor='left',
                 font=dict(size=10, color='blue' if val_flag else 'black'),
                 bgcolor='yellow' if val_flag else 'lightgreen',
-                align='left',  # Ensure left alignment
-
+                align='left',
             ))
 
             # Add vertical lines for peaks
@@ -764,6 +764,11 @@ def update_graph(
             bordercolor="lightgray",
             borderwidth=1
         )
+
+    fig.update_layout(
+        annotations=annotations,
+        shapes=lines
+    )
 
     return fig, f'{counts}', f'{elapsed}', f'cps {cps}', f'{dropped_counts} lost counts ', gaussian
 
