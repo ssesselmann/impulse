@@ -11,6 +11,7 @@ import os
 import re
 import platform
 import threading
+import queue
 import sqlite3 as sql
 import pandas as pd
 import pulsecatcher as pc
@@ -28,12 +29,17 @@ from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
 from datetime import datetime
 from urllib.request import urlopen
-from shproto.dispatcher import process_03
+from shproto.dispatcher import process_03, start
 
 logger          = logging.getLogger(__name__)
 cps_list        = []
 with global_vars.write_lock:
     data_directory  = global_vars.data_directory
+
+# Create a threading event to control the background thread
+stop_thread         = threading.Event()
+# Define the queue at the global level
+pulse_data_queue    = queue.Queue()
 
 # Finds pulses in string of data over a given threshold
 def find_pulses(left_channel):
@@ -57,15 +63,33 @@ def normalise_pulse(average):
     return normalised
 
 def get_serial_device_information():
-    with shproto.dispatcher.command_lock:
-        shproto.dispatcher.command = "-inf"
-        logger.info("Sending '-inf' command to device\n")
-    time.sleep(0.1)
+    try:
+        # Temporarily stop pulse data mode
+        process_03('-sto')  # Stop pulse data
+        time.sleep(0.01)
+        process_03('-mode 0')  # Reset to default mode
+        time.sleep(0.01)
 
-    with shproto.dispatcher.command_lock:
-        device_info = shproto.dispatcher.inf_str
-        shproto.dispatcher.inf_str = ""
-    return device_info
+        # Send the `"-inf"` command
+        with shproto.dispatcher.command_lock:
+            shproto.dispatcher.command = "-inf"
+            logger.info("Command '-inf' sent to dispatcher")
+        
+        time.sleep(0.1)  # Allow time for response
+
+        # Retrieve the device information
+        with shproto.dispatcher.command_lock:
+            device_info = shproto.dispatcher.inf_str
+            logger.info(f"Retrieved device information: {device_info}")
+            shproto.dispatcher.inf_str = ""  # Clear for subsequent commands
+        
+        time.sleep(0.01)
+
+        return device_info if device_info else "No response from device"
+
+    except Exception as e:
+        logger.error(f"Error retrieving device information: {e}")
+        return "Error retrieving device information"
 
 def parse_device_info(info_string):
     components = info_string.split()
@@ -257,8 +281,6 @@ def update_json_3d_file(t0, t1, bins, counts, elapsed, filename_3d, last_histogr
     except Exception as e:
         logger.error(f"Error writing JSON file: {e}")
 
-
-
 # This function writes counts per second to JSON
 def write_cps_json(filename, count_history, elapsed, valid_counts, dropped_counts):
 
@@ -316,7 +338,7 @@ def refresh_audio_device_list():
     try:
         p = pyaudio.PyAudio()
         p.terminate()
-        time.sleep(0.1)
+        time.sleep(0.01)
     except:
         pass
 
@@ -328,6 +350,7 @@ def get_device_number():
 # This function gets a list of audio devices connected to the computer
 def get_device_list():
     refresh_audio_device_list()
+    time.sleep(0.01)
     p = pyaudio.PyAudio()
     try:
         device_count = p.get_device_count()
@@ -410,7 +433,6 @@ def peak_finder(y_values, prominence, min_width, smoothing_window=3):
     adjusted_peaks = [p + (smoothing_window - 1) // 2 for p in filtered_peaks]
     return adjusted_peaks, fwhm
 
-
 def gaussian_correl(data, sigma):
     correl_values = []
     data_len = len(data)
@@ -448,7 +470,6 @@ def handle_modal_confirmation(start_clicks, confirm_clicks, cancel_clicks, filen
         return False, ''
 
     return False, ''
-
 
 def start_recording(mode):
 
@@ -573,7 +594,6 @@ def export_csv(filename, data_directory, calib_switch):
                 energy = i
             writer.writerow([energy, value])
 
-
 def update_coeff(filename):
     with global_vars.write_lock:
         data_directory = global_vars.data_directory
@@ -679,8 +699,6 @@ def publish_spectrum(filename):
         logger.error(f'Error from /code/functions/publish_spectrum: {e}\n')
         return f'Error from /code/functions/publish_spectrum: {e}'
 
-
-
 def update_json_notes(filename, spec_notes):
     with global_vars.write_lock:
         data_directory = global_vars.data_directory
@@ -740,11 +758,18 @@ def generate_device_settings_table():
     shproto.dispatcher.spec_stopflag = 0
     dispatcher = threading.Thread(target=shproto.dispatcher.start)
     dispatcher.start()
-    time.sleep(0.1)
+    process_03('-sto')  # Stop ongoing operations
+    time.sleep(0.01)  # Allow time for the device to process
+    process_03('-mode 0')  # Reset mode to default
+    time.sleep(0.01)
+    process_03('-cal')  # Calibration command
+
+    # Retrieve device information
     dev_info = get_serial_device_information()
     info_dict = parse_device_info(dev_info)
-    process_03('-cal')
+
     serial = shproto.dispatcher.serial_number
+
     table = dash_table.DataTable(
         columns=[
             {"id": "Setting", "name": "Firmware settings"},
@@ -836,7 +861,6 @@ def get_options():
 
     return options_sorted
 
-
 def get_options_3d():
     with global_vars.write_lock:
         data_directory = global_vars.data_directory
@@ -851,9 +875,7 @@ def get_options_3d():
     for file in options_sorted:
         file['label'] = file['label'].replace('_3d.json', '')
         file['value'] = file['value'].replace('_3d.json', '')
-
     return options_sorted
-
 
 # Calibrates the x-axis of the Gaussian correlation
 def calibrate_gc(gc, coefficients):
@@ -946,7 +968,9 @@ def save_settings_to_json():
             "tolerance",
             "shape_lld",
             "shape_uld",
-            "val_flag"
+            "val_flag",
+            "max_pulse_length",
+            "max_pulse_height"
             ]}
     
     try:
@@ -1018,7 +1042,9 @@ def load_settings_from_json(path):
                     "tolerance":            int,
                     "shape_lld":            int,
                     "shape_uld":            int,
-                    "val_flag":             bool
+                    "val_flag":             bool,
+                    "max_pulse_length":     int,
+                    "max_pulse_height":     int
                     }   
 
             for key, value in settings.items():
@@ -1133,7 +1159,6 @@ def load_histogram_3d(filename):
 
         logger.error(f"Missing expected data key in {file_path}: {e}\not")
 
-
 def load_cps_file(filename):
 
     data_directory  = global_vars.data_directory
@@ -1180,4 +1205,40 @@ def format_date(iso_datetime_str):
     
     return formatted_datetime
 
+def start_max_pulse_check():
+    try:
+        process_03('-mode 2')  # Switch to pulse mode
+        time.sleep(0.01)
+        process_03('-dbg 2000 8000')  # Filter pulses between 2000 and 8000
+        time.sleep(0.01)
+        process_03('-sta')  # Start recording
+    except Exception as e:
+        logger.error(f"Error in process_03 command: {e}")
+        return True  # Signal that the interval should remain disabled
 
+    if not stop_thread.is_set():  # Check if the thread is already running
+        stop_thread.clear()  # Ensure the thread is ready to run
+        threading.Thread(target=capture_pulse_data, daemon=True).start()
+        return False  # Signal that the interval should be enabled
+  
+def stop_max_pulse_check():
+    try:
+        process_03('-sto')  # Stop recording
+        time.sleep(0.01)
+        process_03('-mode 0')  # Reset mode to default
+
+    except Exception as e:
+        logger.error(f"Error in process_03 command: {e}")
+    
+    stop_thread.set()  # Signal the thread to stop
+    return True  # Signal that the interval should be disabled
+
+def capture_pulse_data():
+    stop_thread.clear()  # Ensure the thread runs unless explicitly stopped
+    try:
+        for pulse_data in start():  # start() yields lists of pulse amplitudes
+            if stop_thread.is_set():  # Check if we need to stop
+                break
+            pulse_data_queue.put(pulse_data)  # Add the list to the queue
+    except Exception as e:
+        logger.error(f"Error while capturing pulse data: {e}")
