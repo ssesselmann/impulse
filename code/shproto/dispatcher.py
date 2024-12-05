@@ -48,13 +48,22 @@ with global_vars.write_lock:
 # This function communicates with the device
 def start(sn=None):
     READ_BUFFER = 1
+    pulse_file_opened = 0
     shproto.dispatcher.clear()
     with shproto.dispatcher.stopflag_lock:
         shproto.dispatcher.stopflag = 0
     nano = shproto.port.connectdevice(sn)
+    if not nano:
+        logger.error("Failed to connect to device.")
+        return
+    else:
+        nano.flushInput()
+        nano.flushOutput()
+    logger.info("Device connected successfully.")
     response = shproto.packet()
     while not shproto.dispatcher.stopflag:
         if shproto.dispatcher.command is not None and len(shproto.dispatcher.command) > 0:
+            logger.debug(f"Dispatcher command: {shproto.dispatcher.command}")
             if command == "-rst":
                 shproto.dispatcher.clear()
             tx_packet = shproto.packet()
@@ -74,7 +83,7 @@ def start(sn=None):
             rx_byte_arr = nano.read(size=READ_BUFFER)
         except serial.SerialException as e:
             logger.error(f"SerialException: {e}\n")
-            break  # Exit the loop if there's a serial exception
+            break
         for rx_byte in rx_byte_arr:
             response.read(rx_byte)
             if response.dropped:
@@ -131,9 +140,20 @@ def start(sn=None):
                                     ((response.payload[i * 4 + 5]) << 24)
                             shproto.dispatcher.histogram[index] = value & 0x7FFFFFF
                 response.clear()
-            elif response.cmd == shproto.MODE_PULSE:  # debug mode, pulse shape
+            if response.cmd == shproto.MODE_PULSE:
+                pulse_data = []
+                for i in range(0, len(response.payload), 2):
+                    if i + 1 < len(response.payload):
+                        value = (response.payload[i + 1] << 8) | response.payload[i]
+                        pulse_data.append(value)
+
+                if pulse_data:
+                    pulse_data = pulse_data[:-1]  # Remove the last item if needed
+                    logger.debug(f"Processed Pulse Data: {pulse_data}")
+                    with global_vars.write_lock:
+                        global_vars.max_pulse_shape = pulse_data
                 if pulse_file_opened != 1:
-                    fd_pulses = open("/tmp/pulses.csv", "w+")
+                    fd_pulses = open(os.path.join(data_directory,"max-pulse-check.csv"), "w+")
                     pulse_file_opened = 1
 
                 shproto.dispatcher.pkts01 += 1
@@ -143,10 +163,9 @@ def start(sn=None):
                 for i in range(0, count):
                     index = offset + i
                     if index < len(shproto.dispatcher.histogram):
-                        value = (response.payload[i * 2 + 2]) | \
-                                ((response.payload[i * 2 + 3]) << 8)
-                        pulse = pulse + [(value & 0x7FFFFFF)]
-                    fd_pulses.writelines("{:d} ".format(value & 0x7FFFFFF))
+                        value = (response.payload[i * 2 + 2]) | ((response.payload[i * 2 + 3]) << 8)
+                        pulse.append(value & 0x7FFFFFF)
+                        fd_pulses.writelines("{:d} ".format(value & 0x7FFFFFF))
                 fd_pulses.writelines("\n")
                 fd_pulses.flush()
                 response.clear()
@@ -176,7 +195,6 @@ def start(sn=None):
                 logger.info("Received: cmd:{}\r\npayload: {}\n".format(response.cmd, response.payload))
                 response.clear()
     nano.close()
-
 
 # This process records the 2D histogram (spectrum)
 def process_01(filename, compression, device, t_interval):
