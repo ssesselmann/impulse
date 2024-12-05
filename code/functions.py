@@ -814,7 +814,9 @@ def allowed_command(cmd):
         r"^-U[0-9]{1,3}$",
         r"^-V[0-9]{1,3}$",
         r"^-sto$",
-        r"^-nos[0-9]{1,3}$"
+        r"^-nos[0-9]{1,3}$",
+        r"^-ris[0-9]{1,3}$",
+        r"^-fall[0-9]{1,3}$"
     ]
     if cmd is None or not isinstance(cmd, str):
         return False
