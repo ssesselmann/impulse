@@ -4,12 +4,18 @@ import functions as fn
 import distortionchecker as dcr
 import shapecatcher as sc
 import os
+import dash
+import threading
+import queue
 import logging
 import requests as req
 import shproto.dispatcher
 import time
 import dash_daq as daq
-from dash import dcc, html, dash_table
+import global_vars
+from shproto.dispatcher import process_03
+from shproto.dispatcher import start
+from dash import dcc, html, dash_table, no_update
 from dash.dependencies import Input, Output, State
 from server import app
 from functions import (
@@ -17,10 +23,12 @@ from functions import (
     generate_device_settings_table, 
     allowed_command, 
     get_path, 
-    save_settings_to_json 
+    save_settings_to_json,
+    start_max_pulse_check,
+    stop_max_pulse_check,
+    capture_pulse_data
     )
 from shapecatcher import sc_info
-import global_vars
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +53,6 @@ def show_tab1():
         sample_length   = global_vars.sample_length
         peakshift       = global_vars.peakshift
         stereo          = global_vars.stereo
-        
 
     pulse_length    = 0
     filepath        = os.path.dirname(__file__)
@@ -178,9 +185,9 @@ def show_tab1():
                         html.H3('You have selected a GS-MAX serial device'),
                         html.Label('Input commands to device'),
                         html.Div(children=[
-                            dcc.Input(id='cmd_input', type='text', value='', style={'marginRight': '10px', 'width': '50%'}),
+                            dcc.Input(id='cmd-input', type='text', value='', style={'marginRight': '10px', 'width': '50%'}),
                             dcc.Input(id='hidden-input', type='text', value=f'{device}', style={'display': 'none'}),
-                            html.Button('Submit', id='submit_cmd', n_clicks=0),
+                            html.Button('Submit', id='submit-cmd', n_clicks=0),
                         ]),
                         html.Div(id='command_output', style={'width': '100%', 'marginTop': '20px'}),
                         html.P(''),
@@ -237,6 +244,7 @@ def show_tab1():
                         daq.BooleanSwitch(id='stereo', on=stereo, color='purple')
                     ], style={'display': 'flex', 'alignItems': 'center', 'justifyContent': 'flex-end', 'padding': '5px'}),
                 ], style={'display': audio}),
+                
                 html.Div(id='distortion_div', children=[
                     html.Div(id='showcurve', children=[
                         dcc.Graph(id='curve', figure={'data': [{}], 'layout': {}}),
@@ -246,10 +254,19 @@ def show_tab1():
                             n_clicks=0,
                             className='action_button',
                             style={'marginLeft': '20%', 'marginTop': '20px'}
-                        ),
-                    ]),
-                ], style={'display': audio}),
-            ], style={'backgroundColor': 'white', 'width': '100%', 'height': '600px', 'float': 'left'}),
+                            )])], style={'display': audio}),
+
+                html.Div(id='max-pulse-div', children=[
+                    html.Div(id='max-pulse', children=[
+                        dcc.Graph(id='max-pulse-graph', figure={'data': [{}], 'layout': {}}),
+                        dcc.Interval(id='update-interval', interval=1000),
+                        html.Div(id='max-pulse-button-div', children=[
+                        html.Button('Start Max Pulse', id='start-max-pulse', n_clicks=0, className='action_button', style={'marginLeft': '100px', 'marginTop': '20px', 'width':'150px'}),
+                        html.Button('Stop Max Pulse', id='stop-max-pulse', n_clicks=0, className='action_button', style={'marginLeft': '10px', 'marginTop': '20px', 'width':'150px'}),
+                        ], style={'float':'center', 'width':'100%', 'height':'60px', 'background-color':'white'}),
+                    ])], style={'display': serial}),
+                ], style={'backgroundColor': 'white', 'width': '100%', 'height': '600px', 'float': 'left'}),
+
         ]),
         html.Div(id='footer', children=[
             html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif'),
@@ -410,18 +427,18 @@ def distortion_curve(n_clicks, stereo):
 
 # ------- Send serial device commands -------------------
 
-from dash import no_update
 
 @app.callback(
-    [Output('command_output', 'children'),
-     Output('information_upd', 'children'),
-     Output('cmd_input', 'value')],
-    [Input('submit_cmd', 'n_clicks')],
-    [State('cmd_input', 'value')]
+    [Output('command_output'    , 'children'),
+     Output('information_upd'   , 'children'),
+     Output('cmd-input'         , 'value')],
+    [Input('submit-cmd'         , 'n_clicks'),
+    Input('cmd-input'           , 'n_submit')],
+    [State('cmd-input'          , 'value')]
 )
-def update_output(n_clicks, cmd):
+def update_output(n_clicks, n_submit, cmd):
     if n_clicks is None:
-        return no_update, no_update, no_update
+        return no_update, no_update, no_update, no_update
 
     if cmd is None or not isinstance(cmd, str):
         table = generate_device_settings_table()
@@ -434,13 +451,12 @@ def update_output(n_clicks, cmd):
 
     if allowed:
         execute_serial_command(cmd)
-        time.sleep(0.1)
         table = generate_device_settings_table()
         return f'Command sent: {cmd}', table, ''
 
     else:
         table = generate_device_settings_table()
-        return "!! Command disallowed !!", table, '' 
+        return "Click Submit for device data", table, '' 
 
 # Callback for updating shapecatcher feedback ---------
 @app.callback(
@@ -449,6 +465,79 @@ def update_output(n_clicks, cmd):
 )
 def update_log_output(n_intervals):
     return html.Pre('\n'.join(sc_info[-1:]))  
+
+@app.callback(
+    Output('update-interval', 'disabled'),
+    Input('start-max-pulse', 'n_clicks'),
+    Input('stop-max-pulse', 'n_clicks'),
+    prevent_initial_call=True
+)
+def control_interval(start_clicks, stop_clicks):
+    
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise dash.exceptions.PreventUpdate
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    if button_id == 'start-max-pulse':
+        start_max_pulse_check()
+
+    elif button_id == 'stop-max-pulse':
+        stop_max_pulse_check()
+    return
+
+@app.callback(
+    Output('max-pulse-graph', 'figure'),
+    Input('update-interval', 'n_intervals')
+)
+def update_graph(n_intervals):
+    # Retrieve the max pulse shape from global_vars
+    with global_vars.write_lock:
+        pulse_data  = global_vars.max_pulse_shape
+        max_pulse_x = global_vars.max_pulse_length
+        max_pulse_y = global_vars.max_pulse_height
+
+    # Check if there's no data available
+    if not pulse_data:  # No data available
+        return {
+            'data': [{}],
+            'layout': {
+                'xaxis': {'range': [0, max_pulse_x]},  # Fixed x-axis range
+                'yaxis': {'range': [0, max_pulse_y]},  # Fixed y-axis range
+            }
+        }
+
+    # Limit to the last 20 points
+    pulse_data = pulse_data[-20:]
+
+    # Prepare the graph
+    x_values = list(range(len(pulse_data)))  # X-axis: indices of the last 20 points
+    y_values = pulse_data  # Y-axis: pulse amplitudes
+
+    figure = {
+        'data': [
+            go.Scatter(
+                x=x_values,
+                y=y_values,
+                mode='lines+markers',  # Add both lines and points
+                marker={'size': 6, 'color': 'black'},  # Customize point size
+                name='Pulse Data'
+            )
+        ],
+        'layout': {
+            'title': 'GS-MAX Pulse',
+            'xaxis': {
+                'title': 'Sample Index',
+                'range': [0, max_pulse_x],  # Fixed x-axis range
+            },
+            'yaxis': {
+                'title': 'Amplitude',
+                'range': [0, max_pulse_y],  # Fixed y-axis range
+            },
+        }
+    }
+    return figure
+
 
 
 
