@@ -326,7 +326,6 @@ def confirm_with_user_2d(start_clicks, confirm_clicks, cancel_clicks, filename, 
     if button_id == "start":
         file_exists = os.path.exists(f'{global_vars.data_directory}/{filename}.json')
 
-        # Prevent overwriting files in the "i/" directory
         if filename.startswith("i/"):
             return False, f'Overwriting files in the "i/" directory is not allowed.'
 
@@ -374,19 +373,17 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
                 dispatcher = threading.Thread(target=shproto.dispatcher.start)
                 dispatcher.start()
 
-                time.sleep(0.1)
+                shproto.dispatcher.process_03('-mode 0')
+                logger.info(f'tab2 restores -mode 0\n')
+
                 shproto.dispatcher.process_03('-rst')
                 logger.info(f'tab2 sends reset command -rst\n')
 
-                time.sleep(0.1)
                 shproto.dispatcher.process_03('-sta')
                 logger.info(f'tab2 sends start command -sta\n')
 
-                time.sleep(0.1)
                 shproto.dispatcher.process_01(filename, compression, "MAX", t_interval)
                 logger.info(f'tab2 calls process_01(){filename}, {compression}, MAX, {t_interval}\n')
-
-                time.sleep(0.1)
 
             except Exception as e:
                 logger.error(f'tab 2 start_new_2d_spectrum() error {e}\n')
@@ -419,7 +416,7 @@ def stop_button(n_clicks, dn):
         logger.info('tab2-stop_button device is MAX\n')
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
-        time.sleep(0.1)
+        #time.sleep(0.1)
     else:
         stop_recording()
         logger.info('tab2-stop button device is PRO\n')
@@ -541,28 +538,30 @@ def update_graph(
 
     if counts > 0:
 
-        if sigma == 0:
-            gaussian = []
-        else:
-            gaussian = gaussian_correl(histogram, sigma)
-
         x = list(range(bins))
         y = histogram
 
+        if sigma == 0:      # sigma turned off
+            gaussian = []
+
+        else:
+            gaussian = gaussian_correl(histogram, sigma) # define gaussian
+
         try:
             max_value = np.max(y)
+
         except:
             max_value = 10    
         
         max_log_value = np.log10(max_value)
 
         if cal_switch:
-            x = np.polyval(np.poly1d(coefficients_1), x)
+            x = np.polyval(np.poly1d(coefficients_1), x) # Calculate calibration
 
         if epb_switch:
-            y = [i * count for i, count in enumerate(histogram)]
-            gaussian = [i * count for i, count in enumerate(gaussian)]
-            prefixy = 'E'
+            y        = [i * count for i, count in enumerate(histogram)]
+            #gaussian = [i * count for i, count in enumerate(gaussian)]
+            prefixy  = 'E'
 
         trace1 = go.Bar(
             x=x, 
@@ -664,9 +663,9 @@ def update_graph(
     # After processing peaks, ensure y is valid
     y = histogram
     if epb_switch:
-        y = [i * count for i, count in enumerate(histogram)]  # Scale histogram counts
+        y        = [i * count for i, count in enumerate(histogram)]  # Scale histogram counts
         gaussian = [i * count for i, count in enumerate(gaussian)]
-        prefixy = 'E'
+        prefixy  = 'E'
 
     # Update y-axis range
     if log_switch:
