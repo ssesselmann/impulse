@@ -394,9 +394,24 @@ Input {
 #distortion_div {
 	width:33%;
 	height:440px;
-	background-color: white;
+	background-color:white;
 	float:left;
 	padding-top: 10px;
+
+}
+
+#max-pulse-div {
+	width:500px;
+	height:100%;
+	background-color: white;
+	float:left;
+	margin-left: 30px;
+	padding-top: 40px;
+}
+
+#start-max-pulse,
+#stop-max-pulse {
+	float:left;
 }
 
 #footer {

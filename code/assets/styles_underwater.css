@@ -390,6 +390,20 @@ Input {
 	padding-top: 10px;
 }
 
+#max-pulse-div {
+	width:500px;
+	height:100%;
+	background-color: white;
+	float:left;
+	margin-left: 30px;
+	padding-top: 40px;
+}
+
+#start-max-pulse,
+#stop-max-pulse {
+	float:left;
+}
+
 #footer {
 	width:100%;
 	height: auto;
