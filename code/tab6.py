@@ -92,6 +92,16 @@ def show_tab6():
                 html.H4('Select Device'),
                 html.P('Your computer may have several devices connected, so we need to instruct the program which input to use, so just select the correct input device from the pulldown menu. Note, you will need to refresh the page after selecting device.'),
                 
+                html.H4('Command Entry', style={'display':serial}),
+                html.P('Changing the settings on GS-MAX serial devices requires certain commands to be sent to the processor, these commands can be sent using the command input field. Note some commands are deliberately blocked for sdafety reasons.', style={'display':serial}),
+                html.P('If you need to send critical calibration to your device, please contact the manufacturer.', style={'display':serial}),
+                html.P('• Change voltage -U0 to -U255', style={'display':serial}),
+                html.P('• Clicking submit on a blank field refreshes device data', style={'display':serial}),
+                html.P('• Please refer to device manual for other commands', style={'display':serial}),
+                
+                html.H4('Max-Pulse-shape', style={'display':serial}),
+                html.P('Recalibrating your GS-MAX for use with crystals other than NaI(Tl) may require recalibration of the pulse shape, this involves setting the -ris and -fall parameters. the pulse shape function allows you to observe the pulse sample points. -ris is the number of dots to the peak, and -fall is the number of dots in the tail', style={'display':serial}),
+
                 html.H4('Sample Rate', style={'display': audio}),
                 html.P('Analogue to digital audio sampling involves taking a voltage reading of the analogue signal multiple times a second, the faster the sampling rate the more accurately we can reconstruct the signal. Most modern computers can handle audio sampling rates up to 384 kHz. Faster sampling will generally produce a better spectrum, but it also requires a longer pulse which limits the pulse acquisition rate. If your objective is to measure a high count rate you may want a shorter pulse and a lower sample rate. ', style={'display': audio}),
                 
