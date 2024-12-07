@@ -451,11 +451,11 @@ def stop_button(n_clicks, dn):
     )
 def update_graph(
     n, relayoutData, isotopes, filename, epb_switch, log_switch, cal_switch, filename_2, compare_switch, 
-    difference_switch, peakfinder, sigma, max_seconds, max_counts, coi_switch, val_flag, flags):
-        
+    difference_switch, peakfinder, sigma, max_seconds, max_counts, coi_switch, val_flag, flags
+):
     ctx = callback_context
 
-    # Check if the triggered input is the compare_switch
+    # Handle compare_switch triggered input
     if ctx.triggered and 'compare_switch' in ctx.triggered[0]['prop_id']:
         if compare_switch:
             try:
@@ -463,21 +463,26 @@ def update_graph(
             except Exception as e:
                 logger.info(f'tab2 failed to load {filename_2}: {e}\n')    
 
+    # Prepare variables
     coincidence     = 'coincidence<br>(left if right)' if coi_switch else ""
     annotations     = []
     coefficients    = []
-    prominence      = 0
     lines           = []
     gaussian        = []
     now             = datetime.now()
     date            = now.strftime('%d-%m-%Y')
-    max_log_value   = 0
     prefixx         = 'bin'
     prefixy         = 'cts'
-    min_width       = 0
     path_isotopes   = os.path.join(data_directory, flags)
     isotopes_data   = get_isotopes(path_isotopes)
 
+    if epb_switch:
+        log_switch = False
+
+    if log_switch:
+        epb_switch = False    
+
+    # Access global variables under lock
     with global_vars.write_lock:
         counts          = global_vars.counts
         cps             = global_vars.cps
@@ -491,77 +496,82 @@ def update_graph(
         spec_notes      = global_vars.spec_notes
         dropped_counts  = global_vars.dropped_counts
 
-
+    # Determine dtick based on number of bins
     if bins >= 8000:
         dtick = 400
-    elif bins < 8000 and bins >= 6000:
+    elif bins >= 6000:
         dtick = 400
-    elif bins < 6000 and bins >= 4000:
+    elif bins >= 4000:
         dtick = 200
-    elif bins < 4000 and bins >= 2000:
+    elif bins >= 2000:
         dtick = 100
-    elif bins < 2000 and bins >= 1000:
+    elif bins >= 1000:
         dtick = 50
-    elif bins < 1000:
+    else:
         dtick = 20
 
-    layout = go.Layout(
-        paper_bgcolor='white',
-        plot_bgcolor='#f0f0f0',
-        showlegend=False,
-        height=460,
-        margin=dict(t=50, b=0, l=0, r=0),
-        autosize=True,
-        yaxis=dict(range=[0, 'auto']),
-        xaxis=dict(range=[0, 'auto'],
-            tickmode='linear',      
-            tick0=0,                
-            dtick=dtick,
-            ticks="outside", 
-            ticklen=10,
-            tickwidth=1,
-            tickcolor='black',
-            ),
-        annotations=annotations,
-        shapes=lines,
-        uirevision="Don't change",
-    )
+    # Base dictionaries for layout
+    layout_dict = {
+        'paper_bgcolor': 'white',
+        'plot_bgcolor': '#f0f0f0',
+        'showlegend': False,
+        'height': 460,
+        'margin': dict(t=50, b=0, l=0, r=0),
+        'autosize': True,
+        'uirevision': "Don't change"
+    }
 
-    fig = go.Figure(layout=layout)
+    xaxis_dict = {
+        'range': [0, 'auto'],
+        'tickmode': 'linear',
+        'tick0': 0,
+        'dtick': dtick,
+        'ticks': "outside",
+        'ticklen': 10,
+        'tickwidth': 1,
+        'tickcolor': 'black'
+    }
 
+    # Initial y-axis dict (we might update this depending on log_switch)
+    yaxis_dict = {
+        'range': [0, 'auto']
+    }
+
+    fig = go.Figure(layout=go.Layout(**layout_dict, xaxis=xaxis_dict, yaxis=yaxis_dict, annotations=annotations, shapes=lines))
+
+    # If compare_switch is enabled, try loading the second histogram
     if compare_switch:
         try:
             load_histogram_2(filename_2)
-
         except:
             logger.info(f'tab2 failed to load {histogram_2}\n')
 
+    # Main data plotting
     if counts > 0:
-
         x = list(range(bins))
         y = histogram
 
-        if sigma == 0:      # sigma turned off
-            gaussian = []
-
+        # Create Gaussian if sigma > 0
+        if sigma > 0:
+            gaussian = gaussian_correl(histogram, sigma)
         else:
-            gaussian = gaussian_correl(histogram, sigma) # define gaussian
+            gaussian = []
 
         try:
             max_value = np.max(y)
-
         except:
-            max_value = 10    
-        
+            max_value = 10
+
         max_log_value = np.log10(max_value)
 
+        # Apply calibration if needed
         if cal_switch:
-            x = np.polyval(np.poly1d(coefficients_1), x) # Calculate calibration
+            x = np.polyval(np.poly1d(coefficients_1), x)
 
+        # If epb_switch is on, scale histogram by bin index
         if epb_switch:
-            y        = [i * count for i, count in enumerate(histogram)]
-            #gaussian = [i * count for i, count in enumerate(gaussian)]
-            prefixy  = 'E'
+            y = [i * count for i, count in enumerate(histogram)]
+            prefixy = 'E'
 
         trace1 = go.Bar(
             x=x, 
@@ -570,10 +580,12 @@ def update_graph(
             width=1.0
         )
         fig.add_trace(trace1)
+
     else:
+        # No counts scenario
         filename = 'no filename'
-        y = [0]
         x = [0]
+        y = [0]
         trace1 = go.Bar(
             x=[0],
             y=[0],
@@ -581,60 +593,59 @@ def update_graph(
             width=1.0
         )
         fig.add_trace(trace1)
+        max_value = 10
+        max_log_value = np.log10(max_value)
 
-    # peakfinder is input from slider
+    # Peak finding
     prominence = peakfinder * 1.5
     peaks, fwhm = peak_finder(y, prominence, peakfinder)
 
-    # Calibrate peaks and find matching isotopes
+    # If calibrated, find isotopes matches
     if cal_switch:
         calibrated_peaks = [(np.polyval(np.poly1d(coefficients_1), peak), y[peak]) for peak in peaks]
-        # Find isotopes matching all peaks
         isotopes_match = matching_isotopes(calibrated_peaks, isotopes_data, peakfinder)
+    else:
+        isotopes_match = {}
 
-    y = histogram
-
-    if not peakfinder == 0:
-        # Process peaks
-        for i in range(len(peaks)):
-            peak_value = peaks[i]
-            bin_counts = y[peaks[i]]  # Access counts at the peak index
-            x_pos = peaks[i]
-            y_pos = y[peaks[i]]
+    # Annotate peaks if peakfinder != 0
+    if peakfinder != 0:
+        for i, peak_index in enumerate(peaks):
+            peak_value = peak_index
+            bin_counts = y[peak_index]
+            y_pos = bin_counts
             y_pos_ann = y_pos * 1.1
-            resolution = (fwhm[i] / peaks[i]) * 100
+            resolution = (fwhm[i] / peak_index) * 100 if peak_index != 0 else 0
 
+            # Adjust annotation position if too close to top
             if y_pos_ann > (max_value * 0.9):
                 y_pos_ann -= int(max_value * 0.1)
 
             if epb_switch:
-                y_pos_ann = y_pos * x_pos    
+                y_pos_ann = y_pos
 
+            # If calibrated peak
+            suffix = " keV" if cal_switch else " "
             if cal_switch:
-                peak_value = round(np.polyval(np.poly1d(coefficients_1), peak_value),2)
-                x_pos = peak_value
-                suffix = " keV"
+                peak_value = round(np.polyval(np.poly1d(coefficients_1), peak_index), 2)
                 prefixx = " "
             else:
-                suffix = " "
-                prefixx = " bin:"
+                prefixx = "bin:"
 
-            # Adjust annotation position for log scale
+            # Adjust for log scale
             if log_switch:
                 y_pos_ann = np.log10(y_pos * 1.05)
 
-            # Set annotation text based on val_flag
+            # Set annotation text
             if val_flag and cal_switch:
-                annotation_text = ", ".join(
-                    [f"{iso['isotope']} ({iso['energy']} keV)" for iso in isotopes_match.get(i, (None, None, []))[2]]
-                )
+                # Use matched isotopes data if available
+                iso_list = isotopes_match.get(i, (None, None, []))[2]
+                annotation_text = ", ".join([f"{iso['isotope']} ({iso['energy']} keV)" for iso in iso_list])
             else:
                 annotation_text = f"{prefixx}{peak_value}{suffix}|cts:{bin_counts} ({resolution:.1f}%)"
 
-
-            # Add annotations
+            # Add annotation
             annotations.append(dict(
-                x=x_pos,
+                x=peak_value,
                 y=y_pos_ann,
                 xref='x',
                 yref='y',
@@ -650,56 +661,48 @@ def update_graph(
                 align='left',
             ))
 
-            # Add vertical lines for peaks
+            # Add vertical line
             lines.append(dict(
                 type='line',
-                x0=x_pos,
+                x0=peak_value,
                 y0=0,
-                x1=x_pos,
+                x1=peak_value,
                 y1=y_pos,
                 line=dict(color='red', width=1, dash='dot')
             ))
 
-    # After processing peaks, ensure y is valid
-    y = histogram
+    # Recalculate y if epb_switch changed in the interim
     if epb_switch:
-        y        = [i * count for i, count in enumerate(histogram)]  # Scale histogram counts
+        y = [i * count for i, count in enumerate(histogram)]
         gaussian = [i * count for i, count in enumerate(gaussian)]
         prefixy  = 'E'
-
-    # Update y-axis range
-    if log_switch:
-        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0.1, max_log_value + 0.3]))
     else:
-        fig.update_layout(yaxis=dict(autorange=True, type='linear', range=[0, max(y)]))
+        y = histogram
 
+    # Update y-axis based on log or linear
+    if log_switch:
+        yaxis_dict.update({'autorange': False, 'type': 'log', 'range': [0.1, max_log_value + 0.3]})
+    else:
+        yaxis_dict.update({'autorange': True, 'type': 'linear', 'range': [0, max(y) if y else 1]})
 
-    fig.update_layout(
-        annotations=annotations,
-        title={
-            'text': f'{filename}<br>{counts} valid counts<br>{dropped_counts} lost counts<br>{elapsed} seconds<br>{coincidence}<br>{date}',
-            'x': 0.9,
-            'y': 0.85,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font': {'family': 'Arial', 'size': 14, 'color': 'black'},
-        },
-        shapes=lines
-    )
+    # Title dictionary
+    title_dict = {
+        'text': f'{filename}<br>{counts} valid counts<br>{dropped_counts} lost counts<br>{elapsed} seconds<br>{coincidence}<br>{date}',
+        'x': 0.9,
+        'y': 0.85,
+        'xanchor': 'center',
+        'yanchor': 'top',
+        'font': {'family': 'Arial', 'size': 14, 'color': 'black'},
+    }
 
-    steps   = (elapsed / elapsed_2) if elapsed > 0 and elapsed_2 > 0 else 0.1
-
-    x2      = list(range(bins_2))
-
-    y2      = [int(n * steps) for n in histogram_2]
+    # Process comparison if available
+    steps = (elapsed / elapsed_2) if elapsed > 0 and elapsed_2 > 0 else 0.1
+    x2 = list(range(bins_2))
+    y2 = [int(n * steps) for n in histogram_2]
 
     if filename_2:
-
         if cal_switch:
             x2 = np.polyval(np.poly1d(global_vars.coefficients_2), x2)
-
-        if log_switch:
-            y2 = [x * 0.5 for x in y2]
 
         if epb_switch:
             y2 = [i * n * steps for i, n in enumerate(histogram_2)]
@@ -707,14 +710,16 @@ def update_graph(
         trace2 = go.Scatter(
             x=x2, 
             y=y2, 
-            marker={'color': 'red', 'line': {'color': 'red', 'width': 0.5}},
+            marker={'color': 'red', 'line': {'color': 'red', 'width': 0.2}}
         )
 
-        if compare_switch: 
+        if compare_switch:
             fig.add_trace(trace2)
-            fig.update_layout(xaxis=dict(autorange=False))
+            # If comparing, fix xaxis autorange to False
+            xaxis_dict.update({'autorange': False})
 
         if difference_switch:
+            # Show difference plot
             y3 = [a - b for a, b in zip(y, y2)]
             trace3 = go.Bar(
                 x=x,
@@ -722,55 +727,65 @@ def update_graph(
                 marker={'color': 'green', 'line': {'color': 'green', 'width': 0.5}},
                 width=1.0
             )
-            fig = go.Figure(data=[trace3], layout=layout)
+            # New figure for difference
+            fig = go.Figure(data=[trace3], layout=go.Layout(**layout_dict, xaxis=xaxis_dict, yaxis=yaxis_dict))
+            fig.update_layout(title=title_dict, annotations=annotations, shapes=lines)
             fig.update_layout(yaxis=dict(autorange=True, range=[min(y3), max(y3)]))
-
-        if not difference_switch:
+        else:
+            # Just comparing, not difference
             fig.update_layout(yaxis=dict(autorange=True))
 
+    # Add gaussian trace if sigma > 0
     if sigma > 0:
         trace4 = go.Bar(
             x=x,
             y=gaussian,
-            marker={'color': 'red', 'line': {'color': 'red', 'width': 0.5}},
+            marker={'color': 'red', 'line': {'color': 'red', 'width': 0.2}},
             width=1.0
         )
-        fig.add_trace(trace4)        
+        fig.add_trace(trace4)
 
+    # Re-apply log or linear scale if changed by difference plots
     if log_switch:
-        fig.update_layout(yaxis=dict(autorange=False, type='log', range=[0.1, max_log_value + 0.3]))
+        yaxis_dict.update({'autorange': False, 'type': 'log', 'range': [0.1, max_log_value + 0.3]})
     else:
-        fig.update_layout(yaxis=dict(autorange=True, type='linear', range=[0, max(y)]))
+        yaxis_dict.update({'autorange': True, 'type': 'linear', 'range': [0, max(y) if y else 1]})
 
+    # Handle relayoutData if zoomed or selected range
     if relayoutData and 'xaxis.range[0]' in relayoutData and 'xaxis.range[1]' in relayoutData:
-
         x0, x1 = relayoutData['xaxis.range[0]'], relayoutData['xaxis.range[1]']
 
-        visible_counts = sum(count for count, bin in zip(y, x) if x0 <= bin <= x1)
+        if filename_2 and difference_switch:
+            # difference scenario
+            y3 = [a - b for a, b in zip(y, y2)]
+            visible_counts = sum(count for count, bin_val in zip(y3, x) if x0 <= bin_val <= x1)
+        else:
+            visible_counts = sum(count for count, bin_val in zip(y, x) if x0 <= bin_val <= x1)
 
-        if difference_switch:
-
-            visible_counts = sum(count for count, bin in zip(y3, x) if x0 <= bin <= x1)
-
-        fig.add_annotation(
-            x=0.95, xref="paper",
-            y=0.8, yref="paper",
-            text=f"Selected counts {visible_counts}",
-            showarrow=False,
-            font=dict(size=16),
-            align="center",
-            bgcolor="white",
-            bordercolor="lightgray",
-            borderwidth=1
+        annotations.append(
+            dict(
+                x=0.95, xref="paper",
+                y=0.8, yref="paper",
+                text=f"Selected counts {visible_counts}",
+                showarrow=False,
+                font=dict(size=16),
+                align="center",
+                bgcolor="white",
+                bordercolor="lightgray",
+                borderwidth=1
+            )
         )
 
+    # Finally, update all layout parameters once
     fig.update_layout(
+        xaxis=xaxis_dict,
+        yaxis=yaxis_dict,
         annotations=annotations,
-        shapes=lines
+        shapes=lines,
+        title=title_dict
     )
 
     return fig, f'{counts}', f'{elapsed}', f'cps {cps}', f'{dropped_counts} lost counts ', gaussian
-
 
 # Save settings callback function
 @app.callback(
