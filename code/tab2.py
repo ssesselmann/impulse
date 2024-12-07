@@ -625,11 +625,12 @@ def update_graph(
 
             # If calibrated peak
             suffix = " keV" if cal_switch else " "
+
             if cal_switch:
                 peak_value = round(np.polyval(np.poly1d(coefficients_1), peak_index), 2)
                 prefixx = " "
             else:
-                prefixx = "bin:"
+                prefixx = "bin:"   
 
             # Adjust for log scale
             if log_switch:
@@ -642,6 +643,12 @@ def update_graph(
                 annotation_text = ", ".join([f"{iso['isotope']} ({iso['energy']} keV)" for iso in iso_list])
             else:
                 annotation_text = f"{prefixx}{peak_value}{suffix}|cts:{bin_counts} ({resolution:.1f}%)"
+
+            # Show energy per bin
+            if epb_switch and cal_switch:
+                # Display the product of energy and counts
+                formatted_value = f"{int(peak_value * bin_counts):,}"
+                annotation_text = f"{formatted_value} keV*cts" 
 
             # Add annotation
             annotations.append(dict(
