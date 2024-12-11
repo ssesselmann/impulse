@@ -13,8 +13,7 @@ import shproto.dispatcher
 import time
 import dash_daq as daq
 import global_vars
-from shproto.dispatcher import process_03
-from shproto.dispatcher import start
+from shproto.dispatcher import process_03, start
 from dash import dcc, html, dash_table, no_update
 from dash.dependencies import Input, Output, State
 from server import app
@@ -22,11 +21,9 @@ from functions import (
     execute_serial_command, 
     generate_device_settings_table, 
     allowed_command, 
-    get_path, 
     save_settings_to_json,
     start_max_pulse_check,
-    stop_max_pulse_check,
-    capture_pulse_data
+    stop_max_pulse_check
     )
 from shapecatcher import sc_info
 
@@ -58,38 +55,51 @@ def show_tab1():
     filepath        = os.path.dirname(__file__)
     shape_left, shape_right = fn.load_shape()
 
-    logger.info(f'stereo retrieved from settings as {stereo}\n')
+    logger.info(f'Tab1 stereo = {stereo}\n')
 
+    # Obtain news feed update from website
     try:
         response = req.get('https://www.gammaspectacular.com/steven/impulse/news.html', verify=False)
         news = response.text
     except:
         news = "No internet connection, version information temporarily unavailable."
 
+    # Generate audio and serial device lists
     try:
-        adl = fn.get_device_list()          # audio device list
-        sdl = fn.get_serial_device_list()   # serial device list
-        dl = adl + sdl                      # combined device list
+        adl = fn.get_device_list()          
+        sdl = fn.get_serial_device_list()   
+        dl = adl + sdl   
+        options = [{'label': filename, 'value': index} for filename, index in dl]
+        options = [{k: str(v) for k, v in option.items()} for option in options]
+        options = fn.cleanup_serial_options(options)                   
     except:
+        logger.info("Tab1 - Something went wrong retrieving device list")
         pass
 
-    options = [{'label': filename, 'value': index} for filename, index in dl]
-    options = [{k: str(v) for k, v in option.items()} for option in options]
-    options = fn.cleanup_serial_options(options)
-        
-    if device < 100:        # Sound card devices
-        serial = 'none'
-        audio = 'block'
+    # Default styles and interval states
+    audio_int = True
+    serial_int = True
+    audio_style = {'display': 'none'}
+    serial_style = {'display': 'none'}
 
-    if device >= 100:
-        serial = 'block'
-        audio = 'none' 
+    if int(device) < 100:  # Audio device
+        audio_int = False
+        audio_style = {'display': 'block'}
+    else:  # Serial device
+        serial_style = {'display': 'block'}
+
+# -------- HTML ------ HTML ------ HTML ------ HTML ------ HTML ------ HTML ------ HTML ---
 
     tab1 = html.Div(id='tab1', children=[
-        dcc.Interval(id='interval-component', interval=500, n_intervals=0),
+
+        dcc.Interval(id='interval-component', interval=1000, n_intervals=0, disabled=audio_int),
+
         html.Div(id='news', children=[dcc.Markdown(news)]),
-        html.Div(id='sampling_time_output', children='', style={'display': audio}),
+
+        html.Div(id='sampling_time_output', children='', style=audio_style),
+
         html.Div(id='heading', children=[html.H1('Device Selection and Settings')]),
+
         html.Div(id='tab1_settings1', children=[
             html.Div(id='selected_device_text', children=''),
             dcc.Dropdown(
@@ -100,6 +110,7 @@ def show_tab1():
                 className='dropdown',
             ),
         ]),
+
         html.Div(id='tab1_settings2', children=[
             html.Div(children='Sample rate'),
             dcc.Dropdown(
@@ -115,9 +126,10 @@ def show_tab1():
                 ],
                 value=sample_rate,
                 clearable=False,
-                style={'display': audio}
+                style=audio_style
             ),
-        ], style={'display': audio}),
+        ], style=audio_style),
+
         html.Div(id='tab1_settings3', children=[
             html.Div(children='Sample size', style={'textAlign': 'left'}),
             html.Div(dcc.Dropdown(
@@ -134,9 +146,10 @@ def show_tab1():
                 ],
                 value=sample_length,
                 clearable=False,
-                style={'display': audio}
+                style=audio_style
             )),
-        ], style={'display': audio}),
+        ], style=audio_style),
+
         html.Div(id='tab1_settings4', children=[
             html.Div(children='Pulses to sample'),
             html.Div(dcc.Dropdown(
@@ -151,10 +164,11 @@ def show_tab1():
                 ],
                 value=shapecatches,
                 clearable=False,
-                style={'display': audio}
+                style=audio_style
             )),
             html.Div(children='', style={'color': 'red'}),
-        ], style={'display': audio}),
+        ], style=audio_style),
+
         html.Div(id='tab1_settings5', children=[
             html.Div(children='Buffer Size'),
             html.Div(dcc.Dropdown(
@@ -171,55 +185,67 @@ def show_tab1():
                 ],
                 value=chunk_size,
                 clearable=False,
-                style={'display': audio}
+                style=audio_style
             )),
             html.Div(id='output_chunk_text', children=''),
-        ], style={'display': audio}),
-        html.Div(id='n_clicks_storage', ),
-        html.Button('Save Settings', id='submit', n_clicks=0, style={'display': 'none'}),
+        ], style=audio_style),
+
+        # Centre page Div
         html.Div(children=[
             html.Div(id='button', children=[
-                html.Div(id='output_div'),
+
+                # Tab1 - Left hand canvas
                 html.Div(id='canvas', children=[
-                    html.Div(id='instructions', children=[
-                        html.H3('You have selected a GS-MAX serial device'),
-                        html.Label('Input commands to device'),
-                        html.Div(children=[
-                            dcc.Input(id='cmd-input', type='text', value='', style={'marginRight': '10px', 'width': '50%'}),
-                            dcc.Input(id='hidden-input', type='text', value=f'{device}', style={'display': 'none'}),
-                            html.Button('Submit', id='submit-cmd', n_clicks=0),
-                        ]),
-                        html.Div(id='command_output', style={'width': '100%', 'marginTop': '20px'}),
-                        html.P(''),
-                        html.P('Found a bug 🐞 or have a suggestion, email me below'),
-                        html.P('Steven Sesselmann'),
-                        html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
-                        html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
-                    ], style={'display': serial}),
-                    html.Div(id='instruction_div', children=[
-                        html.H2('Easy step by step setup and run'),
-                        html.P('You have selected an GS-PRO Audio device'),
-                        html.P('1) Select preferred sample rate, higher is better'),
-                        html.P('2) Select sample length - dead time < 200 µs'),
-                        html.P('3) Sample up to 1000 pulses for a good mean'),
-                        html.P('4) Capture pulse shape (about 3000 for Cs-137)'),
-                        html.P('5) Optionally check distortion curve, this will help you set correct tolerance on tab2'),
-                        html.P('6) Once pulse shape shows on plot go to tab2'),
-                        html.P('Found a bug 🐞 or have a suggestion, email me below'),
-                        html.P('Steven Sesselmann'),
-                        html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
-                        html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
-                        html.Hr(),
-                        html.Div(id='path_text', children=f'Note: {data_directory}'),
-                    ], style={'display': audio, 'width': '100%', 'height': '100%', 'padding': 10}),
-                ], style={'width': 400, 'height': '100%', 'backgroundColor': 'lightgray', 'float': 'left', 'padding': 10}),
+                    
+                # Serial device command input div
+                html.Div(id='serial-instructions', children=[
+                    html.H3('You have selected a GS-MAX serial device'),
+                    html.Label('Input commands to device'),
+                    html.Div(children=[
+                        dcc.Input(id='cmd-input', type='text', value='', style={'width':'50%', 'paddingRight':'10px', 'border':'solid 1px'}),
+                        dcc.Input(id='hidden-input', type='text', value=f'{device}', style={'display': 'none'}),
+                        html.Button('Submit', id='submit-cmd', className='action_button', n_clicks=0, style={'marginLeft':'10px', 'width':'30%'}),
+                    ]),
+
+                    html.Div(id='command_output'),
+                    html.P(''),
+                    html.P('Found a bug 🐞 or have a suggestion, email me below'),
+                    html.P('Steven Sesselmann'),
+                    html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
+                    html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
+                ], style=serial_style),
+                
+                # Audio device instruction text box
+                html.Div(id='audio-instructions', children=[
+                    html.H2('Easy step by step setup and run'),
+                    html.P('You have selected an GS-PRO Audio device'),
+                    html.P('1) Select preferred sample rate, higher is better'),
+                    html.P('2) Select sample length - dead time < 200 µs'),
+                    html.P('3) Sample up to 1000 pulses for a good mean'),
+                    html.P('4) Capture pulse shape (about 3000 for Cs-137)'),
+                    html.P('5) Optionally check distortion curve, this will help you set correct tolerance on tab2'),
+                    html.P('6) Once pulse shape shows on plot go to tab2'),
+                    html.P('Found a bug 🐞 or have a suggestion, email me below'),
+                    html.P('Steven Sesselmann'),
+                    html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
+                    html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
+                    html.Hr(),
+                    html.Div(id='path_text', children=f'Files saved to:\n {data_directory}'),
+                ], style=audio_style),
+
+                ]),
+
+                # Serial device information table
                 html.Div(id='canvas2', children=[
-                    html.Div(id='information_upd'),
-                ], style={'width': 400, 'backgroundColor': 'lightgray', 'float': 'left', 'marginTop': 20, 'marginLeft': 20, 'display': serial}),
-                html.Div(id='pulse_shape_div', children=[
+                    html.Div(id='serial-device-info-table'),
+                ], style=serial_style),
+                
+                # pulse shape div for audio pulse
+                html.Div(id='pulse-shape-div', children=[
                     html.Div(id='showplot', children=[
                         dcc.Graph(id='plot', figure={'data': [{}], 'layout': {}})
                     ]),
+
                     html.Div('Peak shifter', style={'marginLeft': '20px'}),
                     html.Div(dcc.Slider(
                         id='peakshifter',
@@ -243,34 +269,45 @@ def show_tab1():
                         html.Label('Stereo off/on', style={'paddingRight': '10px'}),
                         daq.BooleanSwitch(id='stereo', on=stereo, color='purple')
                     ], style={'display': 'flex', 'alignItems': 'center', 'justifyContent': 'flex-end', 'padding': '5px'}),
-                ], style={'display': audio}),
+                ], style=audio_style),
                 
-                html.Div(id='distortion_div', children=[
-                    html.Div(id='showcurve', children=[
-                        dcc.Graph(id='curve', figure={'data': [{}], 'layout': {}}),
-                        html.Div('', style={'height': '50px'}),
-                        html.Button('Get Distortion Curve',
-                            id='get_curve_btn',
-                            n_clicks=0,
-                            className='action_button',
-                            style={'marginLeft': '20%', 'marginTop': '20px'}
-                            )])], style={'display': audio}),
+            #distortion div for Audio pulse
+            html.Div(id='audio-distortion', children=[
+                html.Div(id='showcurve', children=[
+                    dcc.Graph(id='curve', figure={'data': [{}], 'layout': {}}),
+                    html.Div('', style={'height': '50px'}),
+                    html.Button('Get Distortion Curve',
+                        id='get_curve_btn',
+                        n_clicks=0,
+                        className='action_button',
+                        style={'marginLeft': '20%', 'marginTop': '20px'}
+                        )]
+                    )], style=audio_style),
 
-                html.Div(id='max-pulse-div', children=[
-                    html.Div(id='max-pulse', children=[
-                        dcc.Graph(id='max-pulse-graph', figure={'data': [{}], 'layout': {}}),
-                        dcc.Interval(id='update-interval', interval=1000),
-                        html.Div(id='max-pulse-button-div', children=[
+            # Pulse capture div for serial device
+            html.Div(id='max-pulse-div', children=[
+                html.Div(id='max-pulse', children=[
+                    dcc.Graph(id='max-pulse-graph', figure={'data': [{}], 'layout': {}}),
+                    dcc.Interval(id='update-interval', interval=1000, n_intervals=0, disabled=serial_int),
+                    html.Div(id='max-pulse-button-div', children=[
                         html.Button('Start Max Pulse', id='start-max-pulse', n_clicks=0, className='action_button', style={'marginLeft': '100px', 'marginTop': '20px', 'width':'150px'}),
                         html.Button('Stop Max Pulse', id='stop-max-pulse', n_clicks=0, className='action_button', style={'marginLeft': '10px', 'marginTop': '20px', 'width':'150px'}),
-                        ], style={'float':'center', 'width':'100%', 'height':'60px', 'background-color':'white'}),
-                    ])], style={'display': serial}),
-                ], style={'backgroundColor': 'white', 'width': '100%', 'height': '600px', 'float': 'left'}),
+                    ], style={'float':'center', 'width':'100%', 'height':'60px', 'background-color':'white'}),
+                ])
+            ], style=serial_style),
+
+        ], style={'backgroundColor': 'white', 'width': '100%', 'height': '600px', 'float': 'left'}),
 
         ]),
+
+
         html.Div(id='footer', children=[
             html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif'),
-            html.Div(id="rate_output"),
+            html.Button('Save Settings', id='submit', n_clicks=0, style={'display': 'none'}),
+            html.Div(id='rate_output'),
+            html.Div(id='interval-audio'),
+            html.Div(id='interval-serial'),
+            html.Div(id='n_clicks_storage'),
         ]),
     ])
     
@@ -322,10 +359,10 @@ def save_settings(n_clicks, device, sample_rate, chunk_size, catch, sample_lengt
 def capture_pulse_shape(n_clicks, stereo):
     layout = {
         'title': {
-            'text': 'Pulse Shape (16 bit)',
+            'text': f'Mean Pulse Captured (always positive)',
             'font': {'size': 16},
             'x': 0.5,
-            'y': 0.9
+            'y': 0.95
         },
         'margin': {'l': 40, 'r': 10, 't': 40, 'b': 40},
         'height': 350,
@@ -402,7 +439,9 @@ def capture_pulse_shape(n_clicks, stereo):
 )
 def distortion_curve(n_clicks, stereo):
     layout = {
-        'title': {'text': 'Distortion curve', 'font': {'size': 16}, 'x': 0.5, 'y': 0.9},
+        'title': {
+            'text': 'Pulses Sorted by Distortion', 
+            'font': {'size': 16}, 'x': 0.5, 'y': 0.95},
         'margin': {'l': 40, 'r': 40, 't': 40, 'b': 40},
         'height': 350,
         'showlegend': False
@@ -429,12 +468,12 @@ def distortion_curve(n_clicks, stereo):
 
 
 @app.callback(
-    [Output('command_output'    , 'children'),
-     Output('information_upd'   , 'children'),
-     Output('cmd-input'         , 'value')],
-    [Input('submit-cmd'         , 'n_clicks'),
-    Input('cmd-input'           , 'n_submit')],
-    [State('cmd-input'          , 'value')]
+    [Output('command_output'            , 'children'),
+     Output('serial-device-info-table'  , 'children'),
+     Output('cmd-input'                 , 'value')],
+    [Input('submit-cmd'                 , 'n_clicks'),
+    Input('cmd-input'                   , 'n_submit')],
+    [State('cmd-input'                  , 'value')]
 )
 def update_output(n_clicks, n_submit, cmd):
     if n_clicks is None:
@@ -460,16 +499,16 @@ def update_output(n_clicks, n_submit, cmd):
 
 # Callback for updating shapecatcher feedback ---------
 @app.callback(
-    Output('shapecatcher-feedback', 'children'),
-    [Input('interval-component', 'n_intervals')]
+    Output('shapecatcher-feedback'  , 'children'),
+    [Input('interval-component'     , 'n_intervals')]
 )
 def update_log_output(n_intervals):
     return html.Pre('\n'.join(sc_info[-1:]))  
 
 @app.callback(
-    Output('update-interval', 'disabled'),
-    Input('start-max-pulse', 'n_clicks'),
-    Input('stop-max-pulse', 'n_clicks'),
+    Output('update-interval'    , 'disabled'),
+    Input('start-max-pulse'     , 'n_clicks'),
+    Input('stop-max-pulse'      , 'n_clicks'),
     prevent_initial_call=True
 )
 def control_interval(start_clicks, stop_clicks):
@@ -488,7 +527,7 @@ def control_interval(start_clicks, stop_clicks):
 
 @app.callback(
     Output('max-pulse-graph', 'figure'),
-    Input('update-interval', 'n_intervals')
+    Input('update-interval' , 'n_intervals')
 )
 def update_graph(n_intervals):
     # Retrieve the max pulse shape from global_vars
@@ -538,7 +577,49 @@ def update_graph(n_intervals):
     }
     return figure
 
+# dynamivally switch between audio and serial devices
+@app.callback(
+    [
+        Output('interval-audio'         , 'disabled'),
+        Output('interval-serial'        , 'disabled'),
+        Output('pulse-shape-div'        , 'style'),
+        Output('max-pulse-div'          , 'style'),
+        Output('serial-instructions'    , 'style'),
+        Output('audio-instructions'     , 'style'),
+        Output('audio-distortion'       , 'style'),
+        Output('canvas2'                , 'style')
+    ],
+    [
+        Input('device_dropdown' , 'value'),
+        Input('start-max-pulse' , 'n_clicks'),
+        Input('stop-max-pulse'  , 'n_clicks'),
+    ]
+)
+def update_device_and_intervals(device, start_clicks, stop_clicks):
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise dash.exceptions.PreventUpdate
 
+    # Default styles and interval states
+    audio_int       = True
+    serial_int      = True
+    audio_style     = {'display': 'none'}
+    serial_style    = {'display': 'none'}
+
+    if int(device) < 100:  # Audio device
+        audio_int = False
+        audio_style = {'display': 'block'}
+    else:  # Serial device
+        serial_style = {'display': 'block'}
+
+    # Check for pulse control triggers
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    if button_id == 'start-max-pulse':
+        serial_int = False  # Enable serial interval
+    elif button_id == 'stop-max-pulse':
+        serial_int = True  # Disable serial interval
+
+    return audio_int, serial_int, audio_style, serial_style, serial_style, audio_style, audio_style, serial_style
 
 
 # -- End of tab1.py ---
