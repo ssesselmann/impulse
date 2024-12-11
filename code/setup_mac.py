@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='impulse',
-    version='2.1.8',
+    version='2.2.3',
     packages=find_packages(),
-    install_requires=['pyaudio'],
+    install_requires=['pyaudio', 'scipy'],
     app=['impulse.py'],
     options={
         'py2app': {
@@ -20,7 +20,6 @@ setup(
                 'dash_daq',
                 'datetime',
                 'flask',
-                'json',
                 'numpy',
                 'pandas',
                 'pathlib',
@@ -28,9 +27,7 @@ setup(
                 'wave',
                 'pyaudio',
                 'scipy',
-                'requests',
-                'threading',
-                'platform'
+                'requests'
             ],
             'resources': ["i","assets"], 
         }
