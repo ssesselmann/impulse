@@ -149,7 +149,6 @@ if not os.path.exists(tbl_directory):
 # 6. Check if "gamma-a.json" exists in the i_directory, if not copy it from resources
 if not os.path.exists(shortlist):  # Check if gamma-a.json exists
     source_a = os.path.join(resource_path("i"), "tbl", "gamma-a.json")  # Path to the source gamma-a.json
-    print(source_a)
     if os.path.exists(source_a):  # Ensure the source files exists
         shutil.copy(source_a, shortlist)  # Copy the file to the destination
         logger.info(f'Copied gamma-a.json to i/tbl\n')
@@ -159,7 +158,6 @@ if not os.path.exists(shortlist):  # Check if gamma-a.json exists
 # 7. Check if "gamma-a.json" exists in the i_directory, if not copy it from resources
 if not os.path.exists(longlist):  # Check if gamma-a.json exists
     source_b = os.path.join(resource_path("i"), "tbl", "gamma-b.json")  # Path to the source gamma-a.json
-    print(source_b)
     if os.path.exists(source_b):  # Ensure the source files exists
         shutil.copy(source_b, longlist)  # Copy the file to the destination
         logger.info(f'Copied gamma-b.json to i/tbl\n')
