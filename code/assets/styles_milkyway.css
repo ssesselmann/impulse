@@ -1,6 +1,6 @@
 
 h1 {
-	color:black;
+	color:gray;
 	text-align:center;
 	font-family: Times New Roman;
 	font-size:28px;
@@ -33,7 +33,6 @@ body {
 	background-image: url("milkyway.jpg");
 }
 
-
 Input {
 	text-align:left;
 	color:black;
@@ -42,7 +41,9 @@ Input {
 	width: 95%;
 }
 
-
+li {
+	color:yellow;
+}
 .rc-slider-track {
   background-color: purple;
 }
@@ -263,16 +264,25 @@ Input {
 	padding:10px;
 	font-family: Times New Roman;
 	font-size:14px;
-	color:white;
+	color:black;
 	float:left;
 }
 
-
+#theme	{
+	width: 250px;
+	font-family: Times New Roman;
+	margin:auto;
+}
 
 #export_histogram	{
 	width: 100%;
 	font-family: Times New Roman;
 	margin:auto;
+}
+
+#export_histogram_output {
+	color:green;
+	text-align: center;
 }
 
 #theme_output,
@@ -287,6 +297,35 @@ Input {
 	float:right;
 	color:red;
 	font-size: 18px;
+}
+
+#canvas {
+	width: 32%;
+	height:100%;
+	backgroundColor:white;
+	float: left;
+	marginTop: 20;
+	marginLeft: 20;
+	padding:30;
+}
+
+
+#canvas2 {
+	width: 32%;
+	height:100%;
+	backgroundColor:white;
+	float: left;
+	marginTop: 20;
+	marginLeft: 20;
+	padding:30;
+}
+
+#max-pulse-div {
+	width:33%;
+}
+
+#max-pulse-graph {
+	width:100%;
 }
 
 #tab0,
@@ -304,15 +343,13 @@ Input {
 	padding-right:20px;
 }
 
-#polynomial,
-#polynomial_3d {
+#polynomial {
 	height:25px;
 	width:100%;
 	float:left;
 	padding-top:10px;
 	padding-left:4%;
 	margin-bottom: 10px;
-	color:white;
 }
 
 
@@ -353,28 +390,37 @@ Input {
 }
 
 
-#instruction_div {
-	width:33%;
-	height:440px;
-	background-color: white;
-	float:left;
-	padding-top: 10px;
-}
-
-#instructions {
+#audio-instructions {
 	font-family:Times New Roman;
-	height:410px;
+	font-size: 16px;
+	width:100%;
+	height:100%;
+	background-color: white;
+	padding-top: 10px;
 	padding-left:20px;
 	padding-right:20px;
-	font-size: 16px;
+	float:left;
 }
+
+#serial-instructions {
+	font-family:Times New Roman;
+	font-size: 16px;
+	width:100%;
+	height:100%;
+	background-color: white;
+	padding-top: 10px;
+	padding-left:20px;
+	padding-right:20px;
+	float:left;
+}
+
 
 #path_text {
 	color:gray;
 	float:left;
 }
 
-#pulse_shape_div {
+#pulse-shape-div {
 	width:33%;
 	height:440px;
 	background-color: white;
@@ -382,7 +428,7 @@ Input {
 	padding-top: 10px;
 }
 
-#distortion_div {
+#audio-distortion {
 	width:33%;
 	height:440px;
 	background-color: white;
@@ -429,19 +475,20 @@ Input {
 	float:left;
 }
 
-#counts, #counts-output, #counts_3d, #elapsed, #elapsed_3d {
+#counts, #counts-output, #counts_3d {
 	font-size:35px;
-	color:rgb(255, 255, 255);
+	color:blue;
 	text-align:center;
 	font-family:Times New Roman;
 	font-weight:bold;
 }
 
-#last-hour {
-	width:200px;
-	float:right;
-	margin-top:60px;
-	color:white;
+#elapsed, #elapsed_3d {
+	font-size:35px;
+	color:blue;
+	text-align:center;
+	font-family:Times New Roman;
+	font-weight:bold;
 }
 
 #t2_filler_div {
@@ -464,7 +511,7 @@ Input {
 	height:120px;
 	padding:none;
 	text-align:center;
-	color:white;
+	color:lightgreen;
 	float:left;
 	margin:none;
 }
@@ -523,7 +570,6 @@ Input {
 }
 
 #exit {
-	width:200px;
 	margin:auto;
 	text-align: center;
 }
@@ -569,6 +615,28 @@ Input {
 		width:80%;
 	}
 	
+	#canvas {
+	width: 32%;
+	height:400px;
+	backgroundColor:white;
+	float: left;
+	marginTop: 20;
+	marginLeft: 20;
+	padding:30;
+}
+
+
+
+#canvas2 {
+	width: 32%;
+	height:400px;
+	backgroundColor:white;
+	float: left;
+	marginTop: 20;
+	marginLeft: 20;
+	padding:30;
+}
+
 	#update_calib_button,
 	#notes-warning {
 		visibility: hidden;
@@ -628,7 +696,7 @@ Input {
 		padding:5px;
 		font-family: Times New Roman;
 		font-size:12px;
-		color:white;
+		color:black;
 		float:left;
 	}
 	
@@ -637,7 +705,7 @@ Input {
 		width:80%;
 		height: auto;
 		float:left;
-		margin-top: 50px;
+		margin-top: 120px;
 	}
 
 
@@ -675,16 +743,20 @@ Input {
 	}
 
 	
-	#instructions {
-		font-family:Times New Roman;
-		height:370px;
-		padding-left:20px;
-		padding-right:20px;
-		font-size: 10px;
+	#audio-instructions {
+		font-size: 9px;
+		background-color: white;
+		height:90%;
 	}
 
-	#pulse_shape_div,
-	#distortion_div {
+	#serial-instructions {
+		font-size: 9px;
+		background-color: white;
+		height:90%;
+	}
+
+	#pulse-shape-div,
+	#audio-distortion {
 		width: 33%;
 		height: 380px;
 		background-color:white;
@@ -701,8 +773,7 @@ Input {
 	}
 
 
-	#polynomial,
-	#polynomial_3d {
+	#polynomial {
 		height:25px;
 		width:100%;
 		float:left;
@@ -710,7 +781,6 @@ Input {
 		padding-left:5%;
 		font-size:10px;
 		font-family:Times New Roman;
-		color:white;
 	}
 	
 	#t2_setting_div, 
