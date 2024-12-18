@@ -1062,6 +1062,13 @@ def load_settings_from_json(path):
                 else:
                     setattr(global_vars, key, value)
 
+            # Backwards compatibility for theme
+            if getattr(global_vars, "theme", "") not in ["light-theme", "dark-theme"]:
+                with global_vars.write_lock:
+                    global_vars.theme = "light-theme"
+                    logger.info("Theme setting is not valid, defaulting to 'light-mode'.")
+        
+
             logger.info(f'Load settings completed \n')
         except Exception as e:
             logger.error(f'Error loading settings from JSON: {e}')
