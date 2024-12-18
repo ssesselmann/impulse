@@ -1,0 +1,1006 @@
+
+h1 {
+	color:lightgreen;
+	text-align:center;
+	font-family: Times New Roman;
+	font-size:28px;
+}
+
+h2 {
+	color:lightgreen;
+	text-align:center;
+	font-family: Times New Roman;
+	font-size:20px;
+}
+
+h3 {
+	color:lightgreen;
+	text-align:left;
+	font-family: Times New Roman;
+	font-size:18px;
+}
+
+h4 {
+	color:lightgreen;
+}
+
+p {
+	color:lightgreen;
+	text-align:left;
+}
+
+img {
+	width:100%;
+	height: auto;
+}
+
+body {
+	background-color:black;
+}
+
+input,
+textarea {
+	text-align:left;
+	color:black;
+	font-size: 10px;
+	font-family: Arial;
+	width: 95%;
+	background-color:lightgray;
+}
+
+/* Target Dash dropdowns */
+.Select-control { 
+    background-color: black !important; /* Background color */
+    color: white ;            /* Text color */
+    border: 1px solid gray;  /* Border styling */
+    border-radius: 4px;      /* Rounded corners */
+}
+
+/* Dropdown options container */
+.Select-menu-outer {
+    background-color: black !important; /* Dropdown list background */
+    color: white;            /* Dropdown text color */
+}
+
+/* Dropdown option styling */
+.Select-option {
+    background-color: black !important;
+    color: white !important;
+}
+
+.Select-value-label {
+	color: white !important;
+}
+
+.custom-tabs {
+    background-color: #800000 !important;/* Light grey background for the tabs container */
+    border: 1px solid #ccc; /* Optional border */
+    border-radius: 5px;
+    color: #ffffff;
+    font-family:Arial;
+    font-weight:bold;
+}
+
+.tab--selected {
+	color: #800000 !important;
+	background-color: white !important;
+}
+
+#my-spectra-table [data-dash-column="ID"] {
+	background-color: black;
+	color: lightgreen;
+	font-weight: bold;
+	text-align: center;
+	font-family: Arial;
+	font-size: 10px;
+}
+
+#my-spectra-table [data-dash-column="Date"] {
+	background-color: black;
+	color: lightgreen;
+	font-weight: normal;
+	text-align:left;
+	font-family: Arial;
+	font-size: 10px;
+}
+
+#my-spectra-table [data-dash-column="Filename"] {
+	background-color: black;
+	color: lightgreen;
+	font-weight: normal;
+	text-align: center;
+	font-family: Arial;
+	font-size: 10px;
+}
+
+#my-spectra-table [data-dash-column="Download"] {
+	background-color: black;
+	color: lightgreen;
+	font-weight: normal;
+	text-align: center;
+	font-family: Arial;
+	font-size: 10px;
+}
+
+#my-spectra-table [data-dash-column="Delete"] {
+	background-color: black;
+	color: lightgreen;
+	font-weight: normal;
+	text-align: center;
+	font-family: Arial;
+	font-size: 10px;
+}
+
+.rc-slider-track {
+  background-color: #800000;
+}
+
+.rc-slider-dot-active {  
+  border-color: lightgreen;
+  border: solid 2px lightgreen;
+}
+
+.rc-slider-handle {
+  background-color: white;
+  border-color: #ff6600;
+}
+
+.rc-slider-handle:hover {
+  border-color: lightgreen;
+}
+
+.rc-slider-handle-active:active {
+  border-color: lightgreen;
+}
+
+.my_inputs {
+	width:400px;
+	margin-bottom: 10px;
+	
+}
+
+.my_checkbox {
+	display:inline-block;
+	margin-left: 20px;
+}
+
+
+.action_button {
+	background-color:#800000;
+	border-radius:6px;
+	color:white;
+	margin-top:10px;
+	font-family: Arial;
+	font-size: 12px;
+	width:80%;
+}
+
+.action_button:hover {
+	background-color: blue;
+}
+
+.tab3-split-div {
+	width: 50%;
+	height:900px;
+	align-items: center;
+	float:left;
+	padding:20px;
+	
+}
+
+.grid-container {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+	width: 100%;
+	height:77%;
+	gap: 10px;
+}
+
+.t3subdiv {
+	background-color: black;
+	align-items: center;
+	text-align:center;
+	font-size: 10px;
+	padding:20px;
+	border-radius: 5px;
+	border:solid 1px lightgray;
+}
+
+#full-monty {
+	color:lightgreen;
+}
+
+#update_calib_button,
+#notes-warning {
+	visibility: hidden;
+}
+
+#t3footer {
+	width:100%;
+	height:Auto;
+}
+
+#chart-3d {
+	height:100%;
+}
+
+#chartbox{
+	margin:10px;
+	pargin-top:5px;
+	height:80%;
+	width:100%;
+	background-color:white;
+	border:solid 1px lightgray;
+	border-radius: 10px;
+	padding:10px;
+}
+
+
+
+#confirm-button, 
+#confirm-publish,
+#confirm-overwrite,
+#confirm-overwrite-tab3 {
+	margin:10px;
+	color:white;
+	font-weight: bold;
+	background-color:green;
+	border-radius: 5px;
+}
+
+#cancel-button,
+#cancel-publish,
+#cancel-overwrite,
+#cancel-overwrite-tab3 {
+	margin:10px;
+	color:white;
+	font-weight: bold;
+	background-color:red;
+	border-radius: 5px;
+}
+
+#notes {
+	height:50px;
+}
+
+#notes-warning {
+	font-size:10px;  
+	text-align:left;
+	width:300px;
+}
+
+#firstrow {
+	width:50%;
+	float:left;
+}
+
+#heading {
+	width:100%;
+	Height:70px;
+	font-family:Times New Roman;
+	color:lightgreen;
+	text-align: center;
+	float:left;
+	padding-bottom:20px;
+}
+
+#tab0-frame,
+#tab1-frame,
+#tab2-frame,
+#tab3-frame,
+#tab4-frame,
+#tab5-frame,
+#tab6-frame {
+	color:lightgreen;
+	flex-direction: row;
+	width:90%;
+	max-width:1400px;
+	margin: auto;
+	margin-top:10px;
+	justify-content: : center;
+	flex-wrap: wrap;
+	background-color:black;
+	
+}
+
+
+#tab0_box_1 {
+	height:800px;
+	width:48%;
+	background-color:black;
+	padding:20px;
+	font-family: serif;
+	margin:5px;
+	margin-top:20px;
+	float:left;
+	border:solid 1px lightgray;
+	border-radius: 20px;
+	color:lightgreen;
+}
+
+#tab0_box_2 {
+	height:800px;
+	width:48%;
+	background-color: black;
+	padding:20px;
+	overflow-y: auto;
+	margin:5px;
+	margin-top:20px;
+	float:left;
+	border:solid 1px lightgray;
+	border-radius: 20px;
+}
+
+#tab1-header {
+	width:100%;
+	display:flex;
+	flex-direction:row;
+	justify-content: space-between; 
+}
+
+.tab1-header-thirds {
+	  flex: 1; 
+    width:33%;
+    height:100%;
+    float:left;
+}
+
+#serial-device-info-table th {
+	background-color: gray;
+	color: lightgreen;
+	font-weight:bold;
+}
+#serial-device-info-table td { 
+    background-color: black; 
+    color: lightgreen; 
+    border: 1px solid gray;
+}
+
+#tab1-serial-div {
+	width:100%;
+	height:600px;
+	display:flex;
+	flex-direction:row;
+	justify-content: space-between; 
+  align-items: flex-start;
+	background-color:black;
+	border:solid 1px gray;
+	padding:10px;
+	border-radius:10px;
+	float:left;
+}
+
+#tab1-audio-div {
+	width:100%;
+	height:600px;
+	display:flex;
+	flex-direction:row;
+	justify-content: space-between; 
+  align-items: flex-start;
+	background-color:black;
+	border:solid 1px gray;
+	padding:10px;
+	border-radius:10px;
+	float:left;
+}
+
+.tab1-audio-thirds {
+    flex: 1; 
+    width:33%;
+    height:100%;
+    padding: 10px;
+    float:left;
+    text-align:center;
+    background-color: black;
+}
+
+.tab1-serial-thirds {
+    flex: 1; 
+    width:33%;
+    height:100%;
+    padding: 10px;
+    float:left;
+    background-color: black;
+}
+
+
+
+#tab1_settings {
+	width:20%;
+	height:65px;
+	float: left;
+	text-align:center;
+	font-family:Times New Roman;
+	margin:auto;
+	padding-bottom:10px;
+
+}
+
+.tab1-pulldown {
+	width:20%;
+	height:65px;
+	float: left;
+	text-align:left;
+	font-family:Times New Roman;
+	margin:auto;
+	padding-bottom:10px;
+}
+
+#calibration-output {
+	font-size: 10px;
+	margin-left:30px;
+}
+
+#theme	{
+	width: 250px;
+	font-family: Times New Roman;
+	margin:auto;
+}
+
+
+
+#export_histogram_output {
+	color:green;
+	text-align: center;
+}
+
+#theme_output,
+#output_chunk_text {
+	color:red;
+}
+
+#tab2 {
+    display: flex; /* Use Flexbox for layout */
+    justify-content: center; /* Horizontally center children */
+    align-items: flex-start; /* Optional: Align items to the top */
+    flex-direction: column; /* Stack children vertically */
+    min-height: 10vh; /* Adjust height as needed */
+}
+
+#tab2-main-div {
+    max-width: 1400px; /* Restricts the maximum width */
+    width: 100%; /* Ensures it scales responsively */
+    padding: 20px; /* Adds spacing inside the box */
+    box-sizing: border-box; /* Ensures padding is included in the width */
+    background-color: yellow; /* For visual debugging */
+}
+
+
+#sampling_time_output {
+	text-align: right;
+	width:50%;
+	float:right;
+	color:red;
+	font-size: 18px;
+}
+
+
+
+
+#polynomial {
+	height:25px;
+	width:100%;
+	float:left;
+	padding-top:10px;
+	padding-left:4%;
+	margin-bottom: 10px;
+}
+
+
+#add {
+	margin:auto;
+	width: 100%;
+}
+
+#exit-button {
+	height:35px;
+	width:180px;
+	margin:20px;
+	font-size:14px;
+	color:white;
+	font-weight:bold;
+
+}
+
+#container_device_list_short {
+	margin:20px;
+}
+
+#showplot {
+	width:96%;
+}
+
+#ps_button_box {
+	width:100%;
+	height:55px;
+	float:left;
+}
+
+#filename {
+	text-align: left;
+	font-size:12px;
+}
+
+
+#audio-instructions {
+	font-family:Times New Roman;
+	font-size: 16px;
+	width:100%;
+	height:100%;
+	background-color: black;
+	padding-top: 10px;
+	padding-left:20px;
+	padding-right:20px;
+	float:left;
+}
+
+#serial-instructions {
+	font-family:Times New Roman;
+	font-size: 16px;
+	width:100%;
+	height:100%;
+	padding-top: 10px;
+	padding-left:20px;
+	padding-right:20px;
+	float:left;
+}
+
+
+#path_text {
+	color:gray;
+	float:left;
+}
+
+#pulse-shape-div {
+	width:33%;
+	height:440px;
+	background-color: black;
+	float:left; 
+	padding-top: 10px;
+}
+
+#audio-distortion {
+	width:33%;
+	height:440px;
+	background-color: black;
+	float:left;
+	padding-top: 10px;
+}
+
+
+
+#start-max-pulse,
+#stop-max-pulse {
+	float:left;
+}
+
+#footer {
+	width:100%;
+	height: auto;
+}
+
+
+
+#bar_chart_div, 
+#bar_chart_div_3d {
+	width:100%;
+	height:550px;
+	padding:5px;
+	background-color: black;
+	margin-left:auto;
+	margin-top:10px;
+	border:solid 1px lightgray;
+	border-radius: 10px;
+	float:left;
+}
+
+#counts, #counts-output, #counts_3d {
+	font-size:35px;
+	color:blue;
+	text-align:center;
+	font-family:Times New Roman;
+	font-weight:bold;
+}
+
+#elapsed, #elapsed_3d {
+	font-size:35px;
+	color:blue;
+	text-align:center;
+	font-family:Times New Roman;
+	font-weight:bold;
+}
+
+
+#t2_setting_div, 
+#t2_setting_div1, 
+#t2_setting_div2, 
+#t2_setting_div3, 
+#t2_setting_div4, 
+#t2_setting_div5, 
+#t2_setting_div6, 
+#t2_setting_div7, 
+#t2_setting_div8, 
+#t2_setting_div9 {
+	width:11%;
+	height:120px;
+	padding:none;
+	text-align:center;
+	color:lightgreen;
+	font-size:12px;
+	float:left;
+	margin:none;
+}
+
+#spec-notes-input {
+	marginTop: 15px;
+	fontSize: 10px;
+	border-radius: 5px;
+	border:solid 1 px gray;
+	margin-top:10px;
+
+}
+
+#start, #start_3d {
+	background-color:green;
+	border-radius:5px;
+	height:35px;
+	width:88%;
+	margin:10px;
+	font-size:14px;
+	color:white;
+	font-weight:bold;
+}
+
+#stop, #stop_3d {
+	height:35px;
+	width:88%;
+	margin:10px;
+	font-size:14px;
+	color:white;
+	font-weight:bold;
+}
+
+
+#settings{
+	color:blue;
+	float:left;
+	font-size: 16px ;
+	font-family:Times New Roman;
+	padding:10px;
+}
+
+#add {
+	width:50%;
+}
+
+#count_rate_div {
+	width:100%;
+	height: 700px;
+	padding:none;
+	background-color:black;
+	border: solid 1px lightgreen;
+}
+
+#count_rate_chart {
+	width: 98%;
+}
+
+.tab5-spectra {
+	height:225px;
+	font-size:12px;
+	background-color:black;
+	border-bottom: solid 2px gray;
+	padding:10px;
+}
+
+
+
+#tab5-col-3 {
+	width:15%;
+	backgroundColor:black, 
+	border:solid 10px gray, 
+	text-align:wrap,
+	font-size:12px;
+}
+
+#tab6 {
+	text-align: center;
+	margin:auto;
+}
+
+#exit {
+	margin:auto;
+	text-align: center;
+}
+
+#tab6_text_div {
+	width: 100%;
+	padding:30px;
+	margin:auto ;
+}
+
+#manual {
+	width:900px;
+	text-align: justify;
+	font-family: Times New Roman;
+	font-size: 16px;
+	background-color: black;
+	border:solid 1px gray;
+	border-radius:10px;
+	margin: auto;
+	padding: 20px;
+}
+
+#subfooter {
+	width:100%;
+	height:auto;
+	float:left;
+	padding:20px;
+}
+
+@media only screen and (max-width: 1366px) {
+
+	h1 {
+	color:lightgreen;
+	text-align:center;
+	font-family: Times New Roman;
+	font-size:20px;
+	}
+
+	h2 {
+		font-size:16px;
+	}
+
+	h3 {
+		font-size:12px;
+	}
+
+	p {
+		text-align:left;
+		font-size:10px;
+	}
+
+	Input,
+	textarea {
+		text-align:left;
+		color:lightgreen;
+		font-size: 10px;
+		font-family: Arial;
+		width: 95%;
+	}
+
+	.custom-tabs {
+    height:20px;
+  }
+			
+	
+	.action_button {
+		background-color:#800000;
+		border-radius:6px;
+		color:white;
+		margin-top:10px;
+		font-size: 12px;
+		width:80%;
+	}
+
+
+	#tab0_box_1 {
+	height:800px;
+	width:48%;
+	padding:10px;
+	font-family: serif;
+	margin:5px;
+	margin-top:5px;
+	float:left;
+	border-radius: 20px;
+	border:solid 1px lightgray;
+	}
+
+	#tab0_box_2 {
+		height:800px;
+		width:48%;
+		padding:10px;
+		overflow-y: auto;
+		margin:5px;
+		margin-top:5px;
+		float:left;
+		border-radius: 20px;
+		border:solid 1px lightgray;
+	}
+
+
+	#update_calib_button,
+	#notes-warning {
+		visibility: hidden;
+	}
+	
+
+	
+	  
+	#first_name,
+	#last_name,
+	#institution,
+	#city,
+	#country,
+	#email,
+	#phone,
+	#website,
+	#social_url,
+	#notes,
+	#api_key {
+		width:80%;
+	}
+	
+	
+	
+	#sampling_time_output {
+		text-align: right;
+		width:50%;
+		float:right;
+	}
+
+	
+	#selected_device_text {
+		width: 200px;
+	}
+	
+	#news {
+		height:auto;
+		width:45%;
+		padding:5px;
+		font-family: Times New Roman;
+		font-size:12px;
+		color:lightgreen;
+		float:left;
+	}
+
+
+	#ps_button_box {
+		width:100%;
+		height:40px;
+		float:left;
+	}
+
+	#tab1_settings {
+		width:20%;
+		height:50px;
+		font-size:14px;
+		float: left;
+		text-align:center;
+		font-family:Times New Roman;
+		margin:auto;
+	}
+	
+	#tab1_settings1,
+	#tab1_settings2,
+	#tab1_settings3,
+	#tab1_settings4,
+	#tab1_settings5 {
+		width:20%;
+		height:65px;
+		font-size:14px;
+		float: left;
+		text-align:left;
+		font-family:Times New Roman;
+		margin:auto;
+	}
+
+	#instruction_div {
+		width:33%;
+		height:380px;
+		background-color: black;
+		float:left;
+	}
+
+	
+	#audio-instructions {
+		font-size: 9px;
+		background-color: black;
+		height:90%;
+	}
+
+	#serial-instructions {
+		font-size: 9px;
+		background-color: black;
+		height:90%;
+	}
+
+	#pulse-shape-div,
+	#audio-distortion {
+		width: 33%;
+		height: 380px;
+		float:left; 
+	}
+
+	#heading {
+		width:94%;
+		Height:40px;
+		font-family:Times New Roman;
+		color:lightgreen;
+		text-align: center;
+		float:left;
+	}
+
+
+	#polynomial {
+		height:25px;
+		width:100%;
+		float:left;
+		padding-top:10px;
+		padding-left:5%;
+		font-size:10px;
+		font-family:Times New Roman;
+	}
+	
+	#t2_setting_div, 
+	#t2_setting_div1, 
+	#t2_setting_div2, 
+	#t2_setting_div3, 
+	#t2_setting_div4, 
+	#t2_setting_div5, 
+	#t2_setting_div6, 
+	#t2_setting_div7, 
+	#t2_setting_div8, 
+	#t2_setting_div9 {
+		font-size: 10px;
+	}
+	
+	
+	#t2_filler_div {
+		width:0%;
+		padding:5px;
+		height:120px;
+		float:left;
+	}
+	
+
+	#counts {
+		 font-size:30px;
+		 color:blue;
+			text-align:center;
+		 font-family:Times New Roman;
+		 font-weight:bold;
+	}
+
+	#elapsed {
+		 font-size:30px;
+		 color:blue;
+			text-align:center;
+		 font-family:Times New Roman;
+		 font-weight:bold;
+	}
+
+	#tab3 {
+		width:100%;
+		height:100%;
+		float:left;
+		text-align:center;
+		padding:10px;
+		padding-top:20px;
+	}
+
+	#count_rate_div {
+		width:90%;
+		height: 700px;
+		padding:none;
+		border: solid 1px lightgreen;
+	}
+	
+	#filename, 
+	#bin_size, 
+	#bins, 
+	#max_counts, 
+	#filename2,
+	#threshold,
+	#tolerance,
+	#calib_bin_1,
+	#calib_bin_2,
+	#calib_bin_3,
+	#calib_e_1,
+	#calib_e_2,
+	#calib_e_3 {
+		font-size: 8px;
+	}
+
+}
