@@ -1172,10 +1172,10 @@ def load_cps_file(filename):
         with open(cps_file_path, 'r') as file:
             cps_data = json.load(file)
 
-            count_history = cps_data.get('count_history', [])
-            elapsed = cps_data.get('elapsed', 0)
-            counts = cps_data.get('validPulseCount', 0)
-            dropped_counts = cps_data.get('droppedPulseCount', 0)
+            count_history   = cps_data.get('count_history', [])
+            elapsed         = cps_data.get('elapsed', 0)
+            counts          = sum(count_history)
+            dropped_counts  = cps_data.get('droppedPulseCount', 0)
 
             # Flatten the nested list and ensure all values are integers
             if isinstance(count_history, list):
