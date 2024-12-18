@@ -9,7 +9,7 @@ from dash import html
 from flask import Flask, send_from_directory
 
 #----VERSION NUMBER -----------
-version         = "v2.2.3"
+version         = "v2.2.4"
 server          = Flask(__name__)
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
 #------------------------------
@@ -64,7 +64,7 @@ app = dash.Dash(
     __name__,
     server=server,
     assets_folder=assets_folder,  # Serve assets from our adjusted path
-    external_stylesheets=[dbc.themes.BOOTSTRAP, f"/assets/styles_{theme}.css"],
+    external_stylesheets=[dbc.themes.BOOTSTRAP, f"/assets/styles-{theme}.css"],
     assets_ignore=f"^(?!styles_{theme}).*\\.css",  # Load only the selected theme CSS
 )
 
