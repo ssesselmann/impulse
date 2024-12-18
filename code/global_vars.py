@@ -54,7 +54,7 @@ compression3d   = 16
 
 
 # Tab1 Settings
-theme           = "plasma"
+theme           = "light-theme"
 device          = 1
 sample_rate     = 48000
 sample_length   = 16
