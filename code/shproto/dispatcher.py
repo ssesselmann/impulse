@@ -334,7 +334,8 @@ def process_01(filename, compression, device, t_interval):
             cps_data = {
                 "filename": filename,
                 "count_history": count_history,
-                "elapsed": elapsed
+                "elapsed": elapsed,
+                "droppedPulseCount" : 0
             }
 
             cps_file_path = os.path.join(data_directory, f'{filename}_cps.json')
