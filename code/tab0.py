@@ -57,18 +57,18 @@ def show_tab0():
     user = load_user_settings()
 
     html_tab0 = html.Div(id='tab_0', children=[
-        html.Div(id='tab0_frame', children=[
+        html.Div(id='tab0-frame', children=[
             html.Div(id='tab0_box_1', children=[
                 html.P(''),
                 html.P(''),
-                html.H1('My Details'),
+                html.H1('My details'),
                 html.P('This page is intended for your personal details and all fields are stored on your local machine, so you don\'t have to worry about privacy.'),
                 html.P('When you choose to publish one of your great spectra for other users to see, you can choose which fields to publish, putting you in control of your data.'),
                 html.Hr(),
                 html.Div(id='publish_label', children='Publish'),
 
                 html.Div(className='tab0row', children=[
-                    dcc.Input(id='first_name', type='text', value=user['first_name'], placeholder='Firstname', className='my_inputs', style={'marginBottom': '10px'}),
+                    dcc.Input(id='first_name', type='text', value=user['first_name'], placeholder='Firstname', className='my_inputs'),
                     daq.BooleanSwitch(
                         id='first_name_f',
                         on=bool(user['first_name_f']),
@@ -77,7 +77,7 @@ def show_tab0():
                     )]),
 
                 html.Div(className='tab0row', children=[
-                    dcc.Input(id='last_name', type='text', value=user['last_name'], placeholder='Lastname', className='my_inputs', style={'marginBottom': '10px'}),
+                    dcc.Input(id='last_name', type='text', value=user['last_name'], placeholder='Lastname', className='my_inputs'),
                     daq.BooleanSwitch(
                         id='last_name_f',
                         on=bool(user['last_name_f']),
@@ -86,7 +86,7 @@ def show_tab0():
                     )]),
 
                 html.Div(className='tab0row', children=[
-                    dcc.Input(id='institution', type='text', value=user['institution'], placeholder='Institution', className='my_inputs', style={'marginBottom': '10px'}),
+                    dcc.Input(id='institution', type='text', value=user['institution'], placeholder='Institution', className='my_inputs'),
                     daq.BooleanSwitch(
                         id='institution_f',
                         on=bool(user['institution_f']),
@@ -95,7 +95,7 @@ def show_tab0():
                     )]),
 
                 html.Div(className='tab0row', children=[
-                    dcc.Input(id='city', type='text', value=user['city'], placeholder='City', className='my_inputs', style={'marginBottom': '10px'}),
+                    dcc.Input(id='city', type='text', value=user['city'], placeholder='City', className='my_inputs'),
                     daq.BooleanSwitch(
                         id='city_f',
                         on=bool(user['city_f']),
@@ -104,7 +104,7 @@ def show_tab0():
                     )]),
 
                 html.Div(className='tab0row', children=[
-                    dcc.Input(id='country', type='text', value=user['country'], placeholder='Country', className='my_inputs', style={'marginBottom': '10px'}),
+                    dcc.Input(id='country', type='text', value=user['country'], placeholder='Country', className='my_inputs'),
                     daq.BooleanSwitch(
                         id='country_f',
                         on=bool(user['country_f']),
@@ -113,7 +113,7 @@ def show_tab0():
                     )]),
 
                 html.Div(className='tab0row', children=[
-                    dcc.Input(id='email', type='text', value=user['email'], placeholder='email', className='my_inputs', style={'marginBottom': '10px'}),
+                    dcc.Input(id='email', type='text', value=user['email'], placeholder='email', className='my_inputs'),
                     daq.BooleanSwitch(
                         id='email_f',
                         on=bool(user['email_f']),
@@ -122,7 +122,7 @@ def show_tab0():
                     )]),
 
                 html.Div(className='tab0row', children=[
-                    dcc.Input(id='phone', type='text', value=user['phone'], placeholder='+00 0000 000 000 phone', className='my_inputs', style={'marginBottom': '10px'}),
+                    dcc.Input(id='phone', type='text', value=user['phone'], placeholder='+00 0000 000 000 phone', className='my_inputs'),
                     daq.BooleanSwitch(
                         id='phone_f',
                         on=bool(user['phone_f']),
@@ -131,7 +131,7 @@ def show_tab0():
                     )]),
 
                 html.Div(className='tab0row', children=[
-                    dcc.Input(id='website', type='text', value=user['website'], placeholder='www.domain.com', className='my_inputs', style={'marginBottom': '10px'}),
+                    dcc.Input(id='website', type='text', value=user['website'], placeholder='www.domain.com', className='my_inputs'),
                     daq.BooleanSwitch(
                         id='website_f',
                         on=bool(user['website_f']),
@@ -140,7 +140,7 @@ def show_tab0():
                     )]),
 
                 html.Div(className='tab0row', children=[
-                    dcc.Input(id='social_url', type='text', value=user['social_url'], placeholder='social_url', className='my_inputs', style={'marginBottom': '10px'}),
+                    dcc.Input(id='social_url', type='text', value=user['social_url'], placeholder='social_url', className='my_inputs'),
                     daq.BooleanSwitch(
                         id='social_url_f',
                         on=bool(user['social_url_f']),
@@ -165,7 +165,7 @@ def show_tab0():
                             style={'width': 100, 'marginLeft': '10px'}
                             ),
                 html.Div(id='get_api_output', children=''),
-                html.Hr(),
+                html.P(),
                 html.Div(id='output-div'),
                 html.Button('Update my spectra', id='update_my_spectra', style={'visibility': 'hidden'}),
                 html.P(id='delete_output', children=''),
@@ -174,9 +174,10 @@ def show_tab0():
 
             html.Div(id='tab0_box_2', children=[
             ]),
+           html.Div(children=[html.Img(id='footer', src='assets/footer.gif')]), 
         ]),
 
-        html.Div(children=[html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
+        
 
     ])
 
@@ -340,15 +341,23 @@ def update_my_spectra(n):
                     'Date': spectrum['datetime'],
                     'Filename': spectrum['filename'],
                     'Download': f"[Download](https://www.gammaspectacular.com/spectra/files/{spectrum['id']}.json)",
-                    'Delete': "X"
+                    'Delete': "del"
                 } for spectrum in spectra_data
             ]
 
             table = html.Div([
-                html.H1('My Published Spectra'),
+                html.H1('My published spectra'),
                 dash_table.DataTable(
-                    id='my_spectra_table',
-                    data=data_for_table,
+                    id='my-spectra-table',
+                    data=[
+                        {
+                            'ID': spectrum['id'],
+                            'Date': spectrum['datetime'],
+                            'Filename': spectrum['filename'],
+                            'Download': f"[Download](https://www.gammaspectacular.com/spectra/files/{spectrum['id']}.json)",
+                            'Delete': "del"
+                        } for spectrum in spectra_data
+                    ],
                     columns=[
                         {'name': 'ID', 'id': 'ID'},
                         {'name': 'Date', 'id': 'Date'},
@@ -356,10 +365,11 @@ def update_my_spectra(n):
                         {'name': 'Download', 'id': 'Download', 'presentation': 'markdown'},
                         {'name': 'Delete', 'id': 'Delete'}
                     ],
-                    style_cell={'width': 'auto', 'text-align': 'center', 'fontFamily': 'Arial', 'height': '12px'},
                     markdown_options={"link_target": "_blank"}
                 )
             ])
+
+
 
             return table
 
@@ -373,8 +383,8 @@ def update_my_spectra(n):
 
 @app.callback(
     Output('delete_output', 'children'),
-    Input('my_spectra_table', 'active_cell'),
-    State('my_spectra_table', 'data')
+    Input('my-spectra-table', 'active_cell'),
+    State('my-spectra-table', 'data')
 )
 def delete_spectrum(active_cell, data):
     if active_cell and active_cell['column_id'] == 'Delete':

@@ -29,12 +29,18 @@ def show_tab4():
     with global_vars.write_lock:
         rolling         = global_vars.rolling_interval
         filename        = global_vars.filename
+        theme           = global_vars.theme
     try:
         load_cps_file(filename)
     except:
         pass
 
     html_tab4 = html.Div(id='tab4', children=[
+
+        dcc.Input(id='theme', type='text', value=f'{theme}', style={'display': 'none'}),
+
+        html.Div(id='tab4-frame', children=[
+
         html.Div(id='count_rate_div', children=[
             dcc.Graph(id='count_rate_chart', figure={}),
             dcc.Interval(id='interval_component', interval=interval, n_intervals=0),  # Refresh rate 1s.
@@ -52,13 +58,15 @@ def show_tab4():
                 daq.ToggleSwitch(
                     id='full-monty',
                     label='Last hour | Show all',
+                    color='green',
                     value=False,
-                    color='purple'
                 )
             ])
         ]),
-        html.Div(children=[html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
-    ])
+        html.Div(children=[html.Img(id='footer', src='assets/footer.gif')]),
+
+        ]), #end of tab4-frame
+    ]) # end of tab4
 
     return html_tab4
 
@@ -68,9 +76,11 @@ def show_tab4():
      Input('t_interval'         , 'value'),
      Input('full-monty'         , 'value')],
     [State('tabs'               , 'value'),
-     State('rolling'            , 'value')]
+     State('rolling'            , 'value'),
+     State('theme'              , 'value')]
 )
-def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
+def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling, theme):
+
     logger.debug(f"Updating chart with t_interval={t_interval}, full_monty={full_monty}, rolling={rolling}")
     now = datetime.now()
     time_str = now.strftime('%d/%m/%Y')
@@ -82,6 +92,21 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
         elapsed         = global_vars.elapsed
         filename        = global_vars.filename
         dropped_counts  = global_vars.dropped_counts
+
+    if theme == 'light-theme':
+        bg_color    = '#fafafa'
+        paper_color = 'white'
+        line_color  = 'black'
+        trace_left  = '#0066ff'
+        trace_right = 'red'
+        trace_dots  = 'black'
+    else:
+        bg_color    = 'black'
+        paper_color = 'black'
+        line_color  = 'lightgray'  
+        trace_left  = 'lightgreen'
+        trace_right = 'red' 
+        trace_dots  = 'white'
 
     if full_monty:
         x = [str(i * t_interval) for i in range(len(count_history))]
@@ -101,8 +126,8 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
         x=x, 
         y=y, 
         mode='markers+lines', 
-        marker=dict(size=4, color='black'), 
-        line=dict(width=1, color='purple'), 
+        marker=dict(size=5, color=trace_dots), 
+        line=dict(width=1, color=trace_right), 
         name='counts per sec.'
     )
     
@@ -114,7 +139,7 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
             x=x, 
             y=rolling_series, 
             mode='lines', 
-            line=dict(width=2, color='green'), 
+            line=dict(width=2, color=trace_left), 
             name=f'{rolling} second average'
         )
     else:
@@ -122,12 +147,12 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
 
     layout = go.Layout(
         title={
-            'text': f'Count Rate - {filename}',
-            'x': 0.5,
+            'text': f'Count Rate | {filename}',
+            'x': 0.06,
             'y': 0.9,
-            'xanchor': 'center',
+            'xanchor': 'left',
             'yanchor': 'top',
-            'font': {'family': 'Arial', 'size': 16, 'color': 'black'}
+            'font': {'family': 'Arial', 'size': 16, 'color': line_color}
         },
         xaxis=dict(
             title='Seconds',
@@ -135,36 +160,36 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling):
             tick0=0,
             dtick=10,
             tickangle=90,
-            tickfont=dict(family='Arial', size=14, color='black'),
-            titlefont=dict(family='Arial', size=18, color='black'),
+            tickfont=dict(family='Arial', size=14, color= line_color),
+            titlefont=dict(family='Arial', size=18, color=line_color),
             type='linear',
             showline=True,
             linewidth=2,
-            linecolor='black',
+            linecolor=line_color,
             ticks='outside'
         ),
         yaxis=dict(
             title='Counts',
             type='linear',
-            tickfont=dict(family='Arial', size=14, color='black'),
-            titlefont=dict(family='Arial', size=18, color='black')
+            tickfont=dict(family='Arial', size=14, color=line_color),
+            titlefont=dict(family='Arial', size=18, color=line_color)
         ),
         annotations=[
             dict(
-                text=f"{counts} Valid counts<br>{dropped_counts} Lost counts<br>{elapsed} Seconds total<br>{rolling} Second average",
-                x=0.95,
-                y=0.95,
+                text=f"{counts} Valid counts | {dropped_counts} Lost counts | {elapsed} Seconds total | {rolling} Second average",
+                x=0.00,
+                y=1.1,
                 xref='paper',
                 yref='paper',
                 showarrow=False,
-                font=dict(family='Arial', size=16, color='black')
+                font=dict(family='Arial', size=16, color=line_color)
             )
         ],
         uirevision="Don't change",
         height=500,
         margin=dict(l=80, r=50, t=100, b=50),
-        paper_bgcolor='white',
-        plot_bgcolor='#efefef',
+        paper_bgcolor=paper_color,
+        plot_bgcolor=bg_color,
         showlegend=False,
     )
 

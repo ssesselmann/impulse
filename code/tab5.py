@@ -36,7 +36,7 @@ def show_tab5():
     id="modal",
     size="xl",  # xtra large modal
     is_open=False,  # Initially closed
-)
+    )
 
     pagination_div = html.Div([
         html.Button('Previous', 
@@ -54,38 +54,41 @@ def show_tab5():
         html.Div(id='current-page', style={'display': 'none'}, children='1')
     ], style={'textAlign': 'center', 'marginTop': '20px', 'marginBottom': '20px', 'width': '300px', 'margin': 'auto'})
 
-    return html.Div([
+    return html.Div(id='tab5', children=[
 
-        html.Div(id='t5_heading', children=[  
-            
-            html.H1("Public Spectrum Repository"),
-            html.H3('Record a great spectrum,'),
-            html.H3('Give it a descriptive name,'),
-            
-            dcc.Input(id='tab5_search', 
-                    type='text', 
-                    placeholder='Search spectra', 
-                    autoFocus=True,
-                    style={'float': 'right', 'width':'200px', 'marginRight':'10%','backgroundColor':'#e6f2ff', 'fontSize':18, 'padding':5}),
-            html.H3('Publish it for the world to see !'),
-            
-            html.P('Note: Calibration on thumb nail spectra may be out due to data compression', style={'fontSize':'10px'}),
-            html.Hr(),
-            
-        ], style={'width':'90%', 'margin':'auto', 'textAlign':'left'}),
+            html.Div(id='tab5-frame', children=[
 
-        html.Div(id='spectrum-data', style={'width': '90%', 'margin': 'auto'}),
-        html.Div(id='total-pages', style={'display': 'none'}),
+                html.Div(id='t5_heading', children=[  
+                    
+                    html.H1("Public Spectrum Repository"),
+                    html.H3('Record a great spectrum,'),
+                    html.H3('Give it a descriptive name,'),
+                    
+                    dcc.Input(id='tab5_search', 
+                            type='text', 
+                            placeholder='Search spectra', 
+                            autoFocus=True,
+                            style={'float': 'right', 'width':'200px', 'marginRight':'10%','backgroundColor':'#e6f2ff', 'fontSize':18, 'padding':5}),
+                    html.H3('Publish it for the world to see !'),
+                    
+                    html.P('Note: Calibration on thumb nail spectra may be out due to data compression', style={'fontSize':'10px'}),
+                    html.Hr(),
+                    
+                ], style={'width':'90%', 'margin':'auto', 'textAlign':'left'}),
 
-        html.Div(children=[
-            html.Div(pagination_div),
-        ], style ={'width':'100%'}), 
+            html.Div(id='spectrum-data', style={'width': '100%', 'margin': 'auto'}),
 
-        html.Div(children=[ html.Img(id='footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
+            html.Div(id='total-pages', style={'display': 'none'}),
 
-        modal,
+            html.Div(children=[ html.Div(pagination_div)], style ={'width':'100%'}), 
 
-    ], style={'width':'96%', 'padding':30,'height':'100%','margin':'auto', 'backgroundColor':'white', 'textAlign':'center'})
+            html.Div(children=[ html.Img(id='footer', src='assets/footer.gif')]),
+
+            modal,
+
+            ]), # end tab5-frame
+
+        ]), # end tab5
 
 @app.callback(
     [Output('spectrum-data', 'children'),
@@ -203,14 +206,14 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                 )
                 buttons.append(button)
 
-                file_info_div = html.Div(id='tab5_col_1', children=[
+                file_info_div = html.Div(id='tab5-col-1', className='tab5-spectra', children=[
                     html.H4(f"#  {id}"),
                     html.P(f"{date}"),
                     html.P(f"Bins:{channels_l}"),
                     html.A("Download", href=download, target='_blank'),
-                ], style={'textAlign':'left','width': '130px', 'padding': '10px'})
+                ])
 
-                client_info_div = html.Div(id='tab5_col_2', children=[
+                client_info_div = html.Div(id='tab5-col-2', className='tab5-spectra', children=[
                     html.P(f"{first_name} {last_name}"),
                     html.P(f"{institution}", style={'display':institution_show}),
                     html.P(f"{city} - {country}", style={'display':cc_show}),
@@ -219,11 +222,11 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                     html.P(html.A(web, href=web, target="_blank"), style={'height':10, 'fontSize':10, 'display':web_show}),
                     html.P(html.A(social, href=social, target="_blank"), style={'height':10, 'fontSize':10, 'display':social_show}),
                     html.P(f"Note: {notes}", style={'display':notes_show}),
-                ], style={'width': '250px', 'padding':'10px'})
+                ])
 
-                notes_div = html.Div(id='tab5_col_3', children=[
+                notes_div = html.Div(id='tab5-col-3', className='tab5-spectra', children=[
                     html.P(id='spec_notes', children =[spec_notes]),
-                ], style={'width':'200px', 'height':'175px', 'marginRight':10, 'padding':'5px', 'marginTop':'30px', 'backgroundColor':'#e6f2ff'})
+                ])
 
                 fig = go.Figure(data=[go.Scatter(
                     x=calib_x,
@@ -236,24 +239,18 @@ def update_table_and_page_info(prev_clicks, next_clicks, search_value, current_p
                 fig.update_layout(
                     title=filename,
                     title_font_size=14,
-                    height=225,
-                    width=400,
+                    height=200,
+                    width=350,
                     plot_bgcolor='#e6f2ff',
                     margin=dict(l=5, r=5, t=30, b=5), 
                     xaxis={'visible': True}, 
                     yaxis={'visible': False}
                 )
 
-                plot_div = html.Div([
-                    dcc.Graph(
-                        figure=fig,
-                        style={'height': '100%', 'width': '100%'}
-                    )
-                ])
+                plot_div = html.Div(className='tab5-spectra', children=[dcc.Graph(figure=fig)])
 
-                button_div = html.Div(id='tab5_col_5', children=[button], style={
-                    'width': '70px',  
-                    'height': '200px',
+                button_div = html.Div(id='tab5-col-5', className='tab5-spectra', children=[button], style={
+                    'width':'100px',
                     'display': 'flex',  
                     'flex-direction': 'column',  
                     'justify-content': 'flex-end',  

@@ -23,15 +23,15 @@ device = global_vars.device
 
 
 
-app.layout = html.Div([
+app.layout = html.Div(children=[
     dcc.Tabs(id='tabs', value='tab_1'     , children=[
-        dcc.Tab(label='My Details'        , value='tab_0'),
-        dcc.Tab(label=f'impulse {version}', value='tab_1'),
-        dcc.Tab(label='2D Histogram'      , value='tab_2'), 
-        dcc.Tab(label='3D Histogram'      , value='tab_3'), 
-        dcc.Tab(label='Count Rate'        , value='tab_4'), 
-        dcc.Tab(label='Repository'        , value='tab_5'),
-        dcc.Tab(label='Manual & Exit'     , value='tab_6'),
+        dcc.Tab(label='My Details'        , value='tab_0', className='custom-tabs'),
+        dcc.Tab(label=f'impulse {version}', value='tab_1', className='custom-tabs'),
+        dcc.Tab(label='2D Histogram'      , value='tab_2', className='custom-tabs'), 
+        dcc.Tab(label='3D Histogram'      , value='tab_3', className='custom-tabs'), 
+        dcc.Tab(label='Count Rate'        , value='tab_4', className='custom-tabs'), 
+        dcc.Tab(label='Repository'        , value='tab_5', className='custom-tabs'),
+        dcc.Tab(label='Manual & Exit'     , value='tab_6', className='custom-tabs'),
     ]),
     html.Div(id='tab-content'),
 

@@ -111,6 +111,7 @@ def show_tab2():
         slb_switch      = global_vars.suppress_last_bin
         dropped_counts  = global_vars.dropped_counts
         val_flag        = global_vars.val_flag
+        theme           = global_vars.theme
 
         
 
@@ -132,34 +133,45 @@ def show_tab2():
 
 
     html_tab2 = html.Div(id='tab2', children=[
-        html.Div(id='main-div', children= [
+        html.Div(id='tab2-frame', children= [
+            dcc.Input(id='theme', type='text', value=f'{theme}', style={'display': 'none'}),
+            dcc.Interval(id='interval-component', interval=millisec, n_intervals=0), 
+            html.Div(id='settings_output', children=''),
 
             html.Div(id='bar_chart_div', children=[
                 html.A("Learn", id="tooltip-link", href="#", style={"fontSize": "small", "textDecoration": "underline", "color": "blue", "margin-left":"30px"}),
+                html.Div(id='calibration-output', children=''),
                 dbc.Tooltip("Click and drag to zoom • use box select to select peak • double click on chart to reset • use camera icon to save chart as png" ,target="tooltip-link",placement="right"),
-                dcc.Interval(id='interval-component', interval=millisec, n_intervals=0), 
+                
                 dcc.Graph(id='bar_chart'),
             ]),
 
             html.Div(id='t2_filler_div', children=''),
 
-            html.Div(id='t2_setting_div1', children=[
-                html.Button('START', id='start', n_clicks=0),
-                html.Div(id='start-text', children=''),
-                html.Div(id='counts-output', children=''),
-                html.Div(''),
-                html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1, readOnly=False, value=max_counts, className='input', style={'background-color': counts_warning})]),
-                html.Div(id='dropped_counts', children=''),
-            ]),
 
-            html.Div(id='t2_setting_div2', children=[
-                dcc.Store(id='store-device', data=device),
-                html.Button('STOP', id='stop'),
-                html.Div(id='stop-text', children=''),
-                html.Div(id='elapsed', children=''),
-                html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1, readOnly=False, value=max_seconds, className='input', style={'background-color': seconds_warning})]),
-                html.Div(id='cps', children=''),
-                    ]),
+                html.Div(id='t2_setting_div1', children=[
+                    html.Button('START', id='start', n_clicks=0),
+                    html.Div(id='start-text', children=''),
+                    html.Div(id='counts-output', children=''),
+                    html.Div(''),
+                    html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1, readOnly=False, value=max_counts, className='input', style={'background-color': counts_warning})]),
+                    html.Div(id='dropped_counts', children=''),
+
+                    html.Div(id='tab2-footer', children=[html.Img(src='assets/impulse.gif', style={'width':'200%'})]),
+                ]),
+
+                html.Div(id='t2_setting_div2', children=[
+                    dcc.Store(id='store-device', data=device),
+                    html.Button('STOP', id='stop', className='action_button'),
+                    html.Div(id='stop-text', children=''),
+                    html.Div(id='elapsed', children=''),
+                    html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1, readOnly=False, value=max_seconds, className='input', style={'background-color': seconds_warning})]),
+                    html.Div(id='cps', children=''),
+                ]),
+
+                
+
+
 
             html.Div(id='t2_setting_div3', children=[
                 html.Div(id='compression_div', children=[
@@ -169,11 +181,12 @@ def show_tab2():
                         {'label': '2048 Bins', 'value': '4'},
                         {'label': '4096 Bins', 'value': '2'},
                         {'label': '8192 Bins', 'value': '1'},
-                    ], value=compression, clearable=False, className='dropdown')], style={'display': serial}),
+                    ], value=compression, clearable=False)], style={'display': serial}),
 
-                    html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, className='dropdown', optionHeight=20, style={'textAlign':'left', 'textWrap':None})]),
+                    html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, optionHeight=20, style={'textAlign':'left', 'textWrap':None})]),
                     
-                    html.Div(['Or create new file:', dcc.Input(id='filename', type='text', value=filename, className='input', placeholder='Enter new filename')]),
+                    html.Div(['Or create new file:', dcc.Input(id='filename', type='text', value=filename, placeholder='Enter new filename', disabled=False)]),
+
                     
                     dbc.Modal([
                         dbc.ModalBody(id='modal-body'),
@@ -193,44 +206,37 @@ def show_tab2():
                     {'label': 'Pause MCA', 'value': '-sto'},
                     {'label': 'Restart MCA', 'value': '-sta'},
                     {'label': 'Reset histogram', 'value': '-rst'},
-                ], placeholder='Select command', value=None, className='dropdown')], style={'display': serial}),
+                ], placeholder='Select command', value=None)], style={'display': serial}),
                 html.Div(id='cmd_text', children='', style={'display': 'none'}),
                 html.Div(['LLD Threshold:', dcc.Input(id='threshold', type='number', value=threshold, className='input', style={'height': '35px'})], style={'display': audio}),
                 html.Div(['Shape Tolerance:', dcc.Input(id='tolerance', type='number', value=tolerance, className='input')], style={'display': audio}),
                 html.Div(['Update Interval(s)', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval, className='input')]),
             
-                html.Div(['Export to csv', dcc.Dropdown(
-                        id='export_histogram',
-                        className='dropdown',
-                        options=filtered_options,
-                        placeholder='Export to csv file',
-                        value=None
-                    )]),
-
-                    html.Div(id='export_histogram_output_div', children=[html.P(id='export_histogram_output', children='')]),
+                html.Div(['Export to csv', dcc.Dropdown(id='export-histogram', options=filtered_options, placeholder='Export to csv file', value=None )]),
+                html.Div(id='export_histogram_output_div', children=[html.P(id='export_histogram_output', children='')]),
 
             ], style={'width': '10%'}),
 
             html.Div(id='t2_setting_div5', children=[
                 html.Div('Comparison'),
-                html.Div(dcc.Dropdown(id='filename_2', options=options_sorted, placeholder='Select comparison', value=filename_2, className='dropdown', optionHeight=40)),
-                html.Div(['Show Comparison', daq.BooleanSwitch(id='compare_switch', on=False, color='purple')]),
-                html.Div(['Subtract Comparison', daq.BooleanSwitch(id='difference_switch', on=False, color='purple')]),
-                html.Div(['Coincidence', daq.BooleanSwitch(id='coi-switch', on=coi_switch, color='purple')], style={'display': audio}),
+                html.Div(dcc.Dropdown(id='filename_2', options=options_sorted, placeholder='Select comparison', value=filename_2, optionHeight=40)),
+                html.Div(['Show Comparison', daq.BooleanSwitch(id='compare_switch', on=False, color='green')]),
+                html.Div(['Subtract Comparison', daq.BooleanSwitch(id='difference_switch', on=False, color='green')]),
+                html.Div(['Coincidence', daq.BooleanSwitch(id='coi-switch', on=coi_switch, color='green')], style={'display': audio}),
 
             ]),
 
             html.Div(id='t2_setting_div6', children=[
-                html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='purple')]),
-                html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
-                html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
-                html.Div(['Supress Last Bin', daq.BooleanSwitch(id='slb-switch', on=slb_switch, color='purple')], style={'display': serial}),
+                html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='green')]),
+                html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='green')]),
+                html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='green')]),
+                html.Div(['Supress Last Bin', daq.BooleanSwitch(id='slb-switch', on=slb_switch, color='green')], style={'display': serial}),
             ]),
 
             html.Div(id='t2_setting_div7', children=[
                 html.Button('Sound <)', id='soundbyte', className='action_button'),
                 html.Div(id='audio', children=''),
-                dbc.Button("Publish spectrum", id="publish-button", color="primary", className="action_button"),
+                dbc.Button("Publish spectrum", id="publish-button", className="action_button"),
                 dcc.Store(id='store-confirmation-output', data=''),
                 
                 dbc.Modal(children=[
@@ -246,12 +252,13 @@ def show_tab2():
                 dcc.Store(id='store-annotations', data=[]),
                 html.Div('Gaussian (sigma)'),
                 html.Div(dcc.Slider(id='sigma', min=0, max=3, step=0.25, value=sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
+                
                 dcc.Dropdown(id='flags', options=[
                     {'label': 'Common peaks', 'value': 'i/tbl/gamma-a.json'},
                     {'label': 'Special peaks', 'value': 'i/tbl/gamma-b.json'},
                     {'label': 'x-ray peaks', 'value': 'i/tbl/xray.json'},
                     {'label': 'n-capture peaks', 'value': 'i/tbl/ncapture.json'},
-                ], style={'height': '15px', 'fontSize': '10px', 'borderwidth': '0px', 'textAlign':'left'}, value='i/tbl/gamma-a.json', className='dropdown', optionHeight=15, clearable=False),
+                ], style={'height': '15px', 'fontSize': '10px', 'borderwidth': '0px', 'textAlign':'left'}, value='i/tbl/gamma-a.json', optionHeight=15, clearable=False),
             ]),
 
             html.Div(id='t2_setting_div8', children=[
@@ -263,7 +270,7 @@ def show_tab2():
                 html.Div(dcc.Input(id='calib_bin_5', type='number', value=calib_bin_5, className='input')),
                 html.Div('Peak width (bins)'),
                 html.Div(dcc.Slider(id='peakfinder', min=0, max=15, step=None, value=peakfinder, marks={0:'-',1:'1',3:'3',5:'5',7:'7',9:'9',11:'11', 13:'13', 15:'15'})),
-                html.Div(['values <-> isotopes', daq.BooleanSwitch(id='val-flag', on=val_flag, color='purple')]),
+                html.Div(['values <-> isotopes', daq.BooleanSwitch(id='val-flag', on=val_flag, color='green')]),
 
                 html.Div(id='publish-output', children=''),
             ]),
@@ -276,19 +283,16 @@ def show_tab2():
                 html.Div(dcc.Input(id='calib_e_4', type='number', value=calib_e_4, className='input')),
                 html.Div(dcc.Input(id='calib_e_5', type='number', value=calib_e_5, className='input')),
                 html.Div(id='specNoteDiv', children=[
-                    dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='spectrum notes', cols=20, rows=6)], style={'marginTop': '15px', 'fontSize': '12px'}),
-                #html.Div(id='notes-warning', children=['Update notes after recording !']),
+                    dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='spectrum notes', cols=18, rows=6)]),
                 html.Div(id='spec-notes-output', children='', style={'visibility': 'hidden'}),
             ]),
-        ], style={'width':'100%', 'float':'left'}),
-        html.Div(children=[html.Img(id='footer_tab2', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
-        html.Div(id='subfooter', children=[
-            html.Div(id='settings_output', children=''),
-            html.Div(id='calibration_output', children='')
-            ], style={'color':'yellow'}),
-        
 
-    ])  # End of tab 2 render
+
+        
+        
+        ]), # End of tab2-main-div
+        
+    ])  # End of tab2
 
     return html_tab2
 
@@ -447,14 +451,28 @@ def stop_button(n_clicks, dn):
     State('max_counts'           , 'value'),
     State('coi-switch'           , 'on'),
     State('val-flag'             , 'on'),
-    State('flags'                , 'value')]
+    State('flags'                , 'value'),
+    State('theme'                , 'value')]
     )
 def update_graph(
     n, relayoutData, isotopes, filename, epb_switch, log_switch, cal_switch, filename_2, compare_switch, 
-    difference_switch, peakfinder, sigma, max_seconds, max_counts, coi_switch, val_flag, flags
+    difference_switch, peakfinder, sigma, max_seconds, max_counts, coi_switch, val_flag, flags, theme
 ):
     ctx = callback_context
-
+    if theme == 'light-theme':
+        bg_color    = '#fafafa'
+        paper_color = 'white'
+        line_color  = 'black'
+        trace_left  = 'lightblue'
+        trace_right = 'red'
+        trace_dots  = 'black'
+    else:
+        bg_color    = 'black'
+        paper_color = 'black'
+        line_color  = 'white'  
+        trace_left  = 'lightgreen'
+        trace_right = 'pink' 
+        trace_dots  = 'white'
     # Handle compare_switch triggered input
     if ctx.triggered and 'compare_switch' in ctx.triggered[0]['prop_id']:
         if compare_switch:
@@ -512,8 +530,8 @@ def update_graph(
 
     # Base dictionaries for layout
     layout_dict = {
-        'paper_bgcolor': 'white',
-        'plot_bgcolor': '#f0f0f0',
+        'paper_bgcolor': paper_color,
+        'plot_bgcolor': bg_color,
         'showlegend': False,
         'height': 460,
         'margin': dict(t=50, b=0, l=0, r=0),
@@ -529,12 +547,15 @@ def update_graph(
         'ticks': "outside",
         'ticklen': 10,
         'tickwidth': 1,
-        'tickcolor': 'black'
+        'tickcolor': line_color,
+        'tickfont': {'color': line_color, 'size': 10}
     }
 
     # Initial y-axis dict (we might update this depending on log_switch)
     yaxis_dict = {
-        'range': [0, 'auto']
+        'range': [0, 'auto'],
+        'tickfont': {'color': line_color, 'size': 10},
+        'tickcolor': line_color,
     }
 
     fig = go.Figure(layout=go.Layout(**layout_dict, xaxis=xaxis_dict, yaxis=yaxis_dict, annotations=annotations, shapes=lines))
@@ -576,7 +597,7 @@ def update_graph(
         trace1 = go.Bar(
             x=x, 
             y=y, 
-            marker={'color': 'black', 'line': {'color': 'black', 'width': 0.5}},
+            marker={'color': trace_dots, 'line': {'color': trace_dots, 'width': 0.5}},
             width=1.0
         )
         fig.add_trace(trace1)
@@ -694,12 +715,12 @@ def update_graph(
 
     # Title dictionary
     title_dict = {
-        'text': f'{filename}<br>{counts} valid counts<br>{dropped_counts} lost counts<br>{elapsed} seconds<br>{coincidence}<br>{date}',
-        'x': 0.9,
-        'y': 0.85,
-        'xanchor': 'center',
+        'text': f'{filename} - {counts} valid counts - {dropped_counts} lost counts - {elapsed} seconds - {coincidence} - {date}',
+        'x': 0.02,
+        'y': 0.95,
+        'xanchor': 'left',
         'yanchor': 'top',
-        'font': {'family': 'Arial', 'size': 14, 'color': 'black'},
+        'font': {'family': 'Arial', 'size': 15, 'color': 'black'},
     }
 
     # Process comparison if available
@@ -847,7 +868,7 @@ def save_settings(*args):
 
 # Save calibration callback function
 @app.callback(
-    Output('calibration_output', 'children'),
+    Output('calibration-output', 'children'),
     [Input('calib_bin_1', 'value'),  # [0]
      Input('calib_bin_2', 'value'),  # [1]
      Input('calib_bin_3', 'value'),  # [2]
@@ -904,7 +925,7 @@ def save_calibrations(*args):
         global_vars.coeff_3     = round(coefficients[2], 6)
         global_vars.coefficients_1 = coefficients
 
-    return f'{message} (ax^2 + bx + c) = {polynomial_fn}'
+    return f'{message} = {polynomial_fn}'
 
 
 # Callback function for playing sound
@@ -1006,7 +1027,7 @@ def update_spectrum_notes(spec_notes, filename):
 
 # callback for exporting to csv
 @app.callback(Output('export_histogram_output'  , 'children'),
-              Input('export_histogram'         , 'value'),
+              Input('export-histogram'         , 'value'),
               State('cal-switch'                , 'on')
               )
 def export_histogram(filename, cal_switch):

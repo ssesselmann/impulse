@@ -42,21 +42,23 @@ def show_tab6():
         serial = 'block'
         audio = 'none'     
 
-    html_tab6 = html.Div([
+    html_tab6 = html.Div(id='tab6', children=[
         html.Div(id='exit', children=[
-            html.Button(id='exit-button', children=''),
+            html.Button(id='exit-button', className='action_button', children=''),
             html.Div(dcc.Dropdown(
                 id="theme",
                 className='dropdown',
                 options=[
-                    {"label": "Lightgray"   , "value": "lightgray"},
-                    {"label": "Plasma"      , "value": "plasma"},
-                    {"label": "Orange"      , "value": "orange"},
-                    {"label": "Pink"        , "value": "pink"},
-                    {"label": "Sunburst"    , "value": "sunburst"},
-                    {"label": "Potassium"   , "value": "potassium"},
-                    {"label": "Under Water" , "value": "underwater"},
-                    {"label": "Milky Way"   , "value": "milkyway"},
+                    {"label": "Light theme"   , "value": "light-theme"},
+                    {"label": "Dark theme"   , "value": "dark-theme"},
+
+                    # {"label": "Plasma"      , "value": "plasma"},
+                    # {"label": "Orange"      , "value": "orange"},
+                    # {"label": "Pink"        , "value": "pink"},
+                    # {"label": "Sunburst"    , "value": "sunburst"},
+                    # {"label": "Potassium"   , "value": "potassium"},
+                    # {"label": "Under Water" , "value": "underwater"},
+                    # {"label": "Milky Way"   , "value": "milkyway"},
                 ],
                 value=theme,  # pre-selected option
                 clearable=False,
@@ -218,10 +220,10 @@ def show_tab6():
                 html.Hr(),
                 html.H1('Hardware'),
 
-                html.Div('This program will work with any sound card spectrometer, GS-MAX or ATOM-NANO serial devices. Soundcard spectrometry was invented in Australia by professor Marek Dolleiser' ),
-                html.Div('and the first hardware ever made was the Gammaspectacular GS-1100A back in 2010.' ),
-                html.Div('Since then there have been many improvements to the hardware and today we have a highly developed product'), 
-                html.Div('working with a wide range of gamma scintillation detectors and geiger counters.'), 
+                html.P('This program will work with any sound card spectrometer, GS-MAX or ATOM-NANO serial devices. Soundcard spectrometry was invented in Australia by professor Marek Dolleiser' ),
+                html.P('and the first hardware ever made was the Gammaspectacular GS-1100A back in 2010.' ),
+                html.P('Since then there have been many improvements to the hardware and today we have a highly developed product'), 
+                html.P('working with a wide range of gamma scintillation detectors and geiger counters.'), 
                 html.Div(' '),
                 html.H4('GS-PRO-V5 Spectrometer (BYO detector)'),
                 html.A('Order the GS-PRO-V5 Spectrometer here', href='https://www.gammaspectacular.com/blue/gamma-spectroscopy/gamma-spectrometers/gs-pro-v5?tracking=641198710758a', target='_blank'),
@@ -237,13 +239,13 @@ def show_tab6():
                 html.Br(),
                 html.Hr(),
                 html.Br(),
-                html.Div('This program is Free open source software for the benefit of amateur and professional scientists. I welcome all suggestions and contributions that will make the program better.'), 
+                html.P('This program is Free open source software for the benefit of amateur and professional scientists. I welcome all suggestions and contributions that will make the program better.'), 
                 html.Br(),
-                html.Div('Steven Sesselmann'),
-                html.Div('More information can be found at:'),
+                html.P('Steven Sesselmann'),
+                html.P('More information can be found at:'),
                 html.Div(html.A('www.gammaspectacular.com', href='https://www.gammaspectacular.com', target='_blank' )),
 
-                html.Div(id='add', children=[html.Img(src='https://www.gammaspectacular.com/steven/impulse/GSB-1515-KIT.png')])
+                html.Div(id='add', children=[html.Img(src='assets/GSB-1515-KIT.png')])
             ])
         ])
     ])

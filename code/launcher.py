@@ -85,7 +85,7 @@ default_settings = {
     "sigma": 0,
     "stereo": False,
     "t_interval": 1,
-    "theme": "plasma",
+    "theme": "lightgray",
     "threshold": 100,
     "tolerance": 50000,
     "shape_lld": 500,

@@ -51,6 +51,7 @@ def show_tab3():
         calib_e_1   = global_vars.calib_e_1
         calib_e_2   = global_vars.calib_e_2
         calib_e_3   = global_vars.calib_e_3
+        theme       = global_vars.theme
 
     device          = int(device)
     serial          = 'block'   if device >= 100 else 'none'
@@ -66,102 +67,107 @@ def show_tab3():
         pass
 
     return html.Div(id='tab3', children=[
-        # vertical screen divider
-        html.Div(className='tab3-split-div', children=[
-            # 3x3 grid 
-            html.Div(className='grid-container', children=[
+        dcc.Input(id='theme', type='text', value=f'{theme}', style={'display': 'none'}),
 
-                html.Div(className='t3subdiv', children=[
-                    html.Button('START', id='start_3d', n_clicks=0),
-                    html.Div(id='counts_3d', children=''),
-                    html.Div(id='start_text_3d', children=''),
-                    html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1000, readOnly=False, value=max_counts)]),
-                ]),
+        html.Div(id='tab3-frame', children=[
+            # vertical screen divider
+            html.Div(className='tab3-split-div', children=[
+                # 3x3 grid 
+                html.Div(className='grid-container', children=[
 
-                html.Div(className='t3subdiv', children=[
-                    html.Button('STOP', id='stop_3d'),
-                    html.Div(id='elapsed_3d', children=''),
-                    html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=60, readOnly=False, value=max_seconds)]),
-                    html.Div(id='cps_3d', children=''),
-                    html.Div(id='stop_text_3d', children=''),
-                ]),
-
-                html.Div(className='t3subdiv', children=[
-                    html.Div(['Select existing file:', dcc.Dropdown(
-                        id='filename-list',
-                        options=options_3d,
-                        value="",
-                        className='dropdown',
-                        optionHeight=40,
-                        style={'text-align': 'left', 'fontSize': '10px'})]),
-                    html.Div(['Or enter new file name:', dcc.Input(id='filename_3d', type='text', value=filename_3d)], style={'marginTop': '5px'}),
-                ]),
-
-                html.Div(className='t3subdiv', children=[
-                    html.Div('Nothing to see here')
-
-                ]),
-
-                html.Div(className='t3subdiv', children=[
-                    html.Div(['Time Interval Sec.', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval)]),
-                ]),
-
-                html.Div(className='t3subdiv', children=[
-                    html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='purple')]),
-                    html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='purple')]),
-                    html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='purple')]),
-                ]),
-
-                html.Div(className='t3subdiv', children=[
-                    html.Div('This 3D spectrum uses calibration data from 2D settings and converts it to 512 channels, so if your spectrum looks good on tab2 it should look the same here.', style={'textAlign':'justifyContent'}),
-                    
-                ]),
-
-                html.Div(className='t3subdiv', children=[
-                    html.Div('2D spectrum and 3D spectrum can not run at the same time, record each one separately.'),
-                ]),
-
-                html.Div(className='t3subdiv', children=[
-                    html.P('Large arrays take time to load,', style={'textAlign':'center'}),
-                    html.P('patience is a virtue', style={'textAlign':'center'}),
-                    html.P('🙄', style={'textAlign':'center'}),
+                    html.Div(className='t3subdiv', children=[
+                        html.Button('START', id='start_3d', n_clicks=0),
+                        html.Div(id='counts_3d', children=''),
+                        html.Div(id='start_text_3d', children=''),
+                        html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1000, readOnly=False, value=max_counts)]),
                     ]),
 
-            ]),
+                    html.Div(className='t3subdiv', children=[
+                        html.Button('STOP', id='stop_3d', className='action_button'),
+                        html.Div(id='elapsed_3d', children=''),
+                        html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=60, readOnly=False, value=max_seconds)]),
+                        html.Div(id='cps_3d', children=''),
+                        html.Div(id='stop_text_3d', children=''),
+                    ]),
 
-            html.Div(children=[html.Img(id='t3footer', src='https://www.gammaspectacular.com/steven/impulse/footer.gif')]),
-            html.Div(id='polynomial-3d' , children=''),
+                    html.Div(className='t3subdiv', children=[
+                        html.Div(['Select existing file:', dcc.Dropdown(
+                            id='filename-list',
+                            options=options_3d,
+                            value="",
+                            className='dropdown',
+                            optionHeight=40,
+                            style={'text-align': 'left', 'fontSize': '10px'})]),
+                        html.Div(['Or enter new file name:', dcc.Input(id='filename_3d', type='text', value=filename_3d)], style={'marginTop': '5px'}),
+                    ]),
 
-            ]),
-            
-        html.Div(className='tab3-split-div', children=[
-            html.Div(id='chartbox', children=[
-                dcc.Graph(id='chart-3d', figure={}),
-                dcc.Interval(id='interval-component', interval=1000, n_intervals=0),
+                    html.Div(className='t3subdiv', children=[
+                        html.Div('Nothing to see here')
+
+                    ]),
+
+                    html.Div(className='t3subdiv', children=[
+                        html.Div(['Time Interval Sec.', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval)]),
+                    ]),
+
+                    html.Div(className='t3subdiv', children=[
+                        html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch'    , on=epb_switch, color='green')]),
+                        html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch'      , on=log_switch, color='green')]),
+                        html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch'      , on=cal_switch, color='green')]),
+                    ]),
+
+                    html.Div(className='t3subdiv', children=[
+                        html.Div('This 3D spectrum uses calibration data from 2D settings and converts it to 512 channels, so if your spectrum looks good on tab2 it should look the same here.', style={'textAlign':'justifyContent'}),
+                        
+                    ]),
+
+                    html.Div(className='t3subdiv', children=[
+                        html.Div('2D spectrum and 3D spectrum can not run at the same time, record each one separately.'),
+                    ]),
+
+                    html.Div(className='t3subdiv', children=[
+                        html.P('Large arrays take time to load,', style={'textAlign':'center'}),
+                        html.P('patience is a virtue', style={'textAlign':'center'}),
+                        html.P('🙄', style={'textAlign':'center'}),
+                        ]),
+
                 ]),
-            ]),
 
-        # pop up start confirmation
-        dbc.Modal([
-            dbc.ModalBody(id='modal-body-3d'),
-            dbc.ModalBody(children=[
-                html.P('To avoid huge arrays.'),
-                html.P('This histogram is hard coded for 512 channels'),
-                html.P('Longer intervals will further reduce file size.')
-            ], style={'color': 'red', 'align': 'center', 'fontWeight': 'bold', 'textAlign': 'center'}),
-            dbc.ModalFooter([
-                dbc.Button(f"Overwrite {filename_3d}", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
-                dbc.Button("Cancel", id="cancel-overwrite-tab3", className="ml-auto", n_clicks=0),
-            ]),
-        ],
-            id='modal-overwrite-tab3',
-            is_open=False,
-            centered=True,
-            size="md",
-            className="custom-modal",
-        ),
+                html.Div(children=[html.Img(id='t3footer', src='assets/footer.gif')]),
+                html.Div(id='polynomial-3d' , children=''),
+
+                ]),
+                
+            html.Div(className='tab3-split-div', children=[
+                html.Div(id='chartbox', children=[
+                    dcc.Graph(id='chart-3d', figure={}),
+                    dcc.Interval(id='interval-component', interval=1000, n_intervals=0),
+                    ]),
+                ]),
+
+            # pop up start confirmation
+            dbc.Modal([
+                dbc.ModalBody(id='modal-body-3d'),
+                dbc.ModalBody(children=[
+                    html.P('To avoid huge arrays.'),
+                    html.P('This histogram is hard coded for 512 channels'),
+                    html.P('Longer intervals will further reduce file size.')
+                ], style={'color': 'red', 'align': 'center', 'fontWeight': 'bold', 'textAlign': 'center'}),
+                dbc.ModalFooter([
+                    dbc.Button(f"Overwrite {filename_3d}", id="confirm-overwrite-tab3", className="ml-auto", n_clicks=0),
+                    dbc.Button("Cancel", id="cancel-overwrite-tab3", className="ml-auto", n_clicks=0),
+                ]),
+            ],
+                id='modal-overwrite-tab3',
+                is_open=False,
+                centered=True,
+                size="md",
+                className="custom-modal",
+            ),
+
+        ]), # end of tab3-frame    
         
-    ])
+    ]) # end of tab3
 
 app.layout = html.Div([show_tab3()])
 
@@ -307,9 +313,24 @@ def update_output(n_clicks):
      Input('epb-switch'         , 'on'),
      Input('log-switch'         , 'on'),
      Input('cal-switch'         , 'on'),
-     Input('t_interval'         , 'value')]
+     Input('t_interval'         , 'value')],
+     State('theme'              , 'value')
 )
-def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_switch, t_interval):
+def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_switch, t_interval, theme):
+    if theme == 'light-theme':
+        bg_color    = '#fafafa'
+        paper_color = 'white'
+        line_color  = 'black'
+        trace_left  = 'lightblue'
+        trace_right = 'red'
+        trace_dots  = 'black'
+    else:
+        bg_color    = 'black'
+        paper_color = 'black'
+        line_color  = 'white'  
+        trace_left  = 'lightgreen'
+        trace_right = 'pink' 
+        trace_dots  = 'white'
     
     with global_vars.write_lock:
         device          = global_vars.device
@@ -341,6 +362,7 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
     layout = go.Layout(
             uirevision='nochange',
             margin=dict(l=10, r=10, b=10, t=10),
+            paper_bgcolor= bg_color,
             scene=dict(
                 xaxis=dict(title='bins(x)', range=[0, bins_3d]),
                 yaxis=dict(title='time intervals(y)', range=y_range),
@@ -376,16 +398,16 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
 
         traces      = [surface_trace]
         
-        title_text  = f'{filename_3d}_3d.json<br>{start_time}<br>{counts} counts<br>{elapsed} seconds'
+        title_text  = f'{filename_3d}_3d.json | {start_time} | {counts} counts | {elapsed} seconds'
 
         layout.update(
             title={
                 'text': title_text,
-                'x': 0.05,
-                'y': 0.9,
+                'x': 0.02,
+                'y': 0.95,
                 'xanchor': 'left',
                 'yanchor': 'top',
-                'font': {'family': 'Arial', 'size': 16, 'color': 'black'}
+                'font': {'family': 'Arial', 'size': 16, 'color': line_color}
             }
         )
 
