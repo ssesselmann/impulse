@@ -3,7 +3,6 @@ import threading
 import time
 import json
 import binascii
-import re
 import serial
 import shproto
 import shproto.port

@@ -6,7 +6,6 @@ import os
 import json
 import time
 import numpy as np
-import sqlite3 as sql
 import dash_daq as daq
 import dash_bootstrap_components as dbc
 import audio_spectrum as asp
@@ -170,9 +169,6 @@ def show_tab2():
                 ]),
 
                 
-
-
-
             html.Div(id='t2_setting_div3', children=[
                 html.Div(id='compression_div', children=[
                     html.Div(['Resolution:', dcc.Dropdown(id='compression', options=[
@@ -847,7 +843,7 @@ def save_settings(*args):
         global_vars.filename    = args[4]
         global_vars.filename_2  = args[5]
         global_vars.threshold   = int(args[6])
-        global_vars.tolerance   = int(args[7])
+        global_vars.tolerance   = args[7]
         global_vars.peakfinder  = float(args[8])
         global_vars.sigma       = float(args[9])
         global_vars.t_interval  = int(args[10])

@@ -313,6 +313,7 @@ def show_tab1():
                     html.Div(id='audio-distortion', className='tab1-audio-thirds', children=[
                         html.Div(id='showcurve', children=[
                             dcc.Graph(id='curve', figure={'data': [{}], 'layout': {}}),
+                            
                             html.Div('', style={'height': '50px'}),
                             html.Button('Get Distortion Curve',
                                 id='get_curve_btn',
