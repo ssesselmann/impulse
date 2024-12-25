@@ -7,6 +7,7 @@ import serial
 import shproto
 import shproto.port
 import logging
+import re
 import os
 import platform
 import global_vars
