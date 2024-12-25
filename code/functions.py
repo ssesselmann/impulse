@@ -888,8 +888,12 @@ def calibrate_gc(gc, coefficients):
 
 # Opens and reads the isotopes.json file
 def get_isotopes(file_path):
-    with open(file_path, 'r') as file:
-        return json.load(file)
+    try:
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    except:
+        logger.info('functions get_isotopes failed')
+                
 
 # Finds the peaks in gc (Gaussian correlation)
 def find_peaks_in_gc(gc, sigma):
@@ -972,7 +976,8 @@ def save_settings_to_json():
             "shape_uld",
             "val_flag",
             "max_pulse_length",
-            "max_pulse_height"
+            "max_pulse_height",
+            "flags_selected"
             ]}
     
     try:
@@ -1046,7 +1051,8 @@ def load_settings_from_json(path):
                     "shape_uld":            int,
                     "val_flag":             bool,
                     "max_pulse_length":     int,
-                    "max_pulse_height":     int
+                    "max_pulse_height":     int,
+                    "flags_selected":       str
                     }   
 
             for key, value in settings.items():
@@ -1251,3 +1257,28 @@ def capture_pulse_data():
             pulse_data_queue.put(pulse_data)  # Add the list to the queue
     except Exception as e:
         logger.error(f"Error while capturing pulse data: {e}")
+
+
+def get_isotope_options(path):
+    options = []
+    try:
+        # Get all files in the directory
+        for file_name in os.listdir(path):
+            # Check if the file has a .json extension
+            if file_name.endswith('.json'):
+                file_path = os.path.join(path, file_name)
+                label = file_name.replace('.json', '').replace('-', ' ').title()
+                options.append({'label': label, 'value': file_path})
+    except Exception as e:
+        print(f"Error accessing directory: {e}")
+
+    return options
+
+def read_isotopes_data(data_path):
+    try:
+        with open(data_path, 'r') as f:
+            data = json.load(f)
+        return data
+    except Exception as e:
+        print(f"Error reading isotopes data: {e}")
+        return []
