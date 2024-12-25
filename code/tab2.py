@@ -22,7 +22,6 @@ from server import app
 from dash.exceptions import PreventUpdate
 from datetime import datetime
 
-
 # Functions imported
 from functions import (
     calibrate_gc, 
@@ -33,6 +32,8 @@ from functions import (
     get_device_number, 
     get_isotopes, 
     get_options, 
+    get_isotope_options,
+    read_isotopes_data,
     get_path, 
     get_spec_notes, 
     is_valid_json, 
@@ -59,13 +60,14 @@ with global_vars.write_lock:
 
 def show_tab2():
     options_sorted  = get_options()
-
     filtered_options = [option for option in options_sorted if not option['label'].startswith('•')]
+
+    flags_path = os.path.join(data_directory, "i", "tbl")  
+    flag_options =  get_isotope_options(flags_path)
 
     # Load global variables
     with global_vars.write_lock:
         filename        = global_vars.filename
-
     try:
         load_histogram(filename)        # Load last histogram if it exists
     except:
@@ -105,14 +107,13 @@ def show_tab2():
         t_interval      = global_vars.t_interval
         compression     = global_vars.compression
         spec_notes      = global_vars.spec_notes
-        coefficients    = global_vars.coefficients_1
+        coefficients_1  = global_vars.coefficients_1
         coefficients_2  = global_vars.coefficients_2
         slb_switch      = global_vars.suppress_last_bin
         dropped_counts  = global_vars.dropped_counts
         val_flag        = global_vars.val_flag
         theme           = global_vars.theme
-
-        
+        flags_selected  = global_vars.flags_selected
 
     if device < 100 and device:        # Sound card devices
         serial = 'none'
@@ -127,9 +128,6 @@ def show_tab2():
             global_vars.bins = int(8192/compression)    
 
     millisec        = t_interval * 1000
-    counts_warning  = 'red' if max_counts == 0 else 'white'
-    seconds_warning = 'red' if max_seconds == 0 else 'white'
-
 
     html_tab2 = html.Div(id='tab2', children=[
         html.Div(id='tab2-frame', children= [
@@ -153,7 +151,7 @@ def show_tab2():
                     html.Div(id='start-text', children=''),
                     html.Div(id='counts-output', children=''),
                     html.Div(''),
-                    html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1, readOnly=False, value=max_counts, className='input', style={'background-color': counts_warning})]),
+                    html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1, readOnly=False, value=max_counts, className='input')]),
                     html.Div(id='dropped_counts', children=''),
 
                     html.Div(id='tab2-footer', children=[html.Img(src='assets/impulse.gif', style={'width':'200%'})]),
@@ -164,7 +162,7 @@ def show_tab2():
                     html.Button('STOP', id='stop', className='action_button'),
                     html.Div(id='stop-text', children=''),
                     html.Div(id='elapsed', children=''),
-                    html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1, readOnly=False, value=max_seconds, className='input', style={'background-color': seconds_warning})]),
+                    html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1, readOnly=False, value=max_seconds, className='input')]),
                     html.Div(id='cps', children=''),
                 ]),
 
@@ -179,7 +177,7 @@ def show_tab2():
                         {'label': '8192 Bins', 'value': '1'},
                     ], value=compression, clearable=False)], style={'display': serial}),
 
-                    html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, optionHeight=20, style={'textAlign':'left', 'textWrap':None})]),
+                    html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, optionHeight=40, style={'textAlign':'left', 'textWrap':None})]),
                     
                     html.Div(['Or create new file:', dcc.Input(id='filename', type='text', value=filename, placeholder='Enter new filename', disabled=False)]),
 
@@ -219,7 +217,6 @@ def show_tab2():
                 html.Div(['Show Comparison', daq.BooleanSwitch(id='compare_switch', on=False, color='green')]),
                 html.Div(['Subtract Comparison', daq.BooleanSwitch(id='difference_switch', on=False, color='green')]),
                 html.Div(['Coincidence', daq.BooleanSwitch(id='coi-switch', on=coi_switch, color='green')], style={'display': audio}),
-
             ]),
 
             html.Div(id='t2_setting_div6', children=[
@@ -248,13 +245,7 @@ def show_tab2():
                 dcc.Store(id='store-annotations', data=[]),
                 html.Div('Gaussian (sigma)'),
                 html.Div(dcc.Slider(id='sigma', min=0, max=3, step=0.25, value=sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
-                
-                dcc.Dropdown(id='flags', options=[
-                    {'label': 'Common peaks', 'value': 'i/tbl/gamma-a.json'},
-                    {'label': 'Special peaks', 'value': 'i/tbl/gamma-b.json'},
-                    {'label': 'x-ray peaks', 'value': 'i/tbl/xray.json'},
-                    {'label': 'n-capture peaks', 'value': 'i/tbl/ncapture.json'},
-                ], style={'height': '15px', 'fontSize': '10px', 'borderwidth': '0px', 'textAlign':'left'}, value='i/tbl/gamma-a.json', optionHeight=15, clearable=False),
+                dcc.Dropdown(id='flags', options=flag_options, style={'height': '15px', 'fontSize': '10px', 'borderwidth': '0px', 'textAlign':'left'}, value=flags_selected, optionHeight=15, clearable=False),
             ]),
 
             html.Div(id='t2_setting_div8', children=[
@@ -265,7 +256,7 @@ def show_tab2():
                 html.Div(dcc.Input(id='calib_bin_4', type='number', value=calib_bin_4, className='input')),
                 html.Div(dcc.Input(id='calib_bin_5', type='number', value=calib_bin_5, className='input')),
                 html.Div('Peak width (bins)'),
-                html.Div(dcc.Slider(id='peakfinder', min=0, max=15, step=None, value=peakfinder, marks={0:'-',1:'1',3:'3',5:'5',7:'7',9:'9',11:'11', 13:'13', 15:'15'})),
+                html.Div(dcc.Slider(id='peakfinder', min=0, max=15, step=None, value=peakfinder, marks={'~':0, 1:'1',3:'3',5:'5',7:'7',9:'9',11:'11', 13:'13', 15:'15'})),
                 html.Div(['values <-> isotopes', daq.BooleanSwitch(id='val-flag', on=val_flag, color='green')]),
 
                 html.Div(id='publish-output', children=''),
@@ -282,16 +273,12 @@ def show_tab2():
                     dcc.Textarea(id='spec-notes-input', value=spec_notes, placeholder='spectrum notes', cols=18, rows=6)]),
                 html.Div(id='spec-notes-output', children='', style={'visibility': 'hidden'}),
             ]),
-
-
-        
         
         ]), # End of tab2-main-div
         
     ])  # End of tab2
 
     return html_tab2
-
 
 # User selection of existing file
 @app.callback(
@@ -422,7 +409,6 @@ def stop_button(n_clicks, dn):
         logger.info('tab2-stop button device is PRO\n')
     return
 
-
 # Update histogram interval function
 @app.callback([
     Output('bar_chart'           , 'figure'), 
@@ -480,15 +466,14 @@ def update_graph(
     # Prepare variables
     coincidence     = 'coincidence<br>(left if right)' if coi_switch else ""
     annotations     = []
-    coefficients    = []
+    coefficients_1  = []
     lines           = []
     gaussian        = []
     now             = datetime.now()
     date            = now.strftime('%d-%m-%Y')
     prefixx         = 'bin'
     prefixy         = 'cts'
-    path_isotopes   = os.path.join(data_directory, flags)
-    isotopes_data   = get_isotopes(path_isotopes)
+    isotopes_data   = get_isotopes(flags)
 
     if epb_switch:
         log_switch = False
@@ -639,15 +624,18 @@ def update_graph(
 
             if epb_switch:
                 y_pos_ann = y_pos
+                bin_counts = bin_counts / peak_index
 
             # If calibrated peak
             suffix = " keV" if cal_switch else " "
 
             if cal_switch:
                 peak_value = round(np.polyval(np.poly1d(coefficients_1), peak_index), 2)
+                pitch = peak_value/peak_index
                 prefixx = " "
             else:
-                prefixx = "bin:"   
+                prefixx = "bin:"
+                pitch = 1   
 
             # Adjust for log scale
             if log_switch:
@@ -656,16 +644,20 @@ def update_graph(
             # Set annotation text
             if val_flag and cal_switch:
                 # Use matched isotopes data if available
-                iso_list = isotopes_match.get(i, (None, None, []))[2]
-                annotation_text = ", ".join([f"{iso['isotope']} ({iso['energy']} keV)" for iso in iso_list])
+                iso_list        = isotopes_match.get(i, (None, None, []))[2]
+                iso_list        = read_isotopes_data(flags)
+                energy_range    = peakfinder * pitch
+                # Filter isotopes based on energy match
+                matched_isotopes = [iso for iso in iso_list if abs(iso['energy'] - peak_value) <= energy_range]
+                # Create annotation text from matched isotopes
+                if matched_isotopes:
+                    annotation_text = ", ".join(
+                        [f"{iso['isotope']} ({iso['energy']} keV)" for iso in matched_isotopes]
+                    )
+                else:
+                    annotation_text = f""
             else:
                 annotation_text = f"{prefixx}{peak_value}{suffix}|cts:{bin_counts} ({resolution:.1f}%)"
-
-            # Show energy per bin
-            if epb_switch and cal_switch:
-                # Display the product of energy and counts
-                formatted_value = f"{int(peak_value * bin_counts):,}"
-                annotation_text = f"{formatted_value} keV*cts" 
 
             # Add annotation
             annotations.append(dict(
@@ -716,7 +708,7 @@ def update_graph(
         'y': 0.95,
         'xanchor': 'left',
         'yanchor': 'top',
-        'font': {'family': 'Arial', 'size': 15, 'color': 'black'},
+        'font': {'family': 'Arial', 'size': 15, 'color': line_color},
     }
 
     # Process comparison if available
@@ -831,7 +823,8 @@ def update_graph(
      Input('cal-switch'         , 'on'),  # [14]
      Input('coi-switch'         , 'on'),  # [15]
      Input('slb-switch'         , 'on'),  # [16]
-     Input('val-flag'           , 'on')]  # [17]
+     Input('val-flag'           , 'on'),  # [17]
+     Input('flags'              , 'value')] # [18]
 )
 def save_settings(*args):
 
@@ -855,7 +848,8 @@ def save_settings(*args):
         global_vars.suppress_last_bin = args[16]
         if global_vars.device > 100:
             global_vars.bins = int(8192 / int(args[11]))
-        global_vars.val_flag    = args[17]    
+        global_vars.val_flag    = args[17]  
+        global_vars.flags_selected = args[18]  
 
     save_settings_to_json()
     logger.info(f'Settings updated from tab2\n')
@@ -881,28 +875,26 @@ def save_calibrations(*args):
     x_bins      = [x for x in [args[0], args[1], args[2], args[3], args[4]] if x is not None and x > 0]
     x_energies  = [y for y in [args[5], args[6], args[7], args[8], args[9]] if y is not None and y > 0]
 
-    coefficients = []
+    coefficients_1 = []
 
     # Handle different cases based on the number of valid calibration points
     if len(x_bins) == 1 and len(x_energies) == 1:
         m = x_energies[0] / x_bins[0]
-        coefficients = [0, m, 0]  # Assume linear (y = mx, with c = 0)
+        coefficients_1 = [0, m, 0]  # Assume linear (y = mx, with c = 0)
         message = "Linear one point calibration"
 
     elif len(x_bins) == 2 and len(x_energies) == 2:
-        coefficients = np.polyfit(x_bins, x_energies, 1).tolist()
-        coefficients = [0] + coefficients  # Convert to [0, b, c]
+        coefficients_1 = np.polyfit(x_bins, x_energies, 1).tolist()
+        coefficients_1 = [0] + coefficients_1  # Convert to [0, b, c]
         message = "Linear two point calibration"
 
     elif len(x_bins) >= 3 and len(x_energies) >= 3:
-        coefficients = np.polyfit(x_bins, x_energies, 2).tolist()
+        coefficients_1 = np.polyfit(x_bins, x_energies, 2).tolist()
         message = "Second-order polynomial fit"
 
     else:
         message = "Warning: Insufficient calibration points"
         return message  # Exit the function gracefully
-
-    polynomial_fn = np.poly1d(coefficients)
 
     # Safely write to global variables
     with global_vars.write_lock:
@@ -916,10 +908,15 @@ def save_calibrations(*args):
         global_vars.calib_e_3   = int(args[7]) if args[7] is not None else 0
         global_vars.calib_e_4   = int(args[8]) if args[8] is not None else 0
         global_vars.calib_e_5   = int(args[9]) if args[9] is not None else 0
-        global_vars.coeff_1     = round(coefficients[0], 6)
-        global_vars.coeff_2     = round(coefficients[1], 6)
-        global_vars.coeff_3     = round(coefficients[2], 6)
-        global_vars.coefficients_1 = coefficients
+        global_vars.coeff_1     = round(coefficients_1[0], 6)
+        global_vars.coeff_2     = round(coefficients_1[1], 6)
+        global_vars.coeff_3     = round(coefficients_1[2], 6)
+        global_vars.coefficients_1 = coefficients_1
+
+    save_settings_to_json()
+    logger.info(f'Tab2 - calibration updated\n')
+
+    polynomial_fn = np.poly1d(coefficients_1)
 
     return f'{message} = {polynomial_fn}'
 
@@ -1019,7 +1016,6 @@ def update_spectrum_notes(spec_notes, filename):
         logger.info(f'tab2 spectrum notes updated {spec_notes}\n')
 
     return spec_notes
-
 
 # callback for exporting to csv
 @app.callback(Output('export_histogram_output'  , 'children'),
