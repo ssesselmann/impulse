@@ -65,7 +65,7 @@ textarea {
 /* Dropdown option styling */
 .Select-option {
     background-color: black !important;
-    color: white !important;
+    color: white;
 }
 
 .Select-value-label {
