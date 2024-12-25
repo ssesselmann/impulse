@@ -25,12 +25,13 @@ cps             = 0
 counts          = 0
 dropped_counts  = 0
 count_history   = []
-suppress_last_bin = False
 compression     = 1
-polynomial_fn   = ''
+polynomial_fn   = ""
 max_pulse_shape = []
+suppress_last_bin = False
 max_pulse_length = 20
-max_pulse_height  = 3000
+max_pulse_height = 3000
+flags_selected   = ""
 
 # Spectrum 2 comparison
 filename_2      = ""
