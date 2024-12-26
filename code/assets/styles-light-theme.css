@@ -377,7 +377,8 @@ textarea {
 }
 
 #calibration-output {
-	font-size: 10px;
+	font-family:Arial;
+	font-size: 16px;
 	margin-left:30px;
 }
 

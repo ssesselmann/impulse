@@ -428,7 +428,9 @@ textarea {
 }
 
 #calibration-output {
-	font-size: 10px;
+	font-family:Arial;
+	font-size: 16px;
+	color:white;
 	margin-left:30px;
 }
 
