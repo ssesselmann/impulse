@@ -41,7 +41,7 @@ load_settings_from_json(path)
 with global_vars.write_lock:
     theme = global_vars.theme
 
-logger.info(f"Selected theme: {theme}")
+logger.info(f"Selected theme: {theme}\n")
 
 # Set assets_folder based on platform and bundled environment
 if getattr(sys, 'frozen', False):  # Check if running as a bundled app
@@ -52,7 +52,7 @@ if getattr(sys, 'frozen', False):  # Check if running as a bundled app
 else:
     assets_folder = 'assets'  # Default to local `assets` for development
 
-logger.info(f"Assets folder set to: {assets_folder}")
+logger.info(f"Assets folder set to: {assets_folder}\n")
 
 # Flask route to serve CSS files from the correct assets path
 @server.route('/assets/<filename>')
