@@ -3,11 +3,11 @@ import threading
 import time
 import json
 import binascii
+import re
 import serial
 import shproto
 import shproto.port
 import logging
-import re
 import os
 import platform
 import global_vars
@@ -54,12 +54,12 @@ def start(sn=None):
         shproto.dispatcher.stopflag = 0
     nano = shproto.port.connectdevice(sn)
     if not nano:
-        logger.error("Failed to connect to device.")
+        logger.error("Failed to connect to MAX.")
         return
     else:
         nano.flushInput()
         nano.flushOutput()
-    logger.info("Device connected successfully.")
+    logger.info("MAX connected successfully.")
     response = shproto.packet()
     while not shproto.dispatcher.stopflag:
         if shproto.dispatcher.command is not None and len(shproto.dispatcher.command) > 0:
@@ -102,13 +102,13 @@ def start(sn=None):
                     if re.search('^VERSION', resp_decoded):
                         shproto.dispatcher.inf_str = resp_decoded
                         shproto.dispatcher.inf_str = re.sub(r'\[[^]]*\]', '...', shproto.dispatcher.inf_str, count=2)
-                        logger.info(f"Got nano-pro settings:{shproto.dispatcher.inf_str} \n")
+                        logger.info(f"Got MAX settings:{shproto.dispatcher.inf_str} \n")
                 except UnicodeDecodeError:
                     logger.info("Unknown non-text response in dispatcher line 100\n")
 
                 if len(resp_lines) == 40:
                     shproto.dispatcher.serial_number = "{}".format(resp_lines[39])
-                    logger.info("Found nano-pro serial # {}\n".format(shproto.dispatcher.serial_number))
+                    logger.info("Found MAX serial # {}\n".format(shproto.dispatcher.serial_number))
                     b_str = ''
                     for b in resp_lines[0:10]:
                         b_str += b
@@ -335,7 +335,7 @@ def process_01(filename, compression, device, t_interval):
                 "filename": filename,
                 "count_history": count_history,
                 "elapsed": elapsed,
-                "droppedPulseCount" : 0
+                "droppedPulseCount": 0
             }
 
             cps_file_path = os.path.join(data_directory, f'{filename}_cps.json')
