@@ -303,10 +303,10 @@ textarea {
 }
 
 .tab1-header-thirds {
-	  flex: 1; 
+	flex: 1; 
     width:33%;
-    height:100%;
     float:left;
+    height:50px;
 }
 
 #tab1-serial-div {

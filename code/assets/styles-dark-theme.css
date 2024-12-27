@@ -340,10 +340,10 @@ textarea {
 }
 
 .tab1-header-thirds {
-	  flex: 1; 
+	flex: 1; 
     width:33%;
-    height:100%;
     float:left;
+    height:50px;
 }
 
 #serial-device-info-table th {
