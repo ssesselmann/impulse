@@ -59,7 +59,7 @@ def start(sn=None):
     else:
         nano.flushInput()
         nano.flushOutput()
-    logger.info("MAX connected successfully.")
+    logger.info("MAX connected successfully.\n")
     response = shproto.packet()
     while not shproto.dispatcher.stopflag:
         if shproto.dispatcher.command is not None and len(shproto.dispatcher.command) > 0:
@@ -79,11 +79,17 @@ def start(sn=None):
             time.sleep(0.1)
             continue
         READ_BUFFER = max(nano.in_waiting, READ_BUFFER)
+        
         try:
             rx_byte_arr = nano.read(size=READ_BUFFER)
         except serial.SerialException as e:
-            logger.error(f"SerialException: {e}\n")
+            if "device disconnected" in str(e):
+                logger.error("Device disconnected. Attempting to reconnect...")
+                # Add reconnection logic or gracefully terminate
+            else:
+                logger.error(f"SerialException: {e}")
             break
+
         for rx_byte in rx_byte_arr:
             response.read(rx_byte)
             if response.dropped:
@@ -192,7 +198,7 @@ def start(sn=None):
                                                            ((response.payload[17] & 0xFF) << 24)
                 response.clear()
             else:
-                logger.info("Received: cmd:{}\r\npayload: {}\n".format(response.cmd, response.payload))
+                #logger.info("Received: cmd:{}\r\npayload: {}\n".format(response.cmd, response.payload))
                 response.clear()
     nano.close()
 
