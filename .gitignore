@@ -10,6 +10,7 @@ __pycache__/
 /code/.*
 /code/impulse.log
 /code/impulse_last_run.log
+/code/max-pulse-check.csv
 
 codesign.txt
 codesign.log
