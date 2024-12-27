@@ -67,23 +67,20 @@ def get_serial_device_information():
         # Temporarily stop pulse data mode
         process_03('-sto')  # Stop pulse data
         time.sleep(0.05)
+
         process_03('-mode 0')  # Reset to default mode
         time.sleep(0.05)
 
         # Send the `"-inf"` command
         with shproto.dispatcher.command_lock:
             shproto.dispatcher.command = "-inf"
-            logger.info("Command '-inf' sent to dispatcher")
+            time.sleep(0.5)  # Allow time for response
         
-        time.sleep(0.1)  # Allow time for response
-
         # Retrieve the device information
         with shproto.dispatcher.command_lock:
             device_info = shproto.dispatcher.inf_str
-            logger.info(f"Retrieved device information: {device_info}")
+            time.sleep(0.05)
             shproto.dispatcher.inf_str = ""  # Clear for subsequent commands
-        
-        time.sleep(0.01)
 
         return device_info if device_info else "No response from device"
 
@@ -706,6 +703,7 @@ def publish_spectrum(filename):
 def update_json_notes(filename, spec_notes):
     with global_vars.write_lock:
         data_directory = global_vars.data_directory
+        coefficients_1 = global_vars.coefficients_1
 
     try:
         file_path = f'{data_directory}/{filename}.json'
@@ -717,6 +715,7 @@ def update_json_notes(filename, spec_notes):
         # Update the notes
         if "data" in data and isinstance(data["data"], list) and "sampleInfo" in data["data"][0]:
             data["data"][0]["sampleInfo"]["note"] = spec_notes
+            data["data"][0]["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"] = coefficients_1[::-1]
         else:
             logger.error(f"Unexpected JSON structure in {filename}.json\n")
             return
