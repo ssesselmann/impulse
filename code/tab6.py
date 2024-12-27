@@ -183,6 +183,9 @@ def show_tab6():
                 html.P('All calibration settings are on the 2D histogram tab, in this version you can enter up to 5 calibration points (bin = energy), the program will accept any number of calibration points from 1 to 5. When there are less than 3 calibration points a linear function is applied, and above this it defaults to a polynomial function. These calibration settings are automatically used for the 3D spectrum on tab3. The calibration switch turns the calibration on or off.'),
                 html.P('Note !! Your standard calibration points are saved to your local settings.json, new spectra start recording with these settings. This is convenient if you are using the same detector setup all the time.'),
 
+                html.H4('Recalibrate button'),
+                html.P('This button allows you to update the notes and calibration settings of an existing pre-recorded spectrum file, great for making small adjustments to your files'),
+
                 html.H4('Suppress Last Bin', style={'display': serial}),
                 html.P('This is a boolean switch, which only appears for serial devices. When switch is OFF any counts with pulse height higher than the last bin will accumulate in the last bin, setting this swich to ON soppresses the last bin.', style={'display': serial}),
 
@@ -197,8 +200,8 @@ def show_tab6():
                 html.H4('Toggle flags'),
                 html.P('This switch allows you to lookup [bin number and counts], [energy and counts] or [isotope and energy]. Isotopes libraries are stored in the data folder and can be selected from the pulldown menu. Note: Spectrum must be accurately calibrated for isotope flags to show.'),
 
-                html.H4('Isotope Library'),
-                html.P('There are several isotope lists in your data folder, these are stored in json format and can be selected from the pulldown menu on tab2. Common and less common gamma emitting isotopes have been separated into two tables to prevent too many showing on the screeen'),
+                html.H4('Isotope Lists'),
+                html.P('There are several isotope lists in your data folder, these are stored in json format and can be selected from the pulldown menu on tab2. Common and less common gamma emitting isotopes have been separated into two tables to prevent too many showing on the screeen. You can duplicate and create your own isotope lists in json format and place them in the tbl directory. These will automatically appear in the pulldown selection menu (after browser refresh).'),
 
                 html.H4('Gaussian Correlation'),
                 html.P('This function identifies peaks which are hard to see with the naked eye, it takes the normalized spectrum and calculates the dot product of the gaussian shape with a standard deviation dependent bin number, the slider adjusts sigma, which determines how many bins to average the gaussian function.'),
