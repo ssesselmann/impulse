@@ -134,7 +134,6 @@ def show_tab2():
             dcc.Input(id='theme', type='text', value=f'{theme}', style={'display': 'none'}),
             dcc.Interval(id='interval-component', interval=millisec, n_intervals=0), 
             html.Div(id='settings_output', children=''),
-
             html.Div(id='bar_chart_div', children=[
                 html.A("Learn", id="tooltip-link", href="#", style={"fontSize": "small", "textDecoration": "underline", "color": "blue", "margin-left":"30px"}),
                 html.Div(id='calibration-output', children=''),
@@ -148,7 +147,7 @@ def show_tab2():
 
                 html.Div(id='t2_setting_div1', children=[
                     html.Button('START', id='start', n_clicks=0),
-                    html.Div(id='start-text', children=''),
+                    
                     html.Div(id='counts-output', children=''),
                     html.Div(''),
                     html.Div(['Max Counts', dcc.Input(id='max_counts', type='number', step=1, readOnly=False, value=max_counts, className='input')]),
@@ -160,7 +159,6 @@ def show_tab2():
                 html.Div(id='t2_setting_div2', children=[
                     dcc.Store(id='store-device', data=device),
                     html.Button('STOP', id='stop', className='action_button'),
-                    html.Div(id='stop-text', children=''),
                     html.Div(id='elapsed', children=''),
                     html.Div(['Max Seconds', dcc.Input(id='max_seconds', type='number', step=1, readOnly=False, value=max_seconds, className='input')]),
                     html.Div(id='cps', children=''),
@@ -177,9 +175,11 @@ def show_tab2():
                         {'label': '8192 Bins', 'value': '1'},
                     ], value=compression, clearable=False)], style={'display': serial}),
 
-                    html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=options_sorted, value=filename, optionHeight=40, style={'textAlign':'left', 'textWrap':None})]),
+                    html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=filtered_options, value=filename, optionHeight=40, style={'textAlign':'left', 'textWrap':None})]),
                     
                     html.Div(['Or create new file:', dcc.Input(id='filename', type='text', value=filename, placeholder='Enter new filename', disabled=False)]),
+                    html.Div(id='stop-text', children=''),
+                    html.Div(id='start-text', children=''),
 
                     
                     dbc.Modal([
@@ -217,13 +217,15 @@ def show_tab2():
                 html.Div(['Show Comparison', daq.BooleanSwitch(id='compare_switch', on=False, color='green')]),
                 html.Div(['Subtract Comparison', daq.BooleanSwitch(id='difference_switch', on=False, color='green')]),
                 html.Div(['Coincidence', daq.BooleanSwitch(id='coi-switch', on=coi_switch, color='green')], style={'display': audio}),
+                html.Div(['Supress Last Bin', daq.BooleanSwitch(id='slb-switch', on=slb_switch, color='green')], style={'display': serial}),
+
             ]),
 
             html.Div(id='t2_setting_div6', children=[
                 html.Div(['Energy by bin', daq.BooleanSwitch(id='epb-switch', on=epb_switch, color='green')]),
                 html.Div(['Show log(y)', daq.BooleanSwitch(id='log-switch', on=log_switch, color='green')]),
                 html.Div(['Calibration', daq.BooleanSwitch(id='cal-switch', on=cal_switch, color='green')]),
-                html.Div(['Supress Last Bin', daq.BooleanSwitch(id='slb-switch', on=slb_switch, color='green')], style={'display': serial}),
+                html.Div(['values <-> isotopes', daq.BooleanSwitch(id='val-flag', on=val_flag, color='green')]),
             ]),
 
             html.Div(id='t2_setting_div7', children=[
@@ -240,11 +242,13 @@ def show_tab2():
                     ])], id="confirmation-modal", centered=True, size="md", className="custom-modal"),
 
                 dcc.Store(id="confirmation-output", data=''),
-                #html.Button('isotope flags', id='toggle-annotations-button', n_clicks=0, className="action_button"),
                 dcc.Store(id='store-gaussian'),
                 dcc.Store(id='store-annotations', data=[]),
                 html.Div('Gaussian (sigma)'),
                 html.Div(dcc.Slider(id='sigma', min=0, max=3, step=0.25, value=sigma, marks={0: '0', 1: '1', 2: '2', 3: '3'})),
+                html.Div('Peak width (bins)'),
+                html.Div(dcc.Slider(id='peakfinder', min=0, max=15, step=1, value=peakfinder, marks={0:'off', 1:'',3:'',5:'',7:'',9:'',11:'', 13:'', 15:'15'})),
+                html.Div('Isotope lists'),
                 dcc.Dropdown(id='flags', options=flag_options, style={'height': '15px', 'fontSize': '10px', 'borderwidth': '0px', 'textAlign':'left'}, value=flags_selected, optionHeight=15, clearable=False),
             ]),
 
@@ -255,11 +259,10 @@ def show_tab2():
                 html.Div(dcc.Input(id='calib_bin_3', type='number', value=calib_bin_3, className='input')),
                 html.Div(dcc.Input(id='calib_bin_4', type='number', value=calib_bin_4, className='input')),
                 html.Div(dcc.Input(id='calib_bin_5', type='number', value=calib_bin_5, className='input')),
-                html.Div('Peak width (bins)'),
-                html.Div(dcc.Slider(id='peakfinder', min=0, max=15, step=None, value=peakfinder, marks={'~':0, 1:'1',3:'3',5:'5',7:'7',9:'9',11:'11', 13:'13', 15:'15'})),
-                html.Div(['values <-> isotopes', daq.BooleanSwitch(id='val-flag', on=val_flag, color='green')]),
-
+                html.Button('Re-calibrate', id='recalibrate', className='action_button'),
                 html.Div(id='publish-output', children=''),
+                html.Div(id='publish-output2', children=''),
+
             ]),
 
             html.Div(id='t2_setting_div9', children=[
@@ -280,17 +283,30 @@ def show_tab2():
 
     return html_tab2
 
-# User selection of existing file
+# Dropdown filename selection or start new file
 @app.callback(
-    Output('filename'       , 'value'),
-    [Input('filenamelist'   , 'value')],
-    [State('filename'       , 'value')]
+    [Output('filename'          , 'value'),
+    Output('spec-notes-input'   , 'value')],
+    [Input('filenamelist'       , 'value')],
+    [State('filename'           , 'value')]
 )
 def update_filename_from_dropdown(selected_file, current_filename):
     if selected_file:
+        clear_global_vars(2)
         load_histogram(selected_file)
-        return selected_file
-    return current_filename
+
+        with global_vars.write_lock:
+            spec_notes = global_vars.spec_notes
+
+        return selected_file, spec_notes
+
+    clear_global_vars(2)
+    with global_vars.write_lock:
+            spec_notes = global_vars.spec_notes
+            current_filename = global_vars.filename
+
+
+    return current_filename, spec_notes
 
 # Modal - pop up confirmation screen
 @app.callback(
@@ -361,12 +377,15 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
                 dispatcher.start()
 
                 shproto.dispatcher.process_03('-mode 0')
+                time.sleep(0.05)
                 logger.info(f'tab2 restores -mode 0\n')
 
                 shproto.dispatcher.process_03('-rst')
+                time.sleep(0.05)
                 logger.info(f'tab2 sends reset command -rst\n')
 
                 shproto.dispatcher.process_03('-sta')
+                time.sleep(0.05)
                 logger.info(f'tab2 sends start command -sta\n')
 
                 shproto.dispatcher.process_01(filename, compression, "MAX", t_interval)
@@ -384,7 +403,7 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
 
 # Stop Button function--------------
 @app.callback(
-    Output('stop-text'      , 'children'),
+    [Output('stop-text'     , 'children')],
     [Input('stop'           , 'n_clicks')],
     [State('store-device'   , 'data')]
 )
@@ -407,7 +426,11 @@ def stop_button(n_clicks, dn):
     else:
         stop_recording()
         logger.info('tab2-stop button device is PRO\n')
-    return
+
+    options_sorted  = get_options()
+    filtered_options = [option for option in options_sorted if not option['label'].startswith('•')]
+         
+    return ["Recording stopped"]
 
 # Update histogram interval function
 @app.callback([
@@ -420,8 +443,8 @@ def stop_button(n_clicks, dn):
     [Input('interval-component'  , 'n_intervals'),
     Input('bar_chart'            , 'relayoutData'),
     Input('store-annotations'    , 'data'), 
-    Input('filename'            , 'value')],
-    [State('epb-switch'           , 'on'),
+    Input('filename'             , 'value')],
+    [State('epb-switch'          , 'on'),
     State('log-switch'           , 'on'),
     State('cal-switch'           , 'on'),
     State('filename_2'           , 'value'),
@@ -473,7 +496,7 @@ def update_graph(
     date            = now.strftime('%d-%m-%Y')
     prefixx         = 'bin'
     prefixy         = 'cts'
-    isotopes_data   = get_isotopes(flags)
+    isotopes_data   = get_isotopes(flags or {})
 
     if epb_switch:
         log_switch = False
@@ -605,9 +628,10 @@ def update_graph(
     # If calibrated, find isotopes matches
     if cal_switch:
         calibrated_peaks = [(np.polyval(np.poly1d(coefficients_1), peak), y[peak]) for peak in peaks]
-        isotopes_match = matching_isotopes(calibrated_peaks, isotopes_data, peakfinder)
-    else:
-        isotopes_match = {}
+        try:
+            isotopes_match = matching_isotopes(calibrated_peaks, isotopes_data, peakfinder)
+        except:
+            isotopes_match = {}
 
     # Annotate peaks if peakfinder != 0
     if peakfinder != 0:
@@ -705,7 +729,7 @@ def update_graph(
     title_dict = {
         'text': f'{filename} - {counts} valid counts - {dropped_counts} lost counts - {elapsed} seconds - {coincidence} - {date}',
         'x': 0.02,
-        'y': 0.95,
+        'y': 0.96,
         'xanchor': 'left',
         'yanchor': 'top',
         'font': {'family': 'Arial', 'size': 15, 'color': line_color},
@@ -801,7 +825,7 @@ def update_graph(
         title=title_dict
     )
 
-    return fig, f'{counts}', f'{elapsed}', f'cps {cps}', f'{dropped_counts} lost counts ', gaussian
+    return fig, f'{counts or 0}', f'{elapsed or 0}', f'cps {cps or 0}', f'{dropped_counts or 0} lost counts ', gaussian or []
 
 # Save settings callback function
 @app.callback(
@@ -864,12 +888,14 @@ def save_settings(*args):
      Input('calib_bin_3', 'value'),  # [2]
      Input('calib_bin_4', 'value'),  # [3]
      Input('calib_bin_5', 'value'),  # [4]
-     Input('calib_e_1', 'value'),    # [5]
-     Input('calib_e_2', 'value'),    # [6]
-     Input('calib_e_3', 'value'),    # [7]
-     Input('calib_e_4', 'value'),    # [8]
-     Input('calib_e_5', 'value')]    # [9]
-)
+     Input('calib_e_1'  , 'value'),    # [5]
+     Input('calib_e_2'  , 'value'),    # [6]
+     Input('calib_e_3'  , 'value'),    # [7]
+     Input('calib_e_4'  , 'value'),    # [8]
+     Input('calib_e_5'  , 'value'),
+     Input('cal-switch' , 'on'),
+     Input('val-flag'   , 'on')],
+)   
 def save_calibrations(*args):
     # Ensure that only valid numerical inputs (not None and greater than 0) are included
     x_bins      = [x for x in [args[0], args[1], args[2], args[3], args[4]] if x is not None and x > 0]
@@ -918,7 +944,7 @@ def save_calibrations(*args):
 
     polynomial_fn = np.poly1d(coefficients_1)
 
-    return f'{message} = {polynomial_fn}'
+    return f'{message} [{polynomial_fn}]'
 
 
 # Callback function for playing sound
@@ -998,13 +1024,17 @@ def display_confirmation_result(confirm_publish_clicks, cancel_publish_clicks, f
 
     return ""
 
-#update spectrum notes
+#update spectrum notes and calibration 
 @app.callback(
     Output('spec-notes-output'  , 'children'),
-    [Input('spec-notes-input'   , 'value'),
-     Input('filename'           , 'value')],
+    Output('publish-output2'    , 'children'),
+    Input('recalibrate'         , 'n_clicks'),
+    [State('spec-notes-input'   , 'value'),
+    State('filename'            , 'value')],
 )
-def update_spectrum_notes(spec_notes, filename):
+def update_spectrum_notes(n_clicks, spec_notes, filename):
+    if n_clicks is None:
+        raise PreventUpdate
 
     with global_vars.write_lock:
         global_vars.spec_notes = spec_notes
@@ -1013,13 +1043,16 @@ def update_spectrum_notes(spec_notes, filename):
                 
         update_json_notes(filename, spec_notes)
 
-        logger.info(f'tab2 spectrum notes updated {spec_notes}\n')
 
-    return spec_notes
+    logger.info(f'tab2 spectrum notes updated {spec_notes}\n')
+
+    confirmation = f"Spectrum notes and calibration written to {filename}.json"    
+
+    return spec_notes, confirmation
 
 # callback for exporting to csv
 @app.callback(Output('export_histogram_output'  , 'children'),
-              Input('export-histogram'         , 'value'),
+              Input('export-histogram'          , 'value'),
               State('cal-switch'                , 'on')
               )
 def export_histogram(filename, cal_switch):
