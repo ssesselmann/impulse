@@ -66,9 +66,9 @@ def get_serial_device_information():
     try:
         # Temporarily stop pulse data mode
         process_03('-sto')  # Stop pulse data
-        time.sleep(0.01)
+        time.sleep(0.05)
         process_03('-mode 0')  # Reset to default mode
-        time.sleep(0.01)
+        time.sleep(0.05)
 
         # Send the `"-inf"` command
         with shproto.dispatcher.command_lock:
@@ -763,9 +763,9 @@ def generate_device_settings_table():
     dispatcher = threading.Thread(target=shproto.dispatcher.start)
     dispatcher.start()
     process_03('-sto')  # Stop ongoing operations
-    time.sleep(0.01)  # Allow time for the device to process
+    time.sleep(0.05)  # Allow time for the device to process
     process_03('-mode 0')  # Reset mode to default
-    time.sleep(0.01)
+    time.sleep(0.05)
     process_03('-cal')  # Calibration command
 
     # Retrieve device information
@@ -1227,10 +1227,11 @@ def format_date(iso_datetime_str):
 def start_max_pulse_check():
     try:
         process_03('-mode 2')  # Switch to pulse mode
-        time.sleep(0.01)
+        time.sleep(0.05)
         process_03('-dbg 2000 8000')  # Filter pulses between 2000 and 8000
-        time.sleep(0.01)
+        time.sleep(0.05)
         process_03('-sta')  # Start recording
+        time.sleep(0.05)
     except Exception as e:
         logger.error(f"Error in process_03 command: {e}")
         return True  # Signal that the interval should remain disabled
@@ -1243,9 +1244,9 @@ def start_max_pulse_check():
 def stop_max_pulse_check():
     try:
         process_03('-sto')  # Stop recording
-        time.sleep(0.01)
+        time.sleep(0.05)
         process_03('-mode 0')  # Reset mode to default
-
+        time.sleep(0.05)
     except Exception as e:
         logger.error(f"Error in process_03 command: {e}")
     
