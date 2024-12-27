@@ -762,16 +762,23 @@ def generate_device_settings_table():
     shproto.dispatcher.spec_stopflag = 0
     dispatcher = threading.Thread(target=shproto.dispatcher.start)
     dispatcher.start()
+    
     process_03('-sto')  # Stop ongoing operations
-    time.sleep(0.05)  # Allow time for the device to process
+    time.sleep(0.10) 
+
     process_03('-mode 0')  # Reset mode to default
-    time.sleep(0.05)
+    time.sleep(0.10)
+
     process_03('-cal')  # Calibration command
+    time.sleep(0.10)
 
     # Retrieve device information
     dev_info = get_serial_device_information()
-    info_dict = parse_device_info(dev_info)
+    time.sleep(0.10)
 
+    info_dict = parse_device_info(dev_info)
+    time.sleep(0.10)
+    
     serial = shproto.dispatcher.serial_number
 
     table = dash_table.DataTable(
@@ -1146,9 +1153,12 @@ def load_histogram_3d(filename):
     file_path = os.path.join(global_vars.data_directory, f'{filename}_3d.json')
     
     if not os.path.exists(file_path):
+
         logger.error(f"Load_histogram_3d, file not found: {file_path}\n")
+
         with global_vars.write_lock:
             global_vars.histogram_3d = [[0] * 512] * 10  
+            
         return
 
     try:
