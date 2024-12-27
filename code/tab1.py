@@ -13,7 +13,6 @@ import shproto.dispatcher
 import time
 import dash_daq as daq
 import global_vars
-from shproto.dispatcher import process_03, start
 from dash import dcc, html, dash_table, no_update
 from dash.dependencies import Input, Output, State
 from server import app
