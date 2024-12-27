@@ -59,7 +59,7 @@ def show_tab1():
 
     # Generate audio and serial device lists
     try:
-        adl = fn.get_device_list()          
+        adl = fn.get_device_list()  
         sdl = fn.get_serial_device_list()   
         dl = adl + sdl   
         options = [{'label': filename, 'value': index} for filename, index in dl]
@@ -105,7 +105,8 @@ def show_tab1():
                     html.Div(id='selected_device_text', children=''),
                 ]), # end news
 
-                html.Div(id='tab1-heading-center', className='tab1-header-thirds', children=[html.H1('Device Selection and Settings')], style={'text-align':'left',}),
+                html.Div(id='tab1-heading-center', className='tab1-header-thirds', children=[html.H1('Device Selection and Settings')]),
+                html.Div(id='tab1-heading-right', className='tab1-header-thirds', children=[""]),
 
                 html.Div(id='sampling_time_output', className='tab1-header-thirds', children='', style=audio_style),
 
@@ -564,16 +565,24 @@ def distortion_curve(n_clicks, stereo, theme):
 
 
 @app.callback(
-    [Output('command_output'            , 'children'),
-     Output('serial-device-info-table'  , 'children'),
-     Output('cmd-input'                 , 'value')],
-    [Input('submit-cmd'                 , 'n_clicks'),
-    Input('cmd-input'                   , 'n_submit')],
-    [State('cmd-input'                  , 'value')]
+    [
+    Output('command_output'             , 'children'),
+    Output('serial-device-info-table'   , 'children'),
+    Output('cmd-input'                  , 'value')
+    ],
+    [
+    Input('submit-cmd'                  , 'n_clicks'), 
+    Input('cmd-input'                   , 'n_submit'),
+    ],
+    [
+    State('cmd-input'                   , 'value'), 
+    State('device-dropdown'             , 'value'),
+    ]
 )
-def update_output(n_clicks, n_submit, cmd):
-    if n_clicks is None:
-        return no_update, no_update, no_update, no_update
+def update_output(n_clicks, n_submit, cmd, device):
+    # Check if the device is a valid serial device
+    if not device or int(device) < 100:  # If no device or not a serial device
+        return "No device found", no_update, no_update
 
     if cmd is None or not isinstance(cmd, str):
         table = generate_device_settings_table()
@@ -591,7 +600,7 @@ def update_output(n_clicks, n_submit, cmd):
 
     else:
         table = generate_device_settings_table()
-        return "Click Submit for device data", table, '' 
+        return "Click Submit for device data", table, ''
 
 # Callback for updating shapecatcher feedback ---------
 @app.callback(
