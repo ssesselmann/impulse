@@ -255,20 +255,24 @@ def start_new_3d_spectrum(confirm_clicks, start_clicks, filename_3d, t_interval)
                 shproto.dispatcher.spec_stopflag = 0
                 dispatcher = threading.Thread(target=shproto.dispatcher.start)
                 dispatcher.start()
+                time.sleep(0.05)
 
-                time.sleep(0.1)
                 shproto.dispatcher.process_03('-rst')
+                time.sleep(0.05)
+
                 logger.info(f'tab3 sends reset command -rst\n')
+                time.sleep(0.05)
 
-                time.sleep(0.1)
                 shproto.dispatcher.process_03('-sta')
-                logger.info(f'tab3 sends start command -sta\n')
+                time.sleep(0.05)
 
-                time.sleep(0.1)
+                logger.info(f'tab3 sends start command -sta\n')
+                time.sleep(0.05)
+
                 shproto.dispatcher.process_02(filename_3d, 16, "MAX", t_interval)
                 logger.info(f'tab3 process_01(){filename_3d}, {16}, MAX, {t_interval}\n')
+                time.sleep(0.05)
 
-                time.sleep(0.1)
             except Exception as e:
                 logger.error(f'tab 2 start_new_or_overwrite() error {e}\n')
                 return f"tab2 Error: {str(e)}"
