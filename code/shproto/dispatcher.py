@@ -81,11 +81,14 @@ def start(sn=None):
         READ_BUFFER = max(nano.in_waiting, READ_BUFFER)
         
         try:
-            rx_byte_arr = nano.read(size=READ_BUFFER)
+            with threading.Lock():
+                    rx_byte_arr = nano.read(size=READ_BUFFER)
+                    time.sleep(0.01)
         except serial.SerialException as e:
             if "device disconnected" in str(e):
-                logger.error("Device disconnected. Attempting to reconnect...")
-                # Add reconnection logic or gracefully terminate
+                logger.error("Device disconnected. Attempting to reconnect...\n")
+                with threading.Lock():
+                    rx_byte_arr = nano.read(size=READ_BUFFER)
             else:
                 logger.error(f"SerialException: {e}")
             break
