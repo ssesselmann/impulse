@@ -63,7 +63,7 @@ def show_tab3():
     try:
         load_histogram_3d(filename_3d)
     except:
-        logger.info('Opening 3D file failed - possibly old format')
+        logger.info('Opening 3D file failed')
         pass
 
     return html.Div(id='tab3', children=[
