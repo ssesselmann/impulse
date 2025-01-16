@@ -14,7 +14,7 @@ user_settings   = ""
 shapecsv        = ""
 
 # Main spectrum
-filename        = ""
+filename        = "my_spectrum"
 histogram       = []
 bins            = 1000
 bin_size        = 30
