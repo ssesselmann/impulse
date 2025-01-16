@@ -529,8 +529,6 @@ def clear_global_vars(mode):
             global_vars.dropped_counts  = 0
             global_vars.histogram       = [0] * global_vars.bins
             global_vars.spec_notes      = ""
-            global_vars.filename        = ""
-            global_vars.filename_2      = ""
 
 
     if mode == 3:
