@@ -696,7 +696,13 @@ textarea {
 	padding:10px;
 }
 
+#tab5-col-1 {
+	width:10%;
+}
 
+#tab5-col-2 {
+	width:15%;
+}
 
 #tab5-col-3 {
 	width:15%;
