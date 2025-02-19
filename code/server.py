@@ -9,7 +9,7 @@ from dash import html
 from flask import Flask, send_from_directory
 
 #----VERSION NUMBER -----------
-version         = "v2.2.7"
+version         = "v2.2.8"
 server          = Flask(__name__)
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
 #------------------------------
