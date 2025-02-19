@@ -564,43 +564,52 @@ def distortion_curve(n_clicks, stereo, theme):
 # ------- Send serial device commands -------------------
 
 
+
 @app.callback(
     [
-    Output('command_output'             , 'children'),
-    Output('serial-device-info-table'   , 'children'),
-    Output('cmd-input'                  , 'value')
+        Output('command_output', 'children'),
+        Output('serial-device-info-table', 'children'),
+        Output('cmd-input', 'value')
     ],
     [
-    Input('submit-cmd'                  , 'n_clicks'), 
-    Input('cmd-input'                   , 'n_submit'),
+        Input('submit-cmd', 'n_clicks'), 
+        Input('cmd-input', 'n_submit'),
     ],
     [
-    State('cmd-input'                   , 'value'), 
-    State('device-dropdown'             , 'value'),
+        State('cmd-input', 'value'), 
+        State('device-dropdown', 'value'),
     ]
 )
 def update_output(n_clicks, n_submit, cmd, device):
-    # Check if the device is a valid serial device
-    if not device or int(device) < 100:  # If no device or not a serial device
-        return "No device found", no_update, no_update
+    # 1) Only trigger if device number > 100
+    # If device is None or not an integer or < 100, then do not proceed with rest of logic
+    if not device or int(device) < 100:
+        return "No serial device found", no_update, no_update
 
-    if cmd is None or not isinstance(cmd, str):
+    # 2) & 3) If cmd is None/blank or invalid, generate and return device table
+    if cmd is None or not isinstance(cmd, str) or cmd.strip() == "":
         table = generate_device_settings_table()
-        return 'No command sent', table, ''
+        return 'Click [submit] to refresh table', table, ''  # (Output text, the table, clear input)
 
+    # 4) & 5) Check if command is allowed. If command starts with "+", remove the "+" prefix (override)
     allowed = allowed_command(cmd)
-
+    
     if cmd.startswith("+"):
         cmd = cmd[1:]
 
+    # 6) Execute the command if allowed; if not allowed, respond with table
     if allowed:
         execute_serial_command(cmd)
+        time.sleep(1)  # optional delay
+        # 7) Regenerate table after command is sent
         table = generate_device_settings_table()
         return f'Command sent: {cmd}', table, ''
-
     else:
+        # If not allowed, return the table so user can see device info
         table = generate_device_settings_table()
-        return "Click Submit for device data", table, ''
+        return "Command not allowed. Device data:", table, ''
+
+
 
 # Callback for updating shapecatcher feedback ---------
 @app.callback(
