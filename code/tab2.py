@@ -377,15 +377,15 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
                 dispatcher.start()
 
                 shproto.dispatcher.process_03('-mode 0')
-                time.sleep(0.05)
+                time.sleep(0.5)
                 logger.info(f'tab2 restores -mode 0\n')
 
                 shproto.dispatcher.process_03('-rst')
-                time.sleep(0.05)
+                time.sleep(0.5)
                 logger.info(f'tab2 sends reset command -rst\n')
 
                 shproto.dispatcher.process_03('-sta')
-                time.sleep(0.05)
+                time.sleep(0.5)
                 logger.info(f'tab2 sends start command -sta\n')
 
                 shproto.dispatcher.process_01(filename, compression, "MAX", t_interval)
