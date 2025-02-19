@@ -64,22 +64,19 @@ def normalise_pulse(average):
 
 def get_serial_device_information():
     try:
-        # Temporarily stop pulse data mode
-        process_03('-sto')  # Stop pulse data
-        time.sleep(0.05)
 
-        process_03('-mode 0')  # Reset to default mode
-        time.sleep(0.05)
-
-        # Send the `"-inf"` command
         with shproto.dispatcher.command_lock:
-            shproto.dispatcher.command = "-inf"
+
             time.sleep(0.5)  # Allow time for response
-        
-        # Retrieve the device information
-        with shproto.dispatcher.command_lock:
+
+            shproto.dispatcher.command = "-inf" # Send the `"-inf"` command
+
+            time.sleep(0.5)  # Allow time for response
+
             device_info = shproto.dispatcher.inf_str
-            time.sleep(0.05)
+
+            time.sleep(0.5)
+
             shproto.dispatcher.inf_str = ""  # Clear for subsequent commands
 
         return device_info if device_info else "No response from device"
@@ -565,24 +562,49 @@ def stop_recording():
     logger.info('functions recording stopped\n')
     return
 
+import os
+import json
+import csv
+
+def get_unique_filename(directory, filename):
+    """
+    Generate a unique filename by appending (1), (2), etc., if the file already exists.
+    """
+    base, ext = os.path.splitext(filename)
+    counter = 1
+    new_filename = filename
+
+    while os.path.exists(os.path.join(directory, new_filename)):
+        new_filename = f"{base}({counter}){ext}"
+        counter += 1
+
+    return new_filename
+
 def export_csv(filename, data_directory, calib_switch):
     download_folder = os.path.expanduser("~/Downloads")
-    output_file = f'{filename}.csv'
-    
-    with open(os.path.join(data_directory, f'{filename}.json')) as f:
-        data = json.load(f)
+    output_file = get_unique_filename(download_folder, f'{filename}.csv')
 
-    if data["schemaVersion"] == "NPESv2":
+    try:
+        with open(os.path.join(data_directory, f'{filename}.json')) as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        print(f"Error: {filename}.json not found in {data_directory}")
+        return
+
+    if data.get("schemaVersion") == "NPESv2":
         data = data["data"][0]
 
-    spectrum = data["resultData"]["energySpectrum"]["spectrum"]
-    coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
-
+    try:
+        spectrum = data["resultData"]["energySpectrum"]["spectrum"]
+        coefficients = data["resultData"]["energySpectrum"]["energyCalibration"]["coefficients"]
+    except KeyError:
+        print(f"Error: Missing expected keys in {filename}.json")
+        return
 
     # Ensure the download folder exists
-    if not os.path.exists(download_folder):
-        os.makedirs(download_folder)
-    
+    os.makedirs(download_folder, exist_ok=True)
+
+    # Write data to CSV
     with open(os.path.join(download_folder, output_file), "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["energy", "counts"])
@@ -592,6 +614,8 @@ def export_csv(filename, data_directory, calib_switch):
             else:
                 energy = i
             writer.writerow([energy, value])
+
+
 
 def update_coeff(filename):
     with global_vars.write_lock:
@@ -759,22 +783,14 @@ def generate_device_settings_table():
     shproto.dispatcher.spec_stopflag = 0
     dispatcher = threading.Thread(target=shproto.dispatcher.start)
     dispatcher.start()
-    
-    process_03('-sto')  # Stop ongoing operations
-    time.sleep(0.10) 
 
-    process_03('-mode 0')  # Reset mode to default
-    time.sleep(0.10)
-
-    process_03('-cal')  # Calibration command
-    time.sleep(0.10)
-
-    # Retrieve device information
+    # # Retrieve device information
     dev_info = get_serial_device_information()
-    time.sleep(0.10)
+    time.sleep(0.3)
 
     info_dict = parse_device_info(dev_info)
-    time.sleep(0.10)
+
+    time.sleep(0.3)
     
     serial = shproto.dispatcher.serial_number
 
@@ -1234,11 +1250,11 @@ def format_date(iso_datetime_str):
 def start_max_pulse_check():
     try:
         process_03('-mode 2')  # Switch to pulse mode
-        time.sleep(0.05)
+        time.sleep(0.2)
         process_03('-dbg 2000 8000')  # Filter pulses between 2000 and 8000
-        time.sleep(0.05)
+        time.sleep(0.2)
         process_03('-sta')  # Start recording
-        time.sleep(0.05)
+        time.sleep(0.2)
     except Exception as e:
         logger.error(f"Error in process_03 command: {e}")
         return True  # Signal that the interval should remain disabled
@@ -1251,9 +1267,9 @@ def start_max_pulse_check():
 def stop_max_pulse_check():
     try:
         process_03('-sto')  # Stop recording
-        time.sleep(0.05)
+        time.sleep(0.2)
         process_03('-mode 0')  # Reset mode to default
-        time.sleep(0.05)
+        time.sleep(0.2)
     except Exception as e:
         logger.error(f"Error in process_03 command: {e}")
     
