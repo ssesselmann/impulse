@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='impulse',
-    version='2.2.7',
+    version='2.2.8',
     packages=find_packages(),
     install_requires=[
         'dash',
