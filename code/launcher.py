@@ -89,7 +89,8 @@ default_settings = {
     "threshold": 100,
     "tolerance": 50000,
     "shape_lld": 500,
-    "shape_uld": 10000
+    "shape_uld": 10000,
+    "flags_selected":""
 }
 
 default_user = {

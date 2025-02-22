@@ -34,7 +34,7 @@ max_pulse_height = 3000
 flags_selected   = ""
 
 # Spectrum 2 comparison
-filename_2      = ""
+filename_2      = "background"
 histogram_2     = []
 bins_2          = 1000
 bin_size_2      = 30
@@ -43,7 +43,7 @@ elapsed_2       = 0
 coefficients_2  = []
 
 # 3D spectrum
-filename_3d     = ""
+filename_3d     = "my_3d_spectrum"
 histogram_3d    = []
 bins_3d         = 500
 bin_size_3d     = 60
@@ -85,16 +85,16 @@ cal_switch      = False
 coi_switch      = False
 
 calib_bin_1     = 0
-calib_bin_2     = 250
-calib_bin_3     = 500
-calib_bin_4     = 750
-calib_bin_5     = 1000
+calib_bin_2     = 0
+calib_bin_3     = 0
+calib_bin_4     = 0
+calib_bin_5     = 0
 
 calib_e_1       = 0
-calib_e_2       = 750
-calib_e_3       = 1500
-calib_e_4       = 2250
-calib_e_5       = 3000
+calib_e_2       = 0
+calib_e_3       = 0
+calib_e_4       = 0
+calib_e_5       = 0
 
 coeff_1         = 1
 coeff_2         = 1
