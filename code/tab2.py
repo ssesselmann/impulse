@@ -113,7 +113,10 @@ def show_tab2():
         dropped_counts  = global_vars.dropped_counts
         val_flag        = global_vars.val_flag
         theme           = global_vars.theme
-        flags_selected  = global_vars.flags_selected
+        if not global_vars.flags_selected:
+            flags_selected = os.path.join(data_directory, "i", "tbl", "gamma-a.json") 
+        else:    
+            flags_selected  = global_vars.flags_selected
 
     if device < 100 and device:        # Sound card devices
         serial = 'none'
