@@ -102,7 +102,23 @@ def show_tab6():
                 html.P('• Please refer to device manual for other commands', style={'display':serial}),
                 
                 html.H4('Max-Pulse-shape', style={'display':serial}),
-                html.P('Recalibrating your GS-MAX for use with crystals other than NaI(Tl) may require recalibration of the pulse shape, this involves setting the -ris and -fall parameters. the pulse shape function allows you to observe the pulse sample points. -ris is the number of dots to the peak, and -fall is the number of dots in the tail', style={'display':serial}),
+                html.P("""
+                    If you have purchased a GS-MAX with integral crystal you can ignore this section
+                    however if you have a general purpose spectrometer like the GS-MAX-8000 which
+                    will be used with different types of crystals, you may need to change the pulse 
+                    shape settings. The GS-MAX-8000 factory default is for common NaI(Tl). 
+                    Changing the pulse settings is done from tab1, after connecting to your serial device 
+                    click on "Start Max pulse", watch as the pulses appear on the screen, then count the
+                    number of samples (dots) to and including the peak (ignoring the first dot). For example 0, 1, 2, 3, 4, "5", this 
+                    represents the number of rising samples, then count the number of samples in the tail of the pulse,
+                    1,2,3,4,5,6,7,"8", this is the number of falling samples.
+                    If this differs from your current device settings, you should send the following command to the device 
+                    using the command input. "-ris 5" and "-fall 8". Your devise -will now correctly read the pulse height from your detector.
+                    """, style={'display':serial}),
+
+                html.Img(src='assets/max-shape.png',style={'display':serial, 'width':'50%', 'height':'auto'}),
+
+
 
                 html.H4('Sample Rate', style={'display': audio}),
                 html.P('Analogue to digital audio sampling involves taking a voltage reading of the analogue signal multiple times a second, the faster the sampling rate the more accurately we can reconstruct the signal. Most modern computers can handle audio sampling rates up to 384 kHz. Faster sampling will generally produce a better spectrum, but it also requires a longer pulse which limits the pulse acquisition rate. If your objective is to measure a high count rate you may want a shorter pulse and a lower sample rate. ', style={'display': audio}),
