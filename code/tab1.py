@@ -25,6 +25,7 @@ from functions import (
     stop_max_pulse_check
     )
 from shapecatcher import sc_info
+from shproto.dispatcher import process_03
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +52,14 @@ def show_tab1():
         stereo          = global_vars.stereo
         theme           = global_vars.theme
 
-    pulse_length    = 0
-    filepath        = os.path.dirname(__file__)
+    device_str          = str(device)
+    sample_rate_str     = str(sample_rate)
+    chunk_size_str      = str(chunk_size)
+    sample_length_str   = str(sample_length)
+    shapecatches_str    = str(shapecatches)
+
+    pulse_length        = 0
+    filepath            = os.path.dirname(__file__)
     shape_left, shape_right = fn.load_shape()
 
     logger.info(f'Tab1 stereo = {stereo}\n')
@@ -64,7 +71,10 @@ def show_tab1():
         dl = adl + sdl   
         options = [{'label': filename, 'value': index} for filename, index in dl]
         options = [{k: str(v) for k, v in option.items()} for option in options]
-        options = fn.cleanup_serial_options(options)                   
+        options = fn.cleanup_serial_options(options)   
+
+        valid_devices    = [option['value'] for option in options]
+        default_device   = device_str if device_str in valid_devices else valid_devices[0]  # Choose the first valid option                
     except:
         logger.info("Tab1 - Something went wrong retrieving device list")
         pass
@@ -79,6 +89,7 @@ def show_tab1():
         audio_int = False
         audio_style = {'display': 'block'}
     else:  # Serial device
+        serial_int = False
         serial_style = {'display': 'block'}
 
     if theme == 'dark-theme':
@@ -112,17 +123,16 @@ def show_tab1():
 
                 ]), # end header
 
-            
-
             html.Div(id='tab1_settings1', className='tab1-pulldown', children=[
                 html.Div(children='Device selection'),
                 dcc.Dropdown(
                     id='device-dropdown',
                     options=options,
-                    value=device,  
+                    value=default_device,  
                     clearable=False,
                     className='dropdown',
-                ),
+                )
+
             ]),
 
             html.Div(id='tab1_settings2', className='tab1-pulldown', children=[
@@ -138,7 +148,7 @@ def show_tab1():
                         {'label': '384 kHz', 'value': '384000'},
                         {'label': 'not used', 'value': 'not used'}
                     ],
-                    value=sample_rate,
+                    value=sample_rate_str,  
                     clearable=False,
                     style=audio_style
                 ),
@@ -158,7 +168,7 @@ def show_tab1():
                         {'label': '51 dots', 'value': '51'},
                         {'label': '61 dots', 'value': '61'}
                     ],
-                    value=sample_length,
+                    value=sample_length_str,
                     clearable=False,
                     style=audio_style
                 )),
@@ -176,7 +186,7 @@ def show_tab1():
                         {'label': '500', 'value': '500'},
                         {'label': '1000', 'value': '1000'}
                     ],
-                    value=shapecatches,
+                    value=shapecatches_str,
                     clearable=False,
                     style=audio_style
                 )),
@@ -185,21 +195,23 @@ def show_tab1():
 
             html.Div(id='tab1_settings5', className='tab1-pulldown', children=[
                 html.Div(children='Buffer Size'),
-                html.Div(dcc.Dropdown(
-                    id='chunk_size',
-                    className='dropdown',
-                    options=[
-                        {'label': '516', 'value': '516'},
-                        {'label': '1024', 'value': '1024'},
-                        {'label': '2048', 'value': '2048'},
-                        {'label': '4096', 'value': '4096'},
-                        {'label': '8192', 'value': '8192'},
-                        {'label': '16184', 'value': '16184'},
-                    ],
-                    value=chunk_size,
-                    clearable=False,
-                    style=audio_style
-                )),
+                html.Div(
+                    dcc.Dropdown(
+                        id='chunk_size',
+                        className='dropdown',
+                        options=[
+                            {'label': '516', 'value': '516'},
+                            {'label': '1024', 'value': '1024'},
+                            {'label': '2048', 'value': '2048'},
+                            {'label': '4096', 'value': '4096'},
+                            {'label': '8192', 'value': '8192'},
+                            {'label': '16184', 'value': '16184'},
+                        ],
+                        value=chunk_size_str,  
+                        clearable=False,
+                        style=audio_style
+                        ),
+                    ),
                 html.Div(id='output_chunk_text', children=''),
             ], style=audio_style),
 
@@ -589,6 +601,7 @@ def update_output(n_clicks, n_submit, cmd, device):
     # 2) & 3) If cmd is None/blank or invalid, generate and return device table
     if cmd is None or not isinstance(cmd, str) or cmd.strip() == "":
         table = generate_device_settings_table()
+        process_03('-cal')
         return 'Click [submit] to refresh table', table, ''  # (Output text, the table, clear input)
 
     # 4) & 5) Check if command is allowed. If command starts with "+", remove the "+" prefix (override)
@@ -600,7 +613,7 @@ def update_output(n_clicks, n_submit, cmd, device):
     # 6) Execute the command if allowed; if not allowed, respond with table
     if allowed:
         execute_serial_command(cmd)
-        time.sleep(1)  # optional delay
+        time.sleep(0.5)  # optional delay
         # 7) Regenerate table after command is sent
         table = generate_device_settings_table()
         return f'Command sent: {cmd}', table, ''
