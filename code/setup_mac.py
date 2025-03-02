@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='impulse',
-    version='2.2.8',
+    version='2.2.9',
     packages=find_packages(),
     install_requires=[
         'dash',
@@ -55,6 +55,12 @@ setup(
                 'warnings',
                 'wave',
                 'webbrowser'
+            ],
+            'excludes': [
+                'PyQt6',
+                'PyQt6.sip',
+                'PyQt6.QtOpenGLWidgets',
+                'PyInstaller'
             ],
             'resources': ["i", "assets"],  # Ensure these paths exist and are correctly set up
         }
