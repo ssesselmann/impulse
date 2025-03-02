@@ -64,23 +64,14 @@ def normalise_pulse(average):
 
 def get_serial_device_information():
     try:
-
-        with shproto.dispatcher.command_lock:
-
-            time.sleep(0.5)  # Allow time for response
-
-            shproto.dispatcher.command = "-inf" # Send the `"-inf"` command
-
-            time.sleep(0.5)  # Allow time for response
-
+        with shproto.dispatcher.command_lock:   
+            shproto.dispatcher.command = "-inf" 
+            time.sleep(0.2) 
             device_info = shproto.dispatcher.inf_str
-
-            time.sleep(0.5)
-
-            shproto.dispatcher.inf_str = ""  # Clear for subsequent commands
-
+            time.sleep(0.2)
+            shproto.dispatcher.inf_str = "" 
+            time.sleep(0.2)
         return device_info if device_info else "No response from device"
-
     except Exception as e:
         logger.error(f"Error retrieving device information: {e}")
         return "Error retrieving device information"
@@ -783,17 +774,11 @@ def generate_device_settings_table():
     shproto.dispatcher.spec_stopflag = 0
     dispatcher = threading.Thread(target=shproto.dispatcher.start)
     dispatcher.start()
-
-    # # Retrieve device information
     dev_info = get_serial_device_information()
     time.sleep(0.3)
-
     info_dict = parse_device_info(dev_info)
-
     time.sleep(0.3)
-    
-    serial = shproto.dispatcher.serial_number
-
+    serial_number = shproto.dispatcher.serial_number
     table = dash_table.DataTable(
         columns=[
             {"id": "Setting", "name": "Firmware settings"},
@@ -802,7 +787,7 @@ def generate_device_settings_table():
         ],
         data=[
             {"Setting": "Version", "cmd": "-", "Value": info_dict.get('VERSION')},
-            {"Setting": "Serial number", "cmd": "status", "Value": serial},
+            {"Setting": "Serial number", "cmd": "status", "Value": serial_number},
             {"Setting": "Samples for X (pulse rise)", "cmd": "-ris", "Value": info_dict.get('RISE')},
             {"Setting": "Samples for Y (pulse fall)", "cmd": "-fall", "Value": info_dict.get('FALL')},
             {"Setting": "Lower Limit Discriminator LLD", "cmd": "-nos", "Value": info_dict.get('NOISE')},
@@ -838,6 +823,8 @@ def allowed_command(cmd):
         r"^-U[0-9]{1,3}$",
         r"^-V[0-9]{1,3}$",
         r"^-sto$",
+        r"^-inf$",
+        r"^-cal$",
         r"^-nos[0-9]{1,3}$",
         r"^-ris[0-9]{1,3}$",
         r"^-fall[0-9]{1,3}$"
@@ -1019,7 +1006,7 @@ def save_settings_to_json():
 
 def load_settings_from_json(path):
     if os.path.exists(path):
-        try:
+        try:            
             with open(path, 'r') as f:
                 settings = json.load(f)
 
@@ -1079,18 +1066,19 @@ def load_settings_from_json(path):
                     "flags_selected":       str
                     }   
 
-            for key, value in settings.items():
-                if value is None:
-                    setattr(global_vars, key, None)
-                elif key in type_mappings:
-                    try:
-                        converted_value = type_mappings[key](value)
-                        setattr(global_vars, key, converted_value)
-                    except (ValueError, TypeError):
-                        logger.warning(f"Failed to convert {key}: {value}")
+            with global_vars.write_lock:
+                for key, value in settings.items():
+                    if value is None:
+                        setattr(global_vars, key, None)
+                    elif key in type_mappings:
+                        try:
+                            converted_value = type_mappings[key](value)
+                            setattr(global_vars, key, converted_value)
+                        except (ValueError, TypeError):
+                            logger.warning(f"Failed to convert {key}: {value}")
+                            setattr(global_vars, key, value)
+                    else:
                         setattr(global_vars, key, value)
-                else:
-                    setattr(global_vars, key, value)
 
             # Backwards compatibility for theme
             if getattr(global_vars, "theme", "") not in ["light-theme", "dark-theme"]:
@@ -1098,7 +1086,6 @@ def load_settings_from_json(path):
                     global_vars.theme = "light-theme"
                     logger.info("Theme setting is not valid, defaulting to 'light-mode'.")
         
-
             logger.info(f'Load settings completed \n')
         except Exception as e:
             logger.error(f'Error loading settings from JSON: {e}')
@@ -1250,11 +1237,10 @@ def format_date(iso_datetime_str):
 def start_max_pulse_check():
     try:
         process_03('-mode 2')  # Switch to pulse mode
-        time.sleep(0.2)
+        time.sleep(0.3)
         process_03('-dbg 2000 8000')  # Filter pulses between 2000 and 8000
-        time.sleep(0.2)
+        time.sleep(0.3)
         process_03('-sta')  # Start recording
-        time.sleep(0.2)
     except Exception as e:
         logger.error(f"Error in process_03 command: {e}")
         return True  # Signal that the interval should remain disabled
@@ -1267,9 +1253,8 @@ def start_max_pulse_check():
 def stop_max_pulse_check():
     try:
         process_03('-sto')  # Stop recording
-        time.sleep(0.2)
+        time.sleep(0.3)
         process_03('-mode 0')  # Reset mode to default
-        time.sleep(0.2)
     except Exception as e:
         logger.error(f"Error in process_03 command: {e}")
     
