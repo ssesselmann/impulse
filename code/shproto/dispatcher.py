@@ -65,7 +65,7 @@ def start(sn=None):
         if shproto.dispatcher.command is not None and len(shproto.dispatcher.command) > 0:
             logger.debug(f"Dispatcher command: {shproto.dispatcher.command}")
 
-            #print(f"dispatcher.command {command}")
+            print(f"dispatcher.command {command}")
 
             if command == "-rst":
                 shproto.dispatcher.clear()
@@ -79,18 +79,18 @@ def start(sn=None):
             with shproto.dispatcher.command_lock:
                 shproto.dispatcher.command = ""
         if nano.in_waiting == 0:
-            time.sleep(0.2)
+            #time.sleep(0.1)
             continue
         READ_BUFFER = max(nano.in_waiting, READ_BUFFER)
         
         try:
-            with threading.Lock():
+            with global_vars.run_flag_lock:
                     rx_byte_arr = nano.read(size=READ_BUFFER)
-                    time.sleep(0.08)
+                    #time.sleep(0.1)
         except serial.SerialException as e:
             if "device disconnected" in str(e):
                 logger.error("Device disconnected\n")
-                with threading.Lock():
+                with global_vars.run_flag_lock:
                     rx_byte_arr = nano.read(size=READ_BUFFER)
             else:
                 logger.error(f"SerialException: {e}")
@@ -549,7 +549,6 @@ def load_json_data(file_path):
 def process_03(_command):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = _command
-        time.sleep(0.2)
         logger.info(f'Completed process_03({_command})\n')
         return
 
