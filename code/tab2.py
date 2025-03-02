@@ -131,6 +131,7 @@ def show_tab2():
             global_vars.bins = int(8192/compression)    
 
     millisec        = t_interval * 1000
+    compression_str = str(compression)
 
     html_tab2 = html.Div(id='tab2', children=[
         html.Div(id='tab2-frame', children= [
@@ -176,7 +177,7 @@ def show_tab2():
                         {'label': '2048 Bins', 'value': '4'},
                         {'label': '4096 Bins', 'value': '2'},
                         {'label': '8192 Bins', 'value': '1'},
-                    ], value=compression, clearable=False)], style={'display': serial}),
+                    ], value=compression_str, clearable=False)], style={'display': serial}),
 
                     html.Div(['Select existing file:', dcc.Dropdown(id='filenamelist', options=filtered_options, value=filename, optionHeight=40, style={'textAlign':'left', 'textWrap':None})]),
                     
@@ -380,15 +381,15 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
                 dispatcher.start()
 
                 shproto.dispatcher.process_03('-mode 0')
-                time.sleep(0.5)
+                time.sleep(0.1)
                 logger.info(f'tab2 restores -mode 0\n')
 
                 shproto.dispatcher.process_03('-rst')
-                time.sleep(0.5)
+                time.sleep(0.3)
                 logger.info(f'tab2 sends reset command -rst\n')
 
                 shproto.dispatcher.process_03('-sta')
-                time.sleep(0.5)
+                time.sleep(0.1)
                 logger.info(f'tab2 sends start command -sta\n')
 
                 shproto.dispatcher.process_01(filename, compression, "MAX", t_interval)
@@ -1066,5 +1067,6 @@ def export_histogram(filename, cal_switch):
         return f'Exported to Downloads'
     except:
         f'Export failed'    
+
 
 # -- End of tab2.py --
