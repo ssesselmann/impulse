@@ -21,21 +21,21 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 # Define paths
-data_directory = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
-settings_file = os.path.join(data_directory, "_settings.json")
-user_file = os.path.join(data_directory, "_user.json")
-shapecsv = os.path.join(data_directory, "_shape.csv")
-i_directory = os.path.join(data_directory, "i")
-tbl_directory = os.path.join(i_directory, "tbl")
-shortlist = os.path.join(data_directory, i_directory, tbl_directory, "gamma-a.json")
-longlist = os.path.join(data_directory, i_directory, tbl_directory, "gamma-b.json")
+data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
+settings_file   = os.path.join(data_directory, "_settings.json")
+user_file       = os.path.join(data_directory, "_user.json")
+shapecsv        = os.path.join(data_directory, "_shape.csv")
+i_directory     = os.path.join(data_directory, "i")
+tbl_directory   = os.path.join(i_directory, "tbl")
+shortlist       = os.path.join(data_directory, i_directory, tbl_directory, "gamma-a.json")
+longlist        = os.path.join(data_directory, i_directory, tbl_directory, "gamma-b.json")
 
 # Set global variables
 with global_vars.write_lock:
-    global_vars.data_directory = data_directory
-    global_vars.settings_file = settings_file
-    global_vars.user_settings = user_file
-    global_vars.shapecsv = shapecsv
+    global_vars.data_directory  = data_directory
+    global_vars.settings_file   = settings_file
+    global_vars.user_settings   = user_file
+    global_vars.shapecsv        = shapecsv
 
 # Default settings and user data
 default_settings = {
@@ -172,7 +172,8 @@ with global_vars.write_lock:
 
 try:
     fn.load_settings_from_json(settings_file)
-    logger.info(f'1... {filename} loaded\n')
+    time.sleep(1)
+    logger.info(f'1...{settings_file} loaded\n')
 except:
      logger.info(f'Loading settings failed\n')   
 
