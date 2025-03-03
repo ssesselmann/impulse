@@ -74,7 +74,7 @@ def show_tab1():
         options = fn.cleanup_serial_options(options)   
 
         valid_devices    = [option['value'] for option in options]
-        default_device   = device_str if device_str in valid_devices else valid_devices[0] if valid_devices else None             
+        default_device   = device_str if device_str in valid_devices else valid_devices[0] if valid_devices else None     
     except:
         logger.error(f"tab1 - Invalid device value: {device}")
         pass
@@ -356,37 +356,58 @@ def show_tab1():
 # Callback to save settings ---------------------------
 
 @app.callback(
-    [Output('selected_device_text'  , 'children'),
-     Output('sampling_time_output'  , 'children'),
-     Output('stereo'                , 'on')],
-    [Input('submit'                 , 'n_clicks'),
-     Input('device-dropdown'        , 'value'),
-     Input('sample_rate'            , 'value'),
-     Input('chunk_size'             , 'value'),
-     Input('catch'                  , 'value'),
-     Input('sample_length'          , 'value'),
-     Input('peakshifter'            , 'value'),
-     Input('stereo'                 , 'on')
-     ])
+    [Output('selected_device_text', 'children'),
+     Output('sampling_time_output', 'children'),
+     Output('stereo', 'on')],
+    [Input('submit', 'n_clicks'),
+     Input('device-dropdown', 'value'),
+     Input('sample_rate', 'value'),
+     Input('chunk_size', 'value'),
+     Input('catch', 'value'),
+     Input('sample_length', 'value'),
+     Input('peakshifter', 'value'),
+     Input('stereo', 'on')]
+)
 def save_settings(n_clicks, device, sample_rate, chunk_size, catch, sample_length, peakshift, stereo):
-    if n_clicks is not None:
-        with global_vars.write_lock:
-            global_vars.device          = int(device)
-            global_vars.sample_rate     = int(sample_rate)
-            global_vars.chunk_size      = int(chunk_size)
-            global_vars.shapecatches    = int(catch)
-            global_vars.sample_length   = int(sample_length)
-            global_vars.peakshift       = int(peakshift)
-            global_vars.stereo          = bool(stereo)
+    # Only proceed if the submit button was clicked
+    if n_clicks is None:
+        return no_update, no_update, no_update
 
-        save_settings_to_json()
+    # Handle the case where device is None
+    try:
+        device = int(device) if device is not None else None
+    except (ValueError, TypeError):
+        device = None
 
+    # Update global variables
+    with global_vars.write_lock:
+        global_vars.device = device if device is not None else global_vars.device  # Retain the previous value if device is None
+        global_vars.sample_rate = int(sample_rate) if sample_rate is not None else global_vars.sample_rate
+        global_vars.chunk_size = int(chunk_size) if chunk_size is not None else global_vars.chunk_size
+        global_vars.shapecatches = int(catch) if catch is not None else global_vars.shapecatches
+        global_vars.sample_length = int(sample_length) if sample_length is not None else global_vars.sample_length
+        global_vars.peakshift = int(peakshift) if peakshift is not None else global_vars.peakshift
+        global_vars.stereo = bool(stereo) if stereo is not None else global_vars.stereo
+
+    # Save settings to JSON
+    save_settings_to_json()
+
+    # Calculate pulse length and warning message
+    if sample_rate is not None and sample_length is not None:
         pulse_length = int(1000000 * int(sample_length) / int(sample_rate))
         warning = 'WARNING LONG' if pulse_length >= 334 else ''
+    else:
+        pulse_length = 0
+        warning = ''
 
-        logger.debug(f'Settings saved to JSON file\n')
+    logger.debug(f'Settings saved to JSON file\n')
 
-        return f'Device: {device}', f'{warning} Dead time ~ {pulse_length} µs', stereo
+    # Return the updated UI elements
+    return (
+        f'Device: {device}' if device is not None else 'No device selected',
+        f'{warning} Dead time ~ {pulse_length} µs' if sample_rate and sample_length else 'No sample rate or length set',
+        stereo
+    )
 
 # Callback to capture and save mean pulse shape ----------
 
