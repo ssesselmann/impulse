@@ -74,9 +74,9 @@ def show_tab1():
         options = fn.cleanup_serial_options(options)   
 
         valid_devices    = [option['value'] for option in options]
-        default_device   = device_str if device_str in valid_devices else valid_devices[0]  # Choose the first valid option                
+        default_device   = device_str if device_str in valid_devices else valid_devices[0] if valid_devices else None             
     except:
-        logger.info("Tab1 - Something went wrong retrieving device list")
+        logger.error(f"tab1 - Invalid device value: {device}")
         pass
 
     # Default styles and interval states
@@ -593,9 +593,14 @@ def distortion_curve(n_clicks, stereo, theme):
     ]
 )
 def update_output(n_clicks, n_submit, cmd, device):
-    # 1) Only trigger if device number > 100
-    # If device is None or not an integer or < 100, then do not proceed with rest of logic
-    if not device or int(device) < 100:
+    # 1) Validate device
+    try:
+        device = int(device) if device is not None else None
+    except (ValueError, TypeError):
+        device = None
+
+    # If device is None or not a serial device (device >= 100), return early
+    if device is None or device < 100:
         return "No serial device found", no_update, no_update
 
     # 2) & 3) If cmd is None/blank or invalid, generate and return device table
@@ -772,16 +777,15 @@ def update_graph(n_intervals, theme):
     Input('device-dropdown', 'value')
 )
 def toggle_frames(device):
-    """
-    Toggle between audio and serial frames based on device selection.
-    - Audio devices: device < 100
-    - Serial devices: device >= 100
-    """
     hidden_style = {'display': 'none'}
     visible_style = {'display': 'block'}
 
-    # Check if the device is audio or serial
-    if int(device) < 100:  # Audio device
+    try:
+        device = int(device) if device is not None else None
+    except (ValueError, TypeError):
+        device = None
+
+    if device is None or device < 100:  # Audio device or invalid
         return visible_style, hidden_style  # Show audio, hide serial
     else:  # Serial device
         return hidden_style, visible_style  # Hide audio, show serial
