@@ -2,29 +2,27 @@
 # This file is used for creating a Windows executable package impulse.exe
 # From the command line enter >> pyinstaller impulse.spec
 
-
 a = Analysis(
     ['impulse.py'],
     pathex=[],
     binaries=[
-    ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\pyaudio\\_portaudio.cp312-win_amd64.pyd', '.'),
+        ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python310\\Lib\\site-packages\\pyaudio\\_portaudio.cp310-win_amd64.pyd', '.'),
     ],
     datas=[
-    ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\package-info.json', 'dash_daq'),
-    ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\metadata.json', 'dash_daq'),
-    ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\dash_daq\\dash_daq.min.js', 'dash_daq'),
-    ('i', 'i'), 
-    ('assets', 'assets'),  # Add this line to include the css folder
-
+        ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python310\\Lib\\site-packages\\dash_daq\\package-info.json', 'dash_daq'),
+        ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python310\\Lib\\site-packages\\dash_daq\\metadata.json', 'dash_daq'),
+        ('C:\\Users\\bee1812a\\AppData\\Local\\Programs\\Python\\Python310\\Lib\\site-packages\\dash_daq\\dash_daq.min.js', 'dash_daq'),
+        ('i', 'i'),
+        ('assets', 'assets'),  # Include the CSS folder
     ],
-
-    hiddenimports=['dash_daq', 'pyaudio', 'serial'],
+    hiddenimports=['dash_daq', 'pyaudio', 'serial', 'scipy._lib.array_api_compat.numpy.fft'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
 )
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
@@ -38,18 +36,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,
+    console=False,
     icon='favicon.ico', 
 
 )
-
-    # manifest='''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-    #     <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-    #         <compatibility>
-    #             <application>
-    #                 <!-- Ensure compatibility with Windows 7 and above -->
-    #                 <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>
-    #                 <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>
-    #             </application>
-    #         </compatibility>
-    #     </assembly>'''
