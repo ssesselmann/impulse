@@ -1,6 +1,7 @@
+chardet
 dash
-dash_daq
 dash_bootstrap_components
+dash_daq
 flask
 numpy
 pandas
@@ -10,4 +11,3 @@ pyobjc
 pyserial
 requests
 scipy
-chardet
