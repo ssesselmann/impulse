@@ -1,13 +1,11 @@
+chardet
 dash
-dash_daq
 dash_bootstrap_components
-flask
+dash_daq
 numpy
 pandas
-plotly
 pyaudio
-pyobjc
 pyserial
-requests
 scipy
-chardet
+serial
+wheel
