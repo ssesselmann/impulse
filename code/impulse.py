@@ -21,8 +21,6 @@ warnings.filterwarnings('ignore')
 
 device = global_vars.device
 
-
-
 app.layout = html.Div(children=[
     dcc.Tabs(id='tabs', value='tab_1'     , children=[
         dcc.Tab(label='My Details'        , value='tab_0', className='custom-tabs'),
