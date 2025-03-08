@@ -171,7 +171,6 @@ def update_count_rate_chart(n_intervals, t_interval, full_monty, tab, rolling, t
             title='Counts',
             type='linear',
             tickfont=dict(family='Arial', size=14, color=line_color),
-            titlefont=dict(family='Arial', size=18, color=line_color)
         ),
         annotations=[
             dict(
