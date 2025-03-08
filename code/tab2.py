@@ -118,17 +118,23 @@ def show_tab2():
         else:    
             flags_selected  = global_vars.flags_selected
 
-    if device < 100 and device:        # Sound card devices
+    if isinstance(device, int):  # Ensure device is an integer before comparison
+        if device < 100:        # Sound card devices
+            serial = 'none'
+            audio = 'block'
+            with global_vars.write_lock:
+                global_vars.bins = bins
+
+        elif device >= 100:
+            serial = 'block'
+            audio = 'none'
+            with global_vars.write_lock:    # Atom nano devices
+                global_vars.bins = int(8192/compression)
+    else:
+        # Handle the case where device is not set
+        device = '1'  # or some default value if needed
         serial = 'none'
         audio = 'block'
-        with global_vars.write_lock:
-            global_vars.bins = bins
-
-    if device >= 100 and device:
-        serial = 'block'
-        audio = 'none'
-        with global_vars.write_lock:    # Atom nano devices
-            global_vars.bins = int(8192/compression)    
 
     millisec        = t_interval * 1000
     compression_str = str(compression)
