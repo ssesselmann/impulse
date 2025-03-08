@@ -14,6 +14,9 @@ server          = Flask(__name__)
 data_directory  = os.path.join(os.path.expanduser("~"), "impulse_data_2.0")
 #------------------------------
 
+with global_vars.write_lock:
+    global_vars.data_directory = data_directory
+
 # Set up logging configuration
 if not os.path.exists(data_directory):
     os.makedirs(data_directory)
