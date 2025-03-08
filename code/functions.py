@@ -1236,11 +1236,13 @@ def format_date(iso_datetime_str):
 
 def start_max_pulse_check():
     try:
+        time.sleep(0.1)
+        process_03('-dbg 2000 8000')  # Filter pulses between 2000 and 8000
+        time.sleep(0.2)
         process_03('-mode 2')  # Switch to pulse mode
         time.sleep(0.3)
-        process_03('-dbg 2000 8000')  # Filter pulses between 2000 and 8000
-        time.sleep(0.3)
         process_03('-sta')  # Start recording
+        time.sleep(0.4)
     except Exception as e:
         logger.error(f"Error in process_03 command: {e}")
         return True  # Signal that the interval should remain disabled
