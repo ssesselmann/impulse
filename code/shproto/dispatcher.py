@@ -16,37 +16,44 @@ from datetime import datetime
 
 max_bins            = 8192
 logger              = logging.getLogger(__name__)
+
 stopflag            = 0
 stopflag_lock       = threading.Lock()
+
 spec_stopflag       = 0
 spec_stopflag_lock  = threading.Lock()
+
 histogram           = [0] * max_bins
 histogram_lock      = threading.Lock()
+
 command             = ""
 command_lock        = threading.Lock()
+
+cps                 = 0
+cps_lock            = threading.Lock()
+
+calibration_updated = 0
+calibration_lock    = threading.Lock()
+
 pkts03              = 0
 pkts04              = 0
 total_pkts          = 0
 dropped             = 0
 total_time          = 0
 cpu_load            = 0
-cps                 = 0
-cps_lock            = threading.Lock()
 lost_impulses       = 0
 last_counts         = 0
-data_directory      = None
 cps_list            = []
 serial_number       = ""
 calibration         = [0., 1., 0., 0., 0.]
-calibration_updated = 0
-calibration_lock    = threading.Lock()
 inf_str             = ''
+data_directory      = ''
+    
 
-with global_vars.write_lock:
-    data_directory  = global_vars.data_directory
 
 # This function communicates with the device
 def start(sn=None):
+    
     READ_BUFFER = 1
     pulse_file_opened = 0
     shproto.dispatcher.clear()
@@ -152,35 +159,55 @@ def start(sn=None):
                                     ((response.payload[i * 4 + 5]) << 24)
                             shproto.dispatcher.histogram[index] = value & 0x7FFFFFF
                 response.clear()
+
+            # ----- cmd pulse mode -------------------------------------    
+
+
+            # Track whether the CSV file has been initialized
+            pulse_file_initialized = False  
+
             if response.cmd == shproto.MODE_PULSE:
                 pulse_data = []
+                
+                # Extract pulse data from the payload (16-bit values)
                 for i in range(0, len(response.payload), 2):
                     if i + 1 < len(response.payload):
                         value = (response.payload[i + 1] << 8) | response.payload[i]
                         pulse_data.append(value)
 
                 if pulse_data:
-                    pulse_data = pulse_data[:-1]  # Remove the last item if needed
+                    pulse_data = pulse_data[:-1]  # Remove last item if needed
                     logger.debug(f"Processed Pulse Data: {pulse_data}")
+
                     with global_vars.write_lock:
                         global_vars.max_pulse_shape = pulse_data
-                if pulse_file_opened != 1:
-                    fd_pulses = open(os.path.join(data_directory,"max-pulse-check.csv"), "w+")
-                    pulse_file_opened = 1
 
-                shproto.dispatcher.pkts01 += 1
-                offset = response.payload[0] & 0xFF | ((response.payload[1] & 0xFF) << 8)
-                count = int((response.len - 2) / 2)
-                pulse = []
-                for i in range(0, count):
-                    index = offset + i
-                    if index < len(shproto.dispatcher.histogram):
-                        value = (response.payload[i * 2 + 2]) | ((response.payload[i * 2 + 3]) << 8)
-                        pulse.append(value & 0x7FFFFFF)
-                        fd_pulses.writelines("{:d} ".format(value & 0x7FFFFFF))
-                fd_pulses.writelines("\n")
-                fd_pulses.flush()
+                # Open the CSV file only once per script execution
+                if not pulse_file_initialized:
+                    with global_vars.write_lock:
+                        data_directory = global_vars.data_directory
+                        csv_file_path = os.path.join(data_directory, "_max-pulse-shape.csv")
+
+                    # Check if the file already exists (to avoid overwriting existing data)
+                    file_exists = os.path.isfile(csv_file_path)
+
+                    with open(csv_file_path, "a+") as fd_pulses:
+                        # Write header only if the file is newly created
+                        if not file_exists:
+                            header = ",".join(map(str, range(len(pulse_data)))) + "\n"
+                            fd_pulses.write(header)
+                    
+                    pulse_file_initialized = True  # Ensure we don't write the header again
+
+                # Append the pulse data as a new row
+                with open(csv_file_path, "a") as fd_pulses:
+                    fd_pulses.write(",".join(map(str, pulse_data)) + "\n")
+
                 response.clear()
+
+
+            # ------- cmd stat mode --------------------------
+
             elif response.cmd == shproto.MODE_STAT:
                 shproto.dispatcher.pkts04 += 1
                 shproto.dispatcher.total_time = (response.payload[0] & 0xFF) | \
@@ -549,8 +576,13 @@ def load_json_data(file_path):
 def process_03(_command):
     with shproto.dispatcher.command_lock:
         shproto.dispatcher.command = _command
+        time.sleep(0.3)  # Give it a little time to process
         logger.info(f'Completed process_03({_command})\n')
         return
+
+        
+
+
 
 def stop():
     logger.info('Command shproto.stop \n')
