@@ -8,7 +8,7 @@ if sys.platform == 'darwin':
 
 setup(
     name='impulse',
-    version='3.0.0',
+    version='2.3.0',
     packages=find_packages(),
     install_requires=[
         'dash',
