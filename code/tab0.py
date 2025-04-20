@@ -174,7 +174,6 @@ def show_tab0():
 
             html.Div(id='tab0_box_2', children=[
             ]),
-           html.Div(children=[html.Img(id='footer', src='assets/footer.gif')]), 
         ]),
 
         
