@@ -3,6 +3,7 @@ import warnings
 import global_vars
 import launcher
 import time
+import sys
 
 from functions import open_browser, clear_global_vars
 from server import app, version
@@ -60,5 +61,11 @@ def render_content(tab):
 port = 8050
 
 if __name__ == '__main__':
-    Timer(1, lambda: open_browser(port)).start()
-    app.run_server(host='0.0.0.0', debug=False, threaded=True, port=port)
+    # Only open browser if we are running from a script OR first launch of a bundled app
+    if not getattr(sys, 'frozen', False) or (len(sys.argv) == 1):
+        Timer(1, lambda: open_browser(port)).start()
+
+    app.run(host='0.0.0.0', debug=False, threaded=True, port=port)
+
+
+

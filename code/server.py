@@ -1,6 +1,7 @@
 import dash
 import os
 import sys
+import plotly
 import logging
 import dash_bootstrap_components as dbc
 import global_vars
