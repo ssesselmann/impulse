@@ -1,9 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 import sys
 from pathlib import Path
-from server import version
 from PyInstaller.utils.hooks import collect_submodules
 
+version = "2.3.1"
 project_root = Path('.').resolve()
 block_cipher = None
 
@@ -65,8 +65,8 @@ app = BUNDLE(
         "CFBundleIdentifier": "com.beejewel.impulse",
         "CFBundleName": "Impulse",
         "CFBundleDisplayName": "Impulse",
-        f"CFBundleShortVersionString": {version},
-        "CFBundleVersion": "2.3.0",
+        f"CFBundleShortVersionString": version,
+        "CFBundleVersion": version,
         "NSMicrophoneUsageDescription": "Required for audio analysis",
         "LSMinimumSystemVersion": "11.0",
     }
