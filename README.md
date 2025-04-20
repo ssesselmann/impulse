@@ -4,19 +4,30 @@ Python Script MCA for gamma spectrometry.
 ----------------------------------------
  This program reads a stream of data from the PC sound card and picks out pulses, the pulses are subsequently filtered and written to a JSON file in a special format called [NPESv2-JSON](https://github.com/OpenGammaProject/NPES-JSON). A live histogram and counts per second can be viewed in the browser tabs. 
 
- The current version of Impulse is also compatible with Atom-Nano and GS-Max devices with USB serial communication.
+ The current version of Impulse is compatible with Gammaspectacular Sound Card spectrometers, Theremino adaptors, Atom-Nano and GS-Max devices with USB serial communication.
  When used in serial device mode the already completed spectrum is retrieved from the device and the program performs the display monitor function only.
  
-The Easy Way
-------------
-Not too concerned about downloading the latest changes and just want to try Impulse ? 
-Download the precompiled executable for Mac or Windows from Gammaspectacular.com
+Easy executable app download
+----------------------------
+Download the precompiled executable for Mac or Windows.
 
+https://github.com/ssesselmann/impulse/releases
+or 
 https://www.gammaspectacular.com/blue/software-downloads/impulse
 
+Mac users - Move the app to your applications folder and launch it the normal way.
 
-Raw Code Installation Method (Windows, Mac or Linux)
--------------------------------------------
+Windows users - just save the .exe file anywhere on your PC
+
+The app opens up in your default browser and may request permission to access your microphone (sound card).
+
+Upon launching Impulse will create it's data directory in your home directory ~/impulse_data_2.0
+
+
+
+
+Raw Code Installation Method (Windows, Mac or Linux) - Users familiar with Python
+---------------------------------------------------------------------------------
 Step 1)
 -------
 Download and install the latest version of Python from the official site, consider upgrading if you are on an old version ... www.python.org
