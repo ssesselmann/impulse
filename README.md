@@ -80,7 +80,7 @@ http://localhost:8050
  
 
 
-Things to do
+Requests
 ------------
 
 * Build interval histogram with Dead time calculation 
