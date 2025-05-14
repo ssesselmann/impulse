@@ -183,12 +183,15 @@ textarea {
 }
 
 #t3footer {
+	margin-top: 50px;
+	flex-direction: row;
 	width:100%;
 	height:Auto;
 }
 
 #chart-3d {
 	height:100%;
+
 }
 
 #chartbox{
@@ -962,6 +965,11 @@ textarea {
 		float:left;
 	}
 	
+	#t3footer {
+		flex-direction: row;
+		width:100%;
+		height:Auto;
+		}
 
 	#counts {
 		 font-size:30px;
