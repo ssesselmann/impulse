@@ -217,6 +217,8 @@ textarea {
 }
 
 #t3footer {
+	margin-top: 50px;
+	flex-direction: row;
 	width:100%;
 	height:Auto;
 }
