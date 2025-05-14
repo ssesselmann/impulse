@@ -51,14 +51,6 @@ def show_tab6():
                 options=[
                     {"label": "Light theme"   , "value": "light-theme"},
                     {"label": "Dark theme"   , "value": "dark-theme"},
-
-                    # {"label": "Plasma"      , "value": "plasma"},
-                    # {"label": "Orange"      , "value": "orange"},
-                    # {"label": "Pink"        , "value": "pink"},
-                    # {"label": "Sunburst"    , "value": "sunburst"},
-                    # {"label": "Potassium"   , "value": "potassium"},
-                    # {"label": "Under Water" , "value": "underwater"},
-                    # {"label": "Milky Way"   , "value": "milkyway"},
                 ],
                 value=theme,  # pre-selected option
                 clearable=False,
@@ -227,7 +219,8 @@ def show_tab6():
 
                 html.H2('3D HISTOGRAM tab'),
                 html.P('This page functions much the same way as the regular 2D histogram, with the added time axis. You can control the time interval between each update. NOTE: Because this spectrum writes a lot of data to the browser it is advisable to keep the number of channels and time intervals to a minimum'), 
-
+                html.P('By default the surface plot will only show the last 200 rows, this prevents data oveload during long recordings. To view all rows, set the switch to Full View'),
+                
                 html.H2('COUNT RATE tab'),
                 html.P('This is a line chart showing the counts per second and is entirely driven by the settings on tab-2 and tab-3. The sum average (green line) can be adjusted with the slider or for fine adjustment click on the slider and use your left-right arrow keys to move the slider in steps of one second.'),
                 html.P('To avoid latency the cps chart will only display the last hour by default, however, the entire recording can be viewed with the Show Complete Dataset switch'),
