@@ -28,6 +28,7 @@ from functions import (
 
 logger = logging.getLogger(__name__)
 
+
 def show_tab3():
     with global_vars.write_lock:
         data_directory = global_vars.data_directory
@@ -108,6 +109,12 @@ def show_tab3():
 
                     html.Div(className='t3subdiv', children=[
                         html.Div(['Time Interval Sec.', dcc.Input(id='t_interval', type='number', step=1, readOnly=False, value=t_interval)]),
+                        html.Div(['Full View', daq.BooleanSwitch(
+                            id='full-view-switch',
+                            on=False,
+                            color='green',
+                            style={'marginLeft': '10px'}
+                        )]),
                     ]),
 
                     html.Div(className='t3subdiv', children=[
@@ -315,9 +322,10 @@ def update_output(n_clicks):
      Input('log-switch'         , 'on'),
      Input('cal-switch'         , 'on'),
      Input('t_interval'         , 'value')],
+     Input('full-view-switch'   , 'on'),
      State('theme'              , 'value')
 )
-def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_switch, t_interval, theme):
+def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_switch, t_interval, full_view_on, theme):
     if theme == 'light-theme':
         bg_color    = '#fafafa'
         paper_color = 'white'
@@ -362,21 +370,36 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
 
     layout = go.Layout(
             uirevision='nochange',
-            margin=dict(l=10, r=10, b=10, t=10),
+            margin=dict(l=75, r=0, b=0, t=0),
             paper_bgcolor= bg_color,
             scene=dict(
                 xaxis=dict(title='bins(x)', range=[0, bins_3d]),
                 yaxis=dict(title='time intervals(y)', range=y_range),
                 zaxis=dict(title='counts(z)', type=axis_type),
+                aspectratio=dict(x=1, y=1, z=0.5),  # change these to suit
+                camera=dict(eye=dict(x=2, y=2, z=1))  # position of camera
+
             )
         )
 
+
     try:
-        z = histogram_3d
-        y = list(range(len(histogram_3d)))
+        WINDOW_SIZE = 200
+        total_rows = len(histogram_3d)
+
+        # If user has selected 'full' view, show all data
+        if full_view_on:
+            start_row = 0
+        else:
+            start_row = max(0, total_rows - WINDOW_SIZE)
+
+        z = histogram_3d[start_row:]
+        y = list(range(start_row, total_rows))
         x = list(range(bins_3d))
 
-        layout.scene.yaxis.range = [0, max(y)]
+        #layout.scene.yaxis.range = [0, max(y)]
+        layout.scene.yaxis.range = [start_row, total_rows]
+
 
         if epb_switch:
             z = [[num * index for index, num in enumerate(inner_list)] for inner_list in z]
@@ -385,7 +408,7 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
             f = bins/bins_3d
             x = [int(num * f) for num in x]
             x = np.polyval(np.poly1d(coefficients_1), x)
-            layout.scene.xaxis.range = [0, max(x)]
+            layout.scene.yaxis.range = [start_row, total_rows]
             layout.scene.xaxis.title = "energy (x)"
 
         surface_trace = {
@@ -394,18 +417,19 @@ def update_graph_3d(n_intervals, filename_list, epb_switch, log_switch, cal_swit
             'y': y,
             'z': z,
             'colorscale': 'Rainbow',
-            'showlegend': False
+            'showlegend': True,
+            'showscale': False  # <<< This removes the color legend
         }
 
         traces      = [surface_trace]
         
-        title_text  = f'{filename_3d}_3d.json | {start_time} | {counts} counts | {elapsed} seconds'
+        title_text  = f'{filename_3d}_3d.json <br><br> {start_time} | {counts} counts | {elapsed} seconds'
 
         layout.update(
             title={
                 'text': title_text,
                 'x': 0.02,
-                'y': 0.95,
+                'y': 0.92,
                 'xanchor': 'left',
                 'yanchor': 'top',
                 'font': {'family': 'Arial', 'size': 16, 'color': line_color}
