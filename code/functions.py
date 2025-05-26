@@ -24,7 +24,7 @@ import global_vars
 import numpy as np
 
 from pulsecatcher import pulsecatcher
-from dash import dash_table
+from dash import dash_table, html
 from scipy.signal import find_peaks, peak_widths
 from collections import defaultdict
 from datetime import datetime
@@ -61,33 +61,6 @@ def normalise_pulse(average):
     mean = sum(average) / len(average)
     normalised = [int(n - mean) for n in average]
     return normalised
-
-def get_serial_device_information():
-    try:
-        with shproto.dispatcher.command_lock:   
-            shproto.dispatcher.command = "-inf" 
-            time.sleep(0.2) 
-            device_info = shproto.dispatcher.inf_str
-            time.sleep(0.2)
-            shproto.dispatcher.inf_str = "" 
-            time.sleep(0.2)
-        return device_info if device_info else "No response from device"
-    except Exception as e:
-        logger.error(f"Error retrieving device information: {e}")
-        return "Error retrieving device information"
-
-def parse_device_info(info_string):
-    components = info_string.split()
-    settings = {}
-    for i in range(0, len(components) - 1, 2):
-        key = components[i]
-        value = components[i + 1]
-        if value.replace('.', '', 1).isdigit() and value.count('.') < 2:
-            converted_value = float(value) if '.' in value else int(value)
-        else:
-            converted_value = value
-        settings[key] = converted_value
-    return settings
 
 # Normalized pulse samples less normalized shape samples squared summed and rooted
 def distortion(normalised, shape):
@@ -765,57 +738,173 @@ def fetch_json(file_id):
         logger.error(f"Error fetching JSON: {e}\n")
         return None
 
-def execute_serial_command(input_cmd):
-    with shproto.dispatcher.command_lock:
-        shproto.dispatcher.command = input_cmd
-        logger.info(f"Sending command {input_cmd} to device\n")
+def get_serial_device_information():
+    try:
+        with shproto.dispatcher.command_lock:  
+            shproto.dispatcher.command = "-inf" 
+
+        time.sleep(0.4)
+
+        dev_info = shproto.dispatcher.inf_str
+        shproto.dispatcher.inf_str = "" 
+
+        return dev_info if dev_info else "No response from device"
+
+    except Exception as e:
+        logger.error(f"Error retrieving device information: {e}")
+        return "Error retrieving device information"
+
+
+
+
+def parse_device_info(info_string):
+
+    tokens = info_string.split()
+    settings = {}
+    i = 0
+    n = len(tokens)
+
+    while i < n:
+        # 1) key is always one token
+        key = tokens[i]
+        i += 1
+        if i >= n:
+            break
+
+        # 2) if the next token starts a bracketed list, consume until the closing bracket
+        if tokens[i].startswith("["):
+            start = i
+            j = i
+            while j < n and not tokens[j].endswith("]"):
+                j += 1
+
+            # join all pieces of the list, strip brackets, split into parts
+            raw_list = " ".join(tokens[start : j + 1])
+            inner   = raw_list.strip("[]").strip()
+            parts   = re.split(r"[,\s]+", inner)
+
+            # convert each part to int/float if possible
+            lst = []
+            for part in parts:
+                if part.lstrip("-").replace(".", "", 1).isdigit() and part.count(".") < 2:
+                    lst.append(int(part) if "." not in part else float(part))
+                else:
+                    lst.append(part)
+            
+            settings[key] = lst
+            i = j + 1  # advance past the entire bracketed list
+
+        else:
+            # 3) single-token value case
+            val_token = tokens[i]
+            i += 1
+
+            # convert to int/float if it looks like a number
+            if val_token.lstrip("-").replace(".", "", 1).isdigit() and val_token.count(".") < 2:
+                converted = int(val_token) if "." not in val_token else float(val_token)
+            else:
+                converted = val_token
+
+            settings[key] = converted
+
+    return settings
 
 def generate_device_settings_table():
-    shproto.dispatcher.spec_stopflag = 0
-    dispatcher = threading.Thread(target=shproto.dispatcher.start)
-    dispatcher.start()
-    dev_info = get_serial_device_information()
-    time.sleep(0.3)
-    info_dict = parse_device_info(dev_info)
-    time.sleep(0.3)
+    # 1) Fetch serial number
+    process_03('-cal')
+    time.sleep(0.1)
     serial_number = shproto.dispatcher.serial_number
+    time.sleep(0.1)
+
+    # 2) Fetch settings info
+    dev_info = get_serial_device_information()
+    time.sleep(0.1)
+    info = parse_device_info(dev_info)
+    time.sleep(0.1)
+
+    # 3) Build only the main settings DataTable
     table = dash_table.DataTable(
         columns=[
-            {"id": "Setting", "name": "Firmware settings"},
-            {"id": "cmd", "name": "Command"},
-            {"id": "Value", "name": "Value"}
+            {"id": "Setting",       "name": "Firmware setting"},
+            {"id": "cmd",           "name": "Cmd"},
+            {"id": "Value",         "name": "Value"},
         ],
         data=[
-            {"Setting": "Version", "cmd": "-", "Value": info_dict.get('VERSION')},
-            {"Setting": "Serial number", "cmd": "status", "Value": serial_number},
-            {"Setting": "Samples for X (pulse rise)", "cmd": "-ris", "Value": info_dict.get('RISE')},
-            {"Setting": "Samples for Y (pulse fall)", "cmd": "-fall", "Value": info_dict.get('FALL')},
-            {"Setting": "Lower Limit Discriminator LLD", "cmd": "-nos", "Value": info_dict.get('NOISE')},
-            {"Setting": "ADC Sample Frequency", "cmd": "-frq", "Value": info_dict.get('F')},
-            {"Setting": "Max integral value", "cmd": "-max", "Value": info_dict.get('MAX')},
-            {"Setting": "Hysteresis value", "cmd": "-hyst", "Value": info_dict.get('HYST')},
-            {"Setting": "Working Mode [0, 1, 2]", "cmd": "-mode", "Value": info_dict.get('MODE')},
-            {"Setting": "Discriminator step (>1)", "cmd": "-step", "Value": info_dict.get('STEP')},
-            {"Setting": "High Voltage (0-255)", "cmd": "-U", "Value": info_dict.get('POT')},
-            {"Setting": "Baseline trim (0-255)", "cmd": "-V", "Value": info_dict.get('POT2')},
-            {"Setting": "Temperature sensor 1", "cmd": "status", "Value": f"{info_dict.get('T1')} C˚"},
-            {"Setting": "Energy Window (-win X1 X2)", "cmd": "-win", "Value": info_dict.get('OUT')},
-            {"Setting": "Temp. compensation status", "cmd": "status", "Value": info_dict.get('TCpot')},
-            {"Setting": "Temp. compensation table", "cmd": "status", "Value": info_dict.get('Tco')}
+            {"Setting": "Version",           "cmd": "-ver",  "Value": info.get("VERSION")},
+            {"Setting": "Serial number",     "cmd": "-cal",  "Value": serial_number},
+            {"Setting": "Rise samples",      "cmd": "-ris",  "Value": info.get("RISE")},
+            {"Setting": "Fall samples",      "cmd": "-fall", "Value": info.get("FALL")},
+            {"Setting": "Noise LLD",         "cmd": "-nos",  "Value": info.get("NOISE")},
+            {"Setting": "ADC freq (Hz)",     "cmd": "-frq",  "Value": info.get("F")},
+            {"Setting": "Max integral",      "cmd": "-max",  "Value": info.get("MAX")},
+            {"Setting": "Hysteresis",        "cmd": "-hyst", "Value": info.get("HYST")},
+            {"Setting": "Mode [0–2]",        "cmd": "-mode", "Value": info.get("MODE")},
+            {"Setting": "Discriminator step","cmd": "-step", "Value": info.get("STEP")},
+            {"Setting": "High voltage",      "cmd": "-U",    "Value": info.get("POT")},
+            {"Setting": "Baseline trim",     "cmd": "-V",    "Value": info.get("POT2")},
+            {"Setting": "Temp sensor 1 (°C)","cmd": "status","Value": info.get("T1")},
+            {"Setting": "Energy window",     "cmd": "-win",  "Value": info.get("OUT")},
+            {"Setting": "Temp-comp enabled", "cmd": "-tc",   "Value": info.get("TC")},
         ],
         style_cell={
-            'textAlign': 'left',
-            'padding': '4px',
-            'fontSize': '12px',
-            'fontFamily': 'Arial'
+            'textAlign':    'left',
+            'padding':      '4px',
+            'fontSize':     '12px',
+            'fontFamily':   'Arial',
+            'whiteSpace':   'normal',
+            'height':       'auto'
         },
         style_cell_conditional=[
-            {'if': {'column_id': 'Setting'}, 'width': '60%'},
-            {'if': {'column_id': 'cmd'}, 'width': '10%'},
-            {'if': {'column_id': 'Value'}, 'width': '30%'}
-        ]
+            {'if': {'column_id':'Setting'}, 'width':'60%'},
+            {'if': {'column_id':'cmd'    }, 'width':'10%'},
+            {'if': {'column_id':'Value'  }, 'width':'30%'},
+        ],
+        style_table={
+            'overflowX': 'auto'
+        }
     )
-    return table
+
+    with global_vars.write_lock:
+        global_vars.serial_number = serial_number
+
+    # 4) Return only that table
+    return html.Div(table, style={"width": "100%", "overflowX": "auto"})
+
+def generate_temperature_comp_table():
+
+    # fetch & parse (you can swap to cached or direct fetch if you like)
+    raw = get_serial_device_information()
+    info = parse_device_info(raw)
+
+    tco_raw = info.get("Tco", [])  # should now be a Python list of numbers
+
+    # group into (Temp, MaxIntegral) pairs
+    pairs = [(tco_raw[i], tco_raw[i+1]) for i in range(0, len(tco_raw)-1, 2)]
+
+    # build header
+    header = html.Tr([
+        html.Th("Temperature (°C)",   style={"padding": "4px", "fontWeight": "bold", "textAlign":"center"}),
+        html.Th("Max Integral",       style={"padding": "4px", "fontWeight": "bold", "textAlign":"center"})
+    ])
+
+    # build data rows
+    rows = []
+    for temp, integral in pairs:
+        rows.append(html.Tr([
+            html.Td(str(temp),    style={"padding": "4px", "textAlign":"center"}),
+            html.Td(str(integral),style={"padding": "4px", "textAlign":"right"})
+        ]))
+
+    return html.Table(
+        [header] + rows,
+        style={
+            "borderCollapse": "collapse",
+            "width":          "100%",
+            "maxHeight":      "400px",
+            "overflowY":      "auto",
+            "display":        "block",
+        }
+    )
 
 # Check if commands sent to processor is safe
 def allowed_command(cmd):
@@ -931,7 +1020,6 @@ def reset_stores():
         'store_load_flag_tab4': False,
     }
 
-
 def save_settings_to_json():
     settings = {key: getattr(global_vars, key) for key in [
             "bin_size", 
@@ -988,7 +1076,18 @@ def save_settings_to_json():
             "val_flag",
             "max_pulse_length",
             "max_pulse_height",
-            "flags_selected"
+            "flags_selected",
+            "tempcal_table",
+            "tempcal_stability_tolerance",
+            "tempcal_stability_window_sec",
+            "tempcal_poll_interval_sec",
+            "tempcal_spectrum_duration_sec",
+            "tempcal_smoothing_sigma",
+            "tempcal_peak_search_range",
+            "tempcal_cancelled",        
+            "tempcal_base_value",
+            "tempcal_num_runs",
+            "tempcal_delta"
             ]}
     
     try:
@@ -1063,7 +1162,18 @@ def load_settings_from_json(path):
                     "val_flag":             bool,
                     "max_pulse_length":     int,
                     "max_pulse_height":     int,
-                    "flags_selected":       str
+                    "flags_selected":       str,
+                    "tempcal_table":                list,
+                    "tempcal_stability_tolerance":  float,
+                    "tempcal_stability_window_sec": int,
+                    "tempcal_poll_interval_sec":    int,
+                    "tempcal_spectrum_duration_sec":int,
+                    "tempcal_smoothing_sigma":      float,
+                    "tempcal_peak_search_range":    list,
+                    "tempcal_cancelled":            bool,         
+                    "tempcal_base_value":           int,
+                    "tempcal_num_runs":             int,
+                    "tempcal_delta":                int
                     }   
 
             with global_vars.write_lock:
@@ -1296,4 +1406,4 @@ def read_isotopes_data(data_path):
         return data
     except Exception as e:
         print(f"Error reading isotopes data: {e}")
-        return []
+        return []      
