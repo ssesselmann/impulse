@@ -26,7 +26,6 @@ from datetime import datetime
 from functions import (
     calibrate_gc, 
     clear_global_cps_list, 
-    execute_serial_command, 
     find_peaks_in_gc, 
     gaussian_correl, 
     get_device_number, 
@@ -387,15 +386,15 @@ def start_new_2d_spectrum(confirm_clicks, start_clicks, filename, compression, t
                 dispatcher.start()
 
                 shproto.dispatcher.process_03('-mode 0')
-                time.sleep(0.1)
+                time.sleep(0.4)
                 logger.info(f'tab2 restores -mode 0\n')
 
                 shproto.dispatcher.process_03('-rst')
-                time.sleep(0.3)
+                time.sleep(0.4)
                 logger.info(f'tab2 sends reset command -rst\n')
 
                 shproto.dispatcher.process_03('-sta')
-                time.sleep(0.1)
+                time.sleep(0.4)
                 logger.info(f'tab2 sends start command -sta\n')
 
                 shproto.dispatcher.process_01(filename, compression, "MAX", t_interval)
@@ -432,7 +431,7 @@ def stop_button(n_clicks, dn):
         logger.info('tab2-stop_button device is MAX\n')
         spec = threading.Thread(target=shproto.dispatcher.stop)
         spec.start()
-        #time.sleep(0.1)
+        time.sleep(0.4)
     else:
         stop_recording()
         logger.info('tab2-stop button device is PRO\n')
@@ -1052,7 +1051,6 @@ def update_spectrum_notes(n_clicks, spec_notes, filename):
     if not global_vars.run_flag.is_set():
                 
         update_json_notes(filename, spec_notes)
-
 
     logger.info(f'tab2 spectrum notes updated {spec_notes}\n')
 
