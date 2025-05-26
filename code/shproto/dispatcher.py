@@ -48,13 +48,28 @@ serial_number       = ""
 calibration         = [0., 1., 0., 0., 0.]
 inf_str             = ''
 data_directory      = ''
-    
+_dispatcher_thread  = None
+_dispatcher_started = False
 
+def ensure_running(sn=None):
+    """Start the dispatcher.start() loop once in a daemon thread."""
+    global _dispatcher_started, _dispatcher_thread
+    if not _dispatcher_started:
+        _dispatcher_thread = threading.Thread(
+            target=start, 
+            kwargs={'sn': sn}, 
+            daemon=True,
+            name="DispatcherThread"
+        )
+        _dispatcher_thread.start()
+        _dispatcher_started = True
+        # give it a moment to connect
+        time.sleep(0.2)
 
 # This function communicates with the device
 def start(sn=None):
     
-    READ_BUFFER = 1
+    READ_BUFFER = 8192
     pulse_file_opened = 0
     shproto.dispatcher.clear()
     with shproto.dispatcher.stopflag_lock:
@@ -68,32 +83,50 @@ def start(sn=None):
         nano.flushOutput()
     logger.info("MAX connected successfully.\n")
     response = shproto.packet()
+
     while not shproto.dispatcher.stopflag:
-        if shproto.dispatcher.command is not None and len(shproto.dispatcher.command) > 0:
-            logger.debug(f"Dispatcher command: {shproto.dispatcher.command}")
 
-            print(f"dispatcher.command {command}")
+        time.sleep(0.05)
 
-            if command == "-rst":
-                shproto.dispatcher.clear()
-            tx_packet = shproto.packet()
-            tx_packet.cmd = shproto.MODE_TEXT
-            tx_packet.start()
-            for i in range(len(command)):
-                tx_packet.add(ord(command[i]))
-            tx_packet.stop()
-            nano.write(tx_packet.payload)
+        # send any pending text command
+        if shproto.dispatcher.command:
+            # grab-and-clear under lock
             with shproto.dispatcher.command_lock:
+                local_cmd = shproto.dispatcher.command
                 shproto.dispatcher.command = ""
+
+            logger.debug(f"Dispatcher command: {local_cmd!r}")
+
+            if local_cmd == "-rst":
+                shproto.dispatcher.clear()
+
+            tx = shproto.packet()
+            tx.cmd = shproto.MODE_TEXT
+            tx.start()
+            cmd = local_cmd
+            
+            if not cmd.endswith("\r\n"):
+                cmd = cmd + "\r\n"
+
+            for ch in local_cmd:
+                tx.add(ord(ch))
+            tx.stop()
+
+            nano.write(tx.payload)
+            logger.debug(f"  → sent bytes: {tx.payload!r}")
+
+            # give the device a moment to process before next read
+            time.sleep(0.05)
+
         if nano.in_waiting == 0:
-            #time.sleep(0.1)
+            time.sleep(0.1)
             continue
         READ_BUFFER = max(nano.in_waiting, READ_BUFFER)
         
         try:
             with global_vars.run_flag_lock:
                     rx_byte_arr = nano.read(size=READ_BUFFER)
-                    #time.sleep(0.1)
+                    time.sleep(0.1)
         except serial.SerialException as e:
             if "device disconnected" in str(e):
                 logger.error("Device disconnected\n")
@@ -120,8 +153,10 @@ def start(sn=None):
                     resp_lines = resp_decoded.splitlines()
                     if re.search('^VERSION', resp_decoded):
                         shproto.dispatcher.inf_str = resp_decoded
-                        shproto.dispatcher.inf_str = re.sub(r'\[[^]]*\]', '...', shproto.dispatcher.inf_str, count=2)
+                        #shproto.dispatcher.inf_str = re.sub(r'\[[^]]*\]', '...', shproto.dispatcher.inf_str, count=2)
+
                         logger.info(f"Got MAX settings:{shproto.dispatcher.inf_str} \n")
+
                 except UnicodeDecodeError:
                     logger.info("Unknown non-text response in dispatcher line 100\n")
 
@@ -161,8 +196,6 @@ def start(sn=None):
                 response.clear()
 
             # ----- cmd pulse mode -------------------------------------    
-
-
             # Track whether the CSV file has been initialized
             pulse_file_initialized = False  
 
@@ -204,10 +237,7 @@ def start(sn=None):
                     fd_pulses.write(",".join(map(str, pulse_data)) + "\n")
 
                 response.clear()
-
-
             # ------- cmd stat mode --------------------------
-
             elif response.cmd == shproto.MODE_STAT:
                 shproto.dispatcher.pkts04 += 1
                 shproto.dispatcher.total_time = (response.payload[0] & 0xFF) | \
@@ -573,16 +603,12 @@ def load_json_data(file_path):
         }
 
 # This process is used for sending commands to the Nano device
-def process_03(_command):
+def process_03(cmd):
+    ensure_running()
     with shproto.dispatcher.command_lock:
-        shproto.dispatcher.command = _command
-        time.sleep(0.3)  # Give it a little time to process
-        logger.info(f'Completed process_03({_command})\n')
-        return
-
-        
-
-
+        shproto.dispatcher.command = cmd
+    time.sleep(0.1)
+    logger.info(f'Completed process_03("{cmd}"")\n')
 
 def stop():
     logger.info('Command shproto.stop \n')
