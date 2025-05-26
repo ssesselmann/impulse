@@ -2,6 +2,11 @@ import threading
 import json
 import os
 
+# for caching the last “-inf” + “-cal” query
+cached_device_info    = None
+cached_device_info_ts = 0.0
+serial_number = 0
+
 # Flags
 run_flag        = threading.Event()
 run_flag_lock   = threading.Lock()
@@ -102,4 +107,19 @@ coeff_3         = 0
 
 # Nano settings
 rolling_interval= 60
+
+# temperature Compensation
+tempcal_table                   = []
+tempcal_stability_tolerance     = 0         # °C threshold for stability
+tempcal_stability_window_sec    = 0         # seconds to hold stable temperature
+tempcal_poll_interval_sec       = 0         # seconds between temperature polls
+tempcal_spectrum_duration_sec   = 0         # seconds per spectrum collection
+tempcal_smoothing_sigma         = 0         # Gaussian smoothing factor
+tempcal_peak_search_range       = []        # bin range to search for the photopeak
+tempcal_cancelled               = False     # Cancelled
+tempcal_base_value              = 0         # Max integral value
+tempcal_num_runs                = 2         # Number of calibration points
+tempcal_delta                   = 5         # Temperature difference between runs
+
+
 
