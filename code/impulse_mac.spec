@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules
 
-version = "2.3.1"
+version = "2.3.2"
 project_root = Path('.').resolve()
 block_cipher = None
 
