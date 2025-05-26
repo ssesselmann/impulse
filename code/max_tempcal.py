@@ -94,7 +94,6 @@ def run_temperature_calibration(temp_delta, base_value=global_vars.tempcal_base_
             if global_vars.tempcal_cancelled:
                 log("🛑 Calibration cancelled during wait.", feedback_callback)
                 return
-            time.sleep(30)
 
         # Step 3: Once temperature is reached, stabilize and collect
         t_now = wait_for_stable_temperature()
