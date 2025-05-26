@@ -86,6 +86,14 @@ textarea {
 	background-color: white !important;
 }
 
+.tab0row {
+	width: 100%;
+	display: flex; 
+	alignItems: top; 
+	gap: 20px;
+	height:40px;
+}
+
 #my-spectra-table [data-dash-column="ID"] {
 	background-color: black;
 	color: lightgreen;
