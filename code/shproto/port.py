@@ -50,7 +50,7 @@ def connectdevice(sn=None):
     if nanoport is None:
         logger.info('No serial port device found.\n')
         sys.exit(0)
-    tty = serial.Serial(nanoport, baudrate=600000, bytesize=8, parity='N', stopbits=1, timeout=5)
+    tty = serial.Serial(nanoport, baudrate=600000, bytesize=8, parity='N', stopbits=1, timeout=0.01)
     return tty
 
 def send_command(command):
