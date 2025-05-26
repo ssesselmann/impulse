@@ -90,7 +90,18 @@ default_settings = {
     "tolerance": 50000,
     "shape_lld": 500,
     "shape_uld": 10000,
-    "flags_selected":""
+    "flags_selected":"",
+    "tempcal_table": [],
+    "tempcal_stability_tolerance": 0.5,
+    "tempcal_stability_window_sec": 300,
+    "tempcal_poll_interval_sec": 10,
+    "tempcal_spectrum_duration_sec": 60,
+    "tempcal_smoothing_sigma": 1.5,
+    "tempcal_peak_search_range": [1500, 6000],
+    "tempcal_cancelled": False,
+    "tempcal_base_value": 18300,
+    "tempcal_num_runs": 2,
+    "tempcal_delta": 5
 }
 
 default_user = {
