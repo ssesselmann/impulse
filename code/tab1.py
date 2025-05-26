@@ -9,28 +9,31 @@ import threading
 import queue
 import logging
 import requests as req
-import shproto.dispatcher
 import time
 import dash_daq as daq
 import global_vars
-from dash import dcc, html, dash_table, no_update
+import dash_bootstrap_components as dbc
+import max_tempcal
+
+from global_vars import tempcal_cancelled, data_directory
+from max_tempcal import run_temperature_calibration
+from dash import dcc, html, dash_table, no_update, ctx
 from dash.dependencies import Input, Output, State
 from server import app
 from functions import (
-    execute_serial_command, 
     generate_device_settings_table, 
     allowed_command, 
     save_settings_to_json,
     start_max_pulse_check,
-    stop_max_pulse_check
+    stop_max_pulse_check,
     )
 from shapecatcher import sc_info
-from shproto.dispatcher import process_03
-
-logger = logging.getLogger(__name__)
+from shproto.dispatcher import process_03, serial_number
 
 with global_vars.write_lock:
     data_directory = global_vars.data_directory
+
+logger = logging.getLogger(__name__)
 
 # ----------- Audio input selection ---------------------------------
 
@@ -61,6 +64,7 @@ def show_tab1():
     pulse_length        = 0
     filepath            = os.path.dirname(__file__)
     shape_left, shape_right = fn.load_shape()
+    button_label        = ""
 
     logger.info(f'Tab1 stereo = {stereo}\n')
 
@@ -107,6 +111,8 @@ def show_tab1():
 
             dcc.Interval(id='update-interval'   , interval=1000, n_intervals=0, disabled=serial_int),
             dcc.Interval(id='interval-component', interval=1000, n_intervals=0, disabled=audio_int),
+            dcc.Interval(id='log-interval', interval=2000, n_intervals=0, disabled=serial_int),
+
             dcc.Input(id='theme', type='text', value=f'{theme}', style={'display': 'none'}),
 
             html.Div(id='tab1-header', children=[
@@ -221,6 +227,20 @@ def show_tab1():
                     html.Div(id='tab1-serial-div-1', className='tab1-serial-thirds', children=[
                         # serial-instructions div
                         html.Div(id='serial-instructions', children=[
+                            dbc.Modal(
+                                id='tempcal-modal',
+                                is_open=False,
+                                size="lg",
+                                children=[
+                                    dbc.ModalHeader("Temperature Calibration Progress"),
+                                    dbc.ModalBody(html.Pre(id='tempcal-log-modal', style={'fontSize': '12px'})),
+                                    dbc.ModalFooter([
+                                    dbc.Button("Confirm", id='confirm-tempcal-btn', color='primary', className='me-2'),
+                                    dbc.Button("Cancel",  id='close-tempcal-modal', color='secondary'),
+                                ]),
+
+                                ]
+                            ),
                             html.H3('You have selected a GS-MAX serial device'),
                             html.Label('Input commands to device'),
                             html.Div(children=[
@@ -235,12 +255,49 @@ def show_tab1():
                             html.P('Steven Sesselmann'),
                             html.Div(html.A('steven@gammaspectacular.com', href='mailto:steven@gammaspectacular.com')),
                             html.Div(html.A('Gammaspectacular.com', href='https://www.gammaspectacular.com', target='_new')),
-                        ]), # end serial-instructions
+                        
+
+                    html.Div([
+                        html.Hr(),
+                        html.H5("Automatic Temperature Calibration"),
+                        html.P('This is an automated function for temperature compensation, see instruction in the manual on tab.6 before using.'),
+                        html.P('Do Not use on factory calibrated instruments'),
+                        dbc.Row([
+                            dbc.Col(html.Label("Runs to sample (minimum 2):"), width=4),
+                            dbc.Col(html.Label("Degrees °C between runs:"), width=4)
+                        ]),
+
+                        dbc.Row([
+                            dbc.Col(dbc.Input(id='num-runs', type='number', placeholder='Number of runs', value=global_vars.tempcal_num_runs, min=2), width=4),
+                            dbc.Col(dbc.Input(id='temp-step', type='number', placeholder='Δ°C between runs', value=global_vars.tempcal_delta, min=1), width=4),
+                            dbc.Col(dbc.Button("Start", id='start-tempcal-btn', className='action_button', ), width=4)
+                        ], className="mb-2"),
+
+                        dcc.Loading(
+                            id="tempcal-loading",
+                            type="default",
+                            children=html.Div(id='tempcal-output', style={'whiteSpace': 'pre-line', 'fontSize': '12px'})
+                        )
+                    ]),
+
+                    ]), # end serial-instructions
+
                     ]), # end tab1-serial-div-1
 
                     # tab1-serial-div2
                     html.Div(id='tab1-serial-div-2', className='tab1-serial-thirds', children=[
-                        html.Div(id='serial-device-info-table'),
+
+                        html.Div(id='serial-device-info-table', style={'marginTop': '10px', 'width':'100%', 'height':'90%'}),
+                         # Show Tco button
+                        html.Button("Temperature Compensation Table", id='open-tco-modal', n_clicks=0, className='action_button', style={'marginTop': '10px', 'width':'80%', 'margin-left':'10%'}),
+
+                        # The Modal
+                        dbc.Modal(id='tco-modal', is_open=False, size="sm", children=[
+                            dbc.ModalHeader("Temperature Compensation Table"),
+                            dbc.ModalBody(html.Div(id='tco-modal-body'), style={'padding': '0 1rem'}),
+                                dbc.ModalFooter(dbc.Button("Close", id='close-tco-modal', className='ml-auto'))
+                            ])
+
                         ]), # end tab1-middle-div2
                     # tab1-serial-div-3
                 html.Div(id='tab1-serial-div-3', className='tab1-serial-thirds', children=[
@@ -596,8 +653,6 @@ def distortion_curve(n_clicks, stereo, theme):
 
 # ------- Send serial device commands -------------------
 
-
-
 @app.callback(
     [
         Output('command_output', 'children'),
@@ -605,50 +660,62 @@ def distortion_curve(n_clicks, stereo, theme):
         Output('cmd-input', 'value')
     ],
     [
-        Input('submit-cmd', 'n_clicks'), 
+        Input('submit-cmd', 'n_clicks'),
         Input('cmd-input', 'n_submit'),
+        Input('device-dropdown', 'value'),
     ],
     [
-        State('cmd-input', 'value'), 
-        State('device-dropdown', 'value'),
+        State('cmd-input', 'value'),
     ]
 )
-def update_output(n_clicks, n_submit, cmd, device):
-    # 1) Validate device
+def update_serial_table(n_clicks, n_submit, device, cmd):
+    trigger = ctx.triggered_id
+    logger.debug(f"🔔 update_serial_table triggered by {trigger}")
+
+    # Default fallback values
+    command_output  = no_update
+    cmd_input_value = no_update
+
     try:
-        device = int(device) if device is not None else None
+        dev = int(device)
     except (ValueError, TypeError):
-        device = None
+        return "Invalid device", html.Div("No device selected"), ""
 
-    # If device is None or not a serial device (device >= 100), return early
-    if device is None or device < 100:
-        return "No serial device found", no_update, no_update
+    if dev < 100:
+        return "Audio device selected", html.Div("Audio device has no firmware table"), ""
 
-    # 2) & 3) If cmd is None/blank or invalid, generate and return device table
-    if cmd is None or not isinstance(cmd, str) or cmd.strip() == "":
-        table = generate_device_settings_table()
-        process_03('-cal')
-        return 'Click [submit] to refresh table', table, ''  # (Output text, the table, clear input)
+    # When just selecting the device → show table
+    if trigger == 'device-dropdown':
+        table = fn.generate_device_settings_table()
+        return no_update, table, no_update
 
-    # 4) & 5) Check if command is allowed. If command starts with "+", remove the "+" prefix (override)
-    allowed = allowed_command(cmd)
-    
-    if cmd.startswith("+"):
-        cmd = cmd[1:]
+    # If Submit or Enter was pressed
+    if trigger in ('submit-cmd', 'cmd-input'):
 
-    # 6) Execute the command if allowed; if not allowed, respond with table
-    if allowed:
-        execute_serial_command(cmd)
-        time.sleep(0.5)  # optional delay
-        # 7) Regenerate table after command is sent
-        table = generate_device_settings_table()
-        return f'Command sent: {cmd}', table, ''
-    else:
-        # If not allowed, return the table so user can see device info
-        table = generate_device_settings_table()
-        return "Command not allowed. Device data:", table, ''
+        if not cmd or not isinstance(cmd, str) or cmd.strip() == "":
 
+            table = fn.generate_device_settings_table()
 
+            return "Click [submit] to refresh table", table, ""
+        
+        allowed = allowed_command(cmd)
+
+        if cmd.startswith("+"):
+            cmd = cmd[1:]
+
+        if allowed:
+            # Carry out command
+            process_03(cmd)
+            time.sleep(0.5)
+
+            table = fn.generate_device_settings_table()
+
+            return f"Command sent: {cmd}", table, ""
+        else:
+            table = fn.generate_device_settings_table()
+            return "Command not allowed", table, ""
+
+    return no_update, no_update, no_update
 
 # Callback for updating shapecatcher feedback ---------
 @app.callback(
@@ -810,6 +877,176 @@ def toggle_frames(device):
         return visible_style, hidden_style  # Show audio, hide serial
     else:  # Serial device
         return hidden_style, visible_style  # Hide audio, show serial
+
+
+@app.callback(
+    [
+      Output('tempcal-modal',        'is_open'),
+      Output('tempcal-log-modal',    'children'),
+      Output('close-tempcal-modal',  'children'),
+    ],
+    [
+      Input('start-tempcal-btn',     'n_clicks'),
+      Input('confirm-tempcal-btn',   'n_clicks'),
+      Input('log-interval',          'n_intervals'),
+      Input('close-tempcal-modal',   'n_clicks'),
+    ],
+    [
+      State('tempcal-modal',        'is_open'),
+      State('device-dropdown',      'value'),
+      State('num-runs',             'value'),
+      State('temp-step',            'value'),
+    ],
+    prevent_initial_call=True
+)
+def handle_tempcal_modal(start_clicks, confirm_clicks, interval, close_clicks,
+                         is_open, device, num_runs, temp_delta):
+
+    trigger = ctx.triggered_id
+
+    with global_vars.write_lock:
+        global_vars.tempcal_num_runs     = num_runs
+        global_vars.tempcal_delta        = temp_delta
+
+    # If user just hit “Start”, pop open the modal for confirmation
+    if trigger == 'start-tempcal-btn':
+        from global_vars import (
+            tempcal_stability_tolerance,
+            tempcal_stability_window_sec,
+            tempcal_poll_interval_sec,
+            tempcal_spectrum_duration_sec,
+            tempcal_smoothing_sigma,
+            tempcal_peak_search_range,
+            tempcal_base_value,
+            tempcal_num_runs,
+            tempcal_delta
+        )
+
+        settings_summary = "\n".join([
+            "❗ Please confirm you want to run temperature calibration.",
+            "----------------------------------------------------------",
+            f"🔧 Calibration Settings used (edit in _settings.json).",
+            "----------------------------------------------------------",
+            f"• Stability tolerance: {tempcal_stability_tolerance} °C",
+            f"• Stability window: {tempcal_stability_window_sec} sec",
+            f"• Poll interval: {tempcal_poll_interval_sec} sec",
+            f"• Spectrum duration: {tempcal_spectrum_duration_sec} sec",
+            f"• Smoothing sigma: {tempcal_smoothing_sigma} σ",
+            f"• Expected Peak search range: {tempcal_peak_search_range}",
+            f"• Base value: {tempcal_base_value}",
+            f"• Number of calibration runs: {tempcal_num_runs}",
+            f"• Temperature ∆ between runs: {tempcal_delta} C˚",
+            "----------------------------------------------------------",
+            "Click Confirm to begin..."
+        ])
+
+        return True, settings_summary, "Cancel"
+
+    # If they hit “Confirm”, do some basic checks then actually start the run
+    elif trigger == 'confirm-tempcal-btn':
+        try:
+            dev = int(device)
+        except:
+            return True, "❌ Invalid device selected.", "Close"
+
+        if dev < 100 or dev > 999:
+
+            return True, f"❌ Device {dev} out of allowed range (100–999).", "Close"
+
+        if not num_runs or not temp_delta:
+            
+            return True, "❗ Please fill in both ‘Number of runs’ and ‘Δ°C between runs’.", "Cancel"
+
+        tempcal_cancelled = False
+
+        def run():
+            try:
+                with global_vars.write_lock:
+                    num     = global_vars.tempcal_num_runs
+                    delta   = global_vars.tempcal_delta
+                    base    = global_vars.tempcal_base_value
+
+                    tdelta  = [delta] * (num - 1)
+
+                run_temperature_calibration(temp_delta=tdelta , base_value=base)
+
+            except Exception as e:
+                print(e)
+
+        threading.Thread(target=run, daemon=True).start()
+
+        return True, "⚙️ Calibration started. Check _tempcal.log for progress.", "Close"
+
+    # Regular log refresh from file
+    elif trigger == 'log-interval':
+        log_path = os.path.join(data_directory, '_tempcal.log')
+
+        if not os.path.exists(log_path) or os.path.getsize(log_path) == 0:
+            # Skip update if log hasn't started
+            return is_open, no_update, no_update
+        try:
+            with open(log_path, 'r') as f:
+                lines = f.readlines()
+            recent_lines = lines[-10:]
+            log_text = ''.join(recent_lines)
+        except Exception as e:
+            log_text = f"❌ Could not read log: {str(e)}"
+
+        # Auto-close modal if calibration completed
+        if "✅ Temperature calibration complete" in log_text:
+            return False, log_text, "Close"
+
+        # label = "Close" if "✅ Temperature calibration complete" in log_text else "Cancel"
+
+        return is_open, log_text, "Cancel"
+
+    # User hit “Cancel” or “Close”
+    elif trigger == 'close-tempcal-modal':
+        tempcal_cancelled = True
+        return False, "Calibration cancelled.", "Cancel"
+
+    return is_open, no_update, no_update
+
+
+@app.callback(
+    Output('start-tempcal-btn', 'disabled'),
+    Input('serial-device-info-table', 'children')
+)
+def disable_tempcal(_):
+
+    serial = global_vars.serial_number
+
+    try:
+        s = int(serial)
+    except (ValueError, TypeError):
+        # no valid serial yet → disable
+        return True
+    # only enable if 200 ≤ serial ≤ 999
+    return not (200 <= s <= 999)
+
+
+# 3a) Toggle open/close
+@app.callback(
+    Output('tco-modal', 'is_open'),
+    [ Input('open-tco-modal', 'n_clicks'), Input('close-tco-modal', 'n_clicks') ],
+    [ State('tco-modal', 'is_open') ]
+)
+def toggle_tco_modal(open_clicks, close_clicks, is_open):
+    # if either button clicked, flip the open state
+    if open_clicks or close_clicks:
+        return not is_open
+    return is_open
+
+# 3b) Populate the modal body when first opened
+@app.callback(
+    Output('tco-modal-body', 'children'),
+    [ Input('open-tco-modal', 'n_clicks') ]
+)
+def render_tco_modal(n_clicks):
+    if not n_clicks:
+        return no_update  # don't render until user asks
+    # call the helper we just added
+    return fn.generate_temperature_comp_table()
 
 
 # -- End of tab1.py ---
