@@ -812,15 +812,15 @@ def parse_device_info(info_string):
 def generate_device_settings_table():
     # 1) Fetch serial number
     process_03('-cal')
-    time.sleep(0.1)
+    time.sleep(0.2)
     serial_number = shproto.dispatcher.serial_number
-    time.sleep(0.1)
+    time.sleep(0.2)
 
     # 2) Fetch settings info
     dev_info = get_serial_device_information()
-    time.sleep(0.1)
+    time.sleep(0.2)
     info = parse_device_info(dev_info)
-    time.sleep(0.1)
+    time.sleep(0.2)
 
     # 3) Build only the main settings DataTable
     table = dash_table.DataTable(
