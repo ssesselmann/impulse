@@ -1,3 +1,9 @@
+NOTICE: 
+This program is no longer maintained. See ImpulseQt instead: 
+https://github.com/ssesselmann/ImpulseQt
+
+
+
 IMPULSE
 -------
 Python Script MCA for gamma spectrometry.
